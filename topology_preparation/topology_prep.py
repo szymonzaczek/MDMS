@@ -1,5 +1,6 @@
 import os
 import numpy
+import fnmatch
 from Bio.PDB import *
 from pathlib import Path
 
@@ -25,11 +26,11 @@ def file_check(file):
 
 def download_pdb(user_input_id):
     pdbl = PDBList()
-    pdbl.retrieve_pdb_file(user_input_id, pdir='.', file_format='pdb')
+    pdbl.retrieve_pdb_file(user_input_id, pdir='.', file_format='pdb', overwrite=True)
 
 
 
-def init_structure():
+def init_pdb():
     USER_CHOICE_STRUC = ("Please, provide information whether you have already downloaded the PDB file wthat will be investigated, \n"
                          "or would you like to retrieve it from RSCB website by providing its PDB ID?\n"
                          "• press 'y' if you have already downloaded your PDB file\n"
@@ -49,7 +50,7 @@ def init_structure():
                     except Exception:
                         print('The path that you have provided is not valid. Please, provide the correct path to the given file.')
                 print(f'\nThe path that you provided: {pdb_path}')
-                save_to_file(f"mol = {pdb_path}", filename)
+                save_to_file(f"pdb = {pdb_path}", filename)
             elif user_input_struc == 'n':
                 USER_INPUT_ID = (f"Please, provide PDB ID (4 characters) of the species that you would like to investigate.\n")
                 while True:
@@ -70,7 +71,13 @@ def init_structure():
                         break
                     except ValueError:
                         print('The input that you have provided is not a valid PDB ID. It must consist of exactly 4 alphanumeric characters.\n')
-
+                # finding a file containing given PDB ID, in order to put it into a prep file
+                print(os.listdir('.'))
+                pdb_file_name = f"*{user_input_id}*"
+                for file in os.listdir('.'):
+                    if fnmatch.fnmatch(file, pdb_file_name):
+                        print(file)
+                        save_to_file(f"pdb = {file}", filename)
             else:
                 raise Exception
             break
@@ -78,7 +85,7 @@ def init_structure():
             print("The input that you've provided is not valid. Please, provide a valid input.")
 
 
-prep_functions = [file_naming, init_structure]
+prep_functions = [file_naming, init_pdb]
 
 methods_generator = (y for y in prep_functions)
 
