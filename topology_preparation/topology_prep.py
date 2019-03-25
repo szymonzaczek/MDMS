@@ -33,6 +33,12 @@ def download_pdb(user_input_id):
     pdbl = PDBList()
     pdbl.retrieve_pdb_file(user_input_id, pdir='.', file_format='pdb', overwrite=True)
 
+def stop_interface():
+    #enforce stopping the entire interface
+    global stop_generator
+    stop_generator = True
+
+
 def remark_read_pdb():
     #retrieving pdb file name from control file
     control = read_file(filename)
@@ -149,9 +155,14 @@ def missing_res_pdb():
             "missing residues to the structure. \nFor this purpose, you might use MODELLER software:\n"
             "(A. Fiser, R.K. Do, A. Sali., Modeling of loops in protein structures, Protein Science 9. 1753-1773, 2000, "
             "https://salilab.org/modeller/).\n"
-            "Prior to proceeding, make sure that there are no missing residues in your structure.\n"
+            "Prior to proceeding, make sure that there are no missing residues in your structure. \nApply changes to the "
+            "PDB file that will be provided into the SAmber and run SAmber again with altered initial structure.\n"
             "Information about missing residues from PDB file: ")
         print(missing_res_prompt)
+        #stopping interface, if there are missing residues
+        stop_interface()
+        #global stop_generator
+        #stop_generator = True
 
 def duplicate_res_pdb():#
     pass
@@ -164,5 +175,11 @@ methods_generator = (y for y in prep_functions)
 
 def queue_methods():
     next(methods_generator, None)
+    global stop_generator
+    stop_generator = False
     for x in prep_functions:
         x()
+        # if a condition is met, generator is stopped
+        if stop_generator == True:
+            print('\nProgram has not finished normally - it appears that something was wrong with your structure. \nApply changes and try again!\n')
+            break
