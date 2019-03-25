@@ -49,6 +49,7 @@ def remark_read_pdb():
     #with open('remark.txt', 'w') as file_handler:
     #    for item in pdb_remark:
     #        file_handler.write("{}\n".format(item))
+    return pdb_remark
 
 
 
@@ -109,8 +110,24 @@ def init_pdb():
 
 
 def missing_atoms_pdb():
-    remark_read_pdb()
-    pass
+    #getting lines starting with remark from a pdb file
+    pdb_remark = remark_read_pdb()
+    #looking for missing atoms in remark lines
+    missing_atom = ''.join([s for s in pdb_remark if "MISSING ATOM" in s])
+    #getting remark nr
+    remark = '(REMARK.[0-9]+)'
+    remark_match = re.search(remark, missing_atom).group(1)
+    #getting string containg all info about missing atoms
+    remark_with_missing_atom = '\n'.join(([s for s in pdb_remark if remark_match in s]))
+    #making string easier to read
+    missing_atom_prompt = re.sub(remark, "", remark_with_missing_atom)
+    #if there is a missing atom, print what was found inside pdb file along with warning
+    if remark_match != None:
+        print("\nWARNING!!!\nIt appears that your PDB file contains missing atoms. They might be added in following steps by"
+              " LEaP, however the better choice would be to use a homology modelling software to do so.\n"
+              "Please, proceed with caution.\n"
+              "Information about missing atom from PDB file: ")
+        print(missing_atom_prompt)
 
 def missing_res_pdb():
     pass
