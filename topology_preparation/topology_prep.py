@@ -128,9 +128,30 @@ def missing_atoms_pdb():
               "Please, proceed with caution.\n"
               "Information about missing atom from PDB file: ")
         print(missing_atom_prompt)
+        #Here, add function that will ensure that user knows what he's doing
 
 def missing_res_pdb():
-    pass
+    # getting lines starting with remark from a pdb file
+    pdb_remark = remark_read_pdb()
+    # looking for missing atoms in remark lines
+    missing_res = ''.join([s for s in pdb_remark if "MISSING RESIDUES" in s])
+    # getting remark nr
+    remark = '(REMARK.[0-9]+)'
+    remark_match = re.search(remark, missing_res).group(1)
+    # getting string containg all info about missing atoms
+    remark_with_missing_res = '\n'.join(([s for s in pdb_remark if remark_match in s]))
+    # making string easier to read
+    missing_res_prompt = re.sub(remark, "", remark_with_missing_res)
+    # if there is a missing atom, print what was found inside pdb file along with warning
+    if remark_match != None:
+        print(
+            "\nERROR!!!\nIt appears that your PDB file contains missing residues. LEaP is not capable of automatically adding "
+            "missing residues to the structure. \nFor this purpose, you might use MODELLER software:\n"
+            "(A. Fiser, R.K. Do, A. Sali., Modeling of loops in protein structures, Protein Science 9. 1753-1773, 2000, "
+            "https://salilab.org/modeller/).\n"
+            "Prior to proceeding, make sure that there are no missing residues in your structure.\n"
+            "Information about missing residues from PDB file: ")
+        print(missing_res_prompt)
 
 def duplicate_res_pdb():#
     pass
