@@ -134,7 +134,23 @@ def missing_atoms_pdb():
               "Please, proceed with caution.\n"
               "Information about missing atom from PDB file: ")
         print(missing_atom_prompt)
-        #Here, add function that will ensure that user knows what he's doing
+        #Here, add function to ask if user wants to finish at this point
+        USER_CHOICE_CONT = "Would you like to continue with SAmber execution, or rather right now you would like to" \
+                           "add missing atoms? Please, provide your choice:" \
+                           "• press 'y' to continue" \
+                           "• press 'n' to quit\n"
+        while True:
+            try:
+                user_input_cont = str(input(USER_CHOICE_CONT)).lower()
+                if user_input_cont == 'y':
+                    break
+                elif user_input_cont == 'n':
+                    stop_interface()
+                    break
+                else:
+                    raise Exception
+            except Exception:
+                print('Please, provide a valid input.')
 
 def missing_res_pdb():
     # getting lines starting with remark from a pdb file
@@ -159,10 +175,7 @@ def missing_res_pdb():
             "PDB file that will be provided into the SAmber and run SAmber again with altered initial structure.\n"
             "Information about missing residues from PDB file: ")
         print(missing_res_prompt)
-        #stopping interface, if there are missing residues
         stop_interface()
-        #global stop_generator
-        #stop_generator = True
 
 def duplicate_res_pdb():#
     pass
@@ -181,5 +194,6 @@ def queue_methods():
         x()
         # if a condition is met, generator is stopped
         if stop_generator == True:
+            #I do not know if this prompt is necessary
             print('\nProgram has not finished normally - it appears that something was wrong with your structure. \nApply changes and try again!\n')
             break
