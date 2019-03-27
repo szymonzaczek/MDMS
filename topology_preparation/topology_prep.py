@@ -1,6 +1,7 @@
 import os
 import numpy
 import fnmatch
+import pandas as pd
 import re
 from Bio.PDB import *
 from pathlib import Path
@@ -14,7 +15,7 @@ def file_naming():
         os.remove(filename)
 
 def save_to_file(content, filename):
-    #saving to a file
+    #saving to a control file
     with open(filename, 'a') as file:
         file.write(content)
 
@@ -44,13 +45,14 @@ def read_remark_pdb():
     pdb = 'pdb.=.(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
+    #creating list into which all of the remark lines will be appended
     pdb_remark = []
     #reading which lines starts with remark and saving it to a list
     with open(f"{pdb_filename}", 'r') as file:
         for line in file:
+            # looking for lines starting with remark and appending them to a list
             if line.startswith('REMARK'):
                 pdb_remark.append(line.strip())
-                #pdb_remark.append(next(file).strip())
     return pdb_remark
 
 def read_het_atoms_pdb():
@@ -59,11 +61,15 @@ def read_het_atoms_pdb():
     pdb = 'pdb.=.(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
+    #cCreating list into which all of the hetatm lines will be appended
     pdb_hetatoms = []
+    print('tutaj')
+    print(pdb_filename)
     with open(f"{pdb_filename}", 'r') as file:
         for line in file:
+            #looking for lines starting with hetatm and appending them to a list
             if line.startswith('HETATM'):
-                pdb_remark.append(line.strip())
+                pdb_hetatoms.append(line.strip())
     return pdb_hetatoms
 
 def init_pdb():
@@ -232,12 +238,34 @@ def missing_res_pdb():
         pass
 
 def ligands_pdb():
+    #getting het_atms from pdb file
     het_atoms = read_het_atoms_pdb()
-    print(het_atoms)
+    #saving het_atoms to a csv file - it will be easier to read it then
+    with open('het_atoms.csv', 'w') as f:
+        f.write('\n'.join(het_atoms))
+    #reading het_atoms as columns - since finding unique residues are sought after, 4 first columns are enough
+    df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
+    print(df)
+    #changing naming of columns
+    #df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name', 'chain', 'residue_nr', 'x', 'y', 'z', 'occupancy', 'temp_factor', 'element']
+    df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
+    print(df)
+    #printing unique residues
+    unique_res = df.residue_name.unique()
+    unique_res = numpy.array(unique_res.tolist())
+    print(unique_res)
+    print(len(unique_res))
+    unique_res_str = '\n'.join(unique_res)
+    prompt = (f"There are {len(unique_res)} unique residues in your PDB file which are not amino acids.\n"
+              f"Each ligand that will be retained for simulations, will require parametrization.\n"
+              f"Please specify, which residues you would like to keep for simulations?"
+              f"Unique residues are:\n"
+              f"{unique_res_str}")
+    print(prompt)
     pass
 
-#prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb]
-prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb,]
+prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb]
+#prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb]
 
 methods_generator = (y for y in prep_functions)
 
