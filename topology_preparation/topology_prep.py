@@ -271,12 +271,55 @@ def ligands_pdb():
         if x in unique_ligands:
             unique_ligands.remove(x)
     unique_ligands_str = '\n'.join(unique_ligands)
-    prompt = (f"There are {len(unique_ligands)} unique residues in your PDB file which are not amino acids and waters.\n"
-              f"Each ligand that will be retained for simulations, will require parametrization.\n"
-              f"Please specify, which residues you would like to keep for simulations? "
-              f"Unique residues are:\n"
-              f"{unique_ligands_str}")
-    print(prompt)
+    nr_unique_ligands = len(unique_ligands)
+    USER_CHOICE_LIGANDS = (f"There are {len(unique_ligands)} unique residues in your PDB file which are not amino acids and waters.\n"
+                           f"Each ligand that will be retained for simulations, will require parametrization.\n"
+                           f"Which residues you would like to keep for simulations? "
+                           f"Unique residues are:\n"
+                           f"{unique_ligands_str}\n"
+                           f"Please specify, which residues will be treated as ligands in your simulation (provide their exact name, "
+                           f"separating each entry by a comma):\n")
+    #table for storing ligands kept for simulations, which are present in pdb
+    ligands = []
+    #loop for choosing which ligands to keep
+    while True:
+        try:
+            #getting input ligands from users
+            user_input_ligands = str(input(USER_CHOICE_LIGANDS).upper())
+            #turning input into a list, ensuring that no matter how much spaces are inserted everything is fine
+            input_ligands = re.sub(r'\s', '', user_input_ligands).split(',')
+            #checking if inputted residues are in unique_ligands list - if yes, appending them to ligands list
+            for x in input_ligands:
+                if x in unique_ligands:
+                    ligands.append(x)
+            #this loop ensures that user picked all the ligands that he wanted
+            while True:
+                USER_CHOICE_LIG_CONT = (f"So far, you've chosen following residues to be included as ligands in your simulations: {ligands}.\n"
+                                        f"Would you like to add more ligands, or would you like to continue?\n"
+                                        f"• press 'a' in order to add more ligands\n"
+                                        f"• press 'c' in order to continue to next step\n")
+                try:
+                    #if user decides to keep adding, procedure is repeated
+                    user_input_lig_cont = str(input(USER_CHOICE_LIG_CONT).lower())
+                    if user_input_lig_cont == 'a':
+                        user_input_ligands = str(input(USER_CHOICE_LIGANDS).upper())
+                        #turning input into a list
+                        input_ligands = re.sub(r'\s', '', user_input_ligands).split(',')
+                        for x in input_ligands:
+                            if x in unique_ligands:
+                                #checking, if specified ligand is already present in ligands list
+                                if x not in ligands:
+                                    ligands.append(x)
+                    elif user_input_lig_cont == 'c':
+                        #if user decides to finish, we move on
+                        break
+                except:
+                    pass
+            break
+        except:
+            print("You've provided wrong residues")
+            pass
+    print(ligands)
     pass
 
 prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb]
