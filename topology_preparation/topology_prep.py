@@ -249,18 +249,33 @@ def ligands_pdb():
     #changing naming of columns
     #df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name', 'chain', 'residue_nr', 'x', 'y', 'z', 'occupancy', 'temp_factor', 'element']
     df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
-    print(df)
     #printing unique residues
     unique_res = df.residue_name.unique()
-    unique_res = numpy.array(unique_res.tolist())
-    print(unique_res)
-    print(len(unique_res))
-    unique_res_str = '\n'.join(unique_res)
-    prompt = (f"There are {len(unique_res)} unique residues in your PDB file which are not amino acids.\n"
+    unique_res = unique_res.tolist()
+    #creating another list that will contain only worthwile ligands
+    unique_ligands = unique_res
+    #removing waters from unique residues
+    water_list = ['HOH', 'WAT']
+    #remove common metal atoms from unique residues - they will be addressed later on
+    metal_list = ['K', 'CA', 'MN', 'CO', 'NA', 'FE', 'MG', 'SR', 'BA', 'NI', 'CU', 'ZN', 'CD']
+    #remove other common from unique residues - leftovers after experiments
+    exp_leftovers_list = ['SCN', 'ACT', 'EDO', 'CL', 'PGE', 'PG4', 'PEG', 'P6G', 'OLC', '1PE', 'CYN', 'I', 'NO3']
+    #clreaning unique_ligands list so that will only contain ligands that should be acted upon
+    for x in water_list:
+        if x in unique_ligands:
+            unique_ligands.remove(x)
+    for x in metal_list:
+        if x in unique_ligands:
+            unique_ligands.remove(x)
+    for x in exp_leftovers_list:
+        if x in unique_ligands:
+            unique_ligands.remove(x)
+    unique_ligands_str = '\n'.join(unique_ligands)
+    prompt = (f"There are {len(unique_ligands)} unique residues in your PDB file which are not amino acids and waters.\n"
               f"Each ligand that will be retained for simulations, will require parametrization.\n"
-              f"Please specify, which residues you would like to keep for simulations?"
+              f"Please specify, which residues you would like to keep for simulations? "
               f"Unique residues are:\n"
-              f"{unique_res_str}")
+              f"{unique_ligands_str}")
     print(prompt)
     pass
 
