@@ -69,6 +69,9 @@ def read_het_atoms_pdb():
             #looking for lines starting with hetatm and appending them to a list
             if line.startswith('HETATM'):
                 pdb_hetatoms.append(line.strip())
+    # saving het_atoms to a csv file - it will be easier to read it then
+    with open('het_atoms.csv', 'w') as f:
+        f.write('\n'.join(pdb_hetatoms))
     return pdb_hetatoms
 
 def init_pdb():
@@ -237,18 +240,12 @@ def missing_res_pdb():
 def ligands_pdb():
     #getting het_atms from pdb file
     het_atoms = read_het_atoms_pdb()
-    print(het_atoms)
-    print(type(het_atoms))
-    #saving het_atoms to a csv file - it will be easier to read it then
-    with open('het_atoms.csv', 'w') as f:
-        f.write('\n'.join(het_atoms))
     #reading het_atoms as columns - since finding unique residues are sought after, 4 first columns are enough
     df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
-    print(df)
     #changing naming of columns
     #df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name', 'chain', 'residue_nr', 'x', 'y', 'z', 'occupancy', 'temp_factor', 'element']
     df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
-    #printing unique residues
+    #getting unique residues
     unique_res = df.residue_name.unique()
     unique_res = unique_res.tolist()
     #creating another list that will contain only worthwile ligands
@@ -311,7 +308,7 @@ def ligands_pdb():
                                     ligands.append(x)
                     elif user_input_lig_cont == 'c':
                         #if user decides to finish, ligands are saved to the control file
-                        save_to_file(f"ligands = {ligands}", filename)
+                        save_to_file(f"ligands = {ligands}\n", filename)
                         #lines containing specified ligands are saved to separate pdb files
                         for x in ligands:
                             ligands_pdb = '\n'.join([s for s in het_atoms if x in s])
@@ -324,10 +321,66 @@ def ligands_pdb():
         except:
             print("You've provided wrong residues")
             pass
-    print(ligands)
+    print(f"Ligands that will be included in your system are: {ligands}")
     pass
 
-prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb]
+def metals_pdb():
+    #getting het_atms from pdb file
+    het_atoms = read_het_atoms_pdb()
+    #getting het atms as csv
+    df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
+    #changing naming of columns
+    df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
+    #metal list that was used in ligands_pdb function
+    metal_list = ['K', 'CA', 'MN', 'CO', 'NA', 'FE', 'MG', 'SR', 'BA', 'NI', 'CU', 'ZN', 'CD']
+    #getting unique residues
+    unique_res = df.residue_name.unique()
+    unique_res = unique_res.tolist()
+    #creating another list that will contain only metal ligands
+    unique_metals = []
+    for x in metal_list:
+        if x in unique_res:
+            unique_metals.append(x)
+    USER_CHOICE_METALS = f"\nThere are metal ions in your PDB structure. Obtaining force field parameters for metal ions" \
+        f"is outside of scope of this program but you might follow tutorials written by Pengfei Li and Kenneth M. Merz Jr.," \
+        f"which are available on Amber Website (http://ambermd.org/tutorials/advanced/tutorial20/index.htm).\n" \
+        f"Please keep in mind that sometimes metal ions play an important role in proteins' functioning and ommitting them" \
+        f"in MD simulations will provide unrealistic insights. Nonetheless, metal ions might also be just leftovers after" \
+        f"experiments (metal ions are normally present in water solutions, from which protein structures are obtained).\n" \
+        f"If you do not know if metal ions that are present in your structure are relevant, make a visual inspection of" \
+        f"your structure and try to determine if this metal is strongly coordinated by the protein. " \
+        f"If it is mostly coordinated" \
+        f"by water or it is placed right next to negatively charged amino acid (such as C - terminus), you're good to " \
+        f"skip it. Otherwise, most likely you should include it in your system.\n" \
+        f"Do you want to retain metal ions for MD simulations? \nIt will require your further manual input outside of this" \
+        f"interface:\n" \
+        f"• press 'y' to retain metal ions for MD simulations\n" \
+        f"• press 'n' to not onclude metal ions in your MD simulations\n" \
+    #if there are metals in pdb, there is a choice if they stay for MD or they are removed
+    if unique_metals:
+        while True:
+            try:
+                user_input_metals = str(input(USER_CHOICE_METALS).lower())
+                if user_input_metals == 'y':
+                    #metals are cut out to a separate PDB and info is saved in a control file
+                    save_to_file(f"metals = {unique_metals}\n", filename)
+                    # lines containing specified ligands are saved to separate pdb files
+                    for x in unique_metals:
+                        metals_pdb = '\n'.join([s for s in het_atoms if x in s])
+                        with open(f"{x}.pdb", "w") as f:
+                            f.write(metals_pdb)
+                    break
+                elif user_input_metals == 'n':
+                    #metals will be ignored - no further action required
+                    break
+            except:
+                print('You have provided wrong input.')
+    pass
+
+def waters_pdb():
+    pass
+
+prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb, metals_pdb, waters_pdb]
 #prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb]
 
 methods_generator = (y for y in prep_functions)
