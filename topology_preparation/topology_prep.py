@@ -63,8 +63,7 @@ def read_het_atoms_pdb():
     pdb_filename = pdb_match
     #cCreating list into which all of the hetatm lines will be appended
     pdb_hetatoms = []
-    print('tutaj')
-    print(pdb_filename)
+    print(f"Your file is named: {pdb_filename}")
     with open(f"{pdb_filename}", 'r') as file:
         for line in file:
             #looking for lines starting with hetatm and appending them to a list
@@ -124,7 +123,6 @@ def init_pdb():
                     for file in os.listdir('.'):
                         if fnmatch.fnmatch(file, pdb_file_name):
                             #saving names of the files containing given PDB ID to control file
-                            #save_to_file(f"pdb = {file}\n", filename)
                             pdbs.append(file)
                     #checking if there are multiples files withh the same PDB ID
                     if len(pdbs) > 1:
@@ -185,7 +183,6 @@ def missing_atoms_pdb():
                   "Please, proceed with caution.\n"
                   "Information about missing atom from PDB file: ")
             print(missing_atom_prompt)
-            #Here, add function to ask if user wants to finish at this point
             USER_CHOICE_CONT = "Would you like to continue with SAmber execution, or rather right now you would like to " \
                                "add missing atoms? Please, provide your choice:\n" \
                                "• press 'y' to continue\n" \
@@ -240,6 +237,8 @@ def missing_res_pdb():
 def ligands_pdb():
     #getting het_atms from pdb file
     het_atoms = read_het_atoms_pdb()
+    print(het_atoms)
+    print(type(het_atoms))
     #saving het_atoms to a csv file - it will be easier to read it then
     with open('het_atoms.csv', 'w') as f:
         f.write('\n'.join(het_atoms))
@@ -260,7 +259,7 @@ def ligands_pdb():
     metal_list = ['K', 'CA', 'MN', 'CO', 'NA', 'FE', 'MG', 'SR', 'BA', 'NI', 'CU', 'ZN', 'CD']
     #remove other common from unique residues - leftovers after experiments
     exp_leftovers_list = ['SCN', 'ACT', 'EDO', 'CL', 'PGE', 'PG4', 'PEG', 'P6G', 'OLC', '1PE', 'CYN', 'I', 'NO3']
-    #clreaning unique_ligands list so that will only contain ligands that should be acted upon
+    #cleaning unique_ligands list so that will only contain ligands that should be acted upon
     for x in water_list:
         if x in unique_ligands:
             unique_ligands.remove(x)
@@ -272,7 +271,7 @@ def ligands_pdb():
             unique_ligands.remove(x)
     unique_ligands_str = '\n'.join(unique_ligands)
     nr_unique_ligands = len(unique_ligands)
-    USER_CHOICE_LIGANDS = (f"There are {len(unique_ligands)} unique residues in your PDB file which are not amino acids and waters.\n"
+    USER_CHOICE_LIGANDS = (f"There are {nr_unique_ligands} unique residues in your PDB file which are not amino acids and waters.\n"
                            f"Each ligand that will be retained for simulations, will require parametrization.\n"
                            f"Which residues you would like to keep for simulations? "
                            f"Unique residues are:\n"
@@ -311,7 +310,13 @@ def ligands_pdb():
                                 if x not in ligands:
                                     ligands.append(x)
                     elif user_input_lig_cont == 'c':
-                        #if user decides to finish, we move on
+                        #if user decides to finish, ligands are saved to the control file
+                        save_to_file(f"ligands = {ligands}", filename)
+                        #lines containing specified ligands are saved to separate pdb files
+                        for x in ligands:
+                            ligands_pdb = '\n'.join([s for s in het_atoms if x in s])
+                            with open(f"{x}.pdb", "w") as f:
+                                f.write(ligands_pdb)
                         break
                 except:
                     pass
