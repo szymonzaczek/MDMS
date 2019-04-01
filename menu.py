@@ -13,7 +13,7 @@ USER_CHOICE_MENU = """\nPlease specify, what you would like to do:
 • press 'i' for preparing Amber input files - they contain parameters for your simulations
 • press 'r' for running simulations
 • press 'q' in order to quit
-Please, provide tour choice: """
+Please, provide your choice: """
 
 def menu():
     while True:

@@ -63,7 +63,6 @@ def read_het_atoms_pdb():
     pdb_filename = pdb_match
     #cCreating list into which all of the hetatm lines will be appended
     pdb_hetatoms = []
-    print(f"Your file is named: {pdb_filename}")
     with open(f"{pdb_filename}", 'r') as file:
         for line in file:
             #looking for lines starting with hetatm and appending them to a list
@@ -459,9 +458,6 @@ def ligands_parameters():
         f"• 'gaff2' - General Amber Force Field, version 2\n" \
         f"• 'gaff' - General Amber Force Field, older version of GAFF2\n" \
         f"• 'bcc' - for AM1-BCC atom types\n"
-    #those must be looped on, since each ligand might have different charge and multiplicity
-    USER_CHOICE_CHARGE = f"Please, provide the net charge of your ligand:\n"
-    USER_CHOICE_MULTIPLICITY = f"Please, provide multiplicity of your ligand:\n"
     #the whole function will only do something, if ligands_list have anything in it
     charge_model = ''
     atoms_type = ''
@@ -500,6 +496,27 @@ def ligands_parameters():
                 break
             except:
                 print('The input that you have provided is not valid')
+        #specifying charges and multiplicity for each ligand
+        lig_charges = []
+        lig_multiplicities = []
+        for x in ligands_list:
+            # those must be looped on, since each ligand might have different charge and multiplicity
+            USER_CHOICE_CHARGE = f"Please, provide the net charge of {x} ligand (integer value):\n"
+            USER_CHOICE_MULTIPLICITY = f"Please, provide multiplicity of {x} ligand (positive integer value):\n"
+            while True:
+                try:
+                    user_input_charge = int(input(USER_CHOICE_CHARGE))
+                    user_input_multiplicity = int(input(USER_CHOICE_MULTIPLICITY))
+                    if user_input_multiplicity < 1:
+                        raise Exception
+                    lig_charges.append(user_input_charge)
+                    lig_multiplicities.append(user_input_multiplicity)
+                    break
+                except:
+                    print("The input that you have provided is not valid")
+        save_to_file(f"ligands_charges = {lig_charges}\n", filename)
+        save_to_file(f"ligands_multiplicities = {lig_multiplicities}\n", filename)
+
     pass
 
 
