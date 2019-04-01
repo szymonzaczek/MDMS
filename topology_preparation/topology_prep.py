@@ -274,7 +274,7 @@ def ligands_pdb():
                            f"Unique residues are:\n"
                            f"{unique_ligands_str}\n"
                            f"Please specify, which residues will be treated as ligands in your simulation (provide their exact name, "
-                           f"separating each entry by a comma):\n")
+                           f"separating each entry by a comma - if you decide to not include ligands, just press enter):\n")
     #table for storing ligands kept for simulations, which are present in pdb
     ligands = []
     #loop for choosing which ligands to keep
@@ -341,21 +341,23 @@ def metals_pdb():
     for x in metal_list:
         if x in unique_res:
             unique_metals.append(x)
-    USER_CHOICE_METALS = f"\nThere are metal ions in your PDB structure. Obtaining force field parameters for metal ions" \
-        f"is outside of scope of this program but you might follow tutorials written by Pengfei Li and Kenneth M. Merz Jr.," \
+    unique_metals_string = ', '.join(unique_metals)
+    USER_CHOICE_METALS = f"\nThere are following metal ions in your PDB structure: {unique_metals_string}. " \
+        f"Obtaining force field parameters for metal ions " \
+        f"is outside of scope of this program but you might follow tutorials written by Pengfei Li and Kenneth M. Merz Jr., " \
         f"which are available on Amber Website (http://ambermd.org/tutorials/advanced/tutorial20/index.htm).\n" \
-        f"Please keep in mind that sometimes metal ions play an important role in proteins' functioning and ommitting them" \
-        f"in MD simulations will provide unrealistic insights. Nonetheless, metal ions might also be just leftovers after" \
+        f"Please keep in mind that sometimes metal ions play an important role in proteins' functioning and ommitting them " \
+        f"in MD simulations will provide unrealistic insights. Nonetheless, metal ions might also be just leftovers after " \
         f"experiments (metal ions are normally present in water solutions, from which protein structures are obtained).\n" \
-        f"If you do not know if metal ions that are present in your structure are relevant, make a visual inspection of" \
+        f"If you do not know if metal ions that are present in your structure are relevant, make a visual inspection of " \
         f"your structure and try to determine if this metal is strongly coordinated by the protein. " \
-        f"If it is mostly coordinated" \
+        f"If it is mostly coordinated " \
         f"by water or it is placed right next to negatively charged amino acid (such as C - terminus), you're good to " \
         f"skip it. Otherwise, most likely you should include it in your system.\n" \
-        f"Do you want to retain metal ions for MD simulations? \nIt will require your further manual input outside of this" \
+        f"Do you want to retain metal ions for MD simulations? \nIt will require your further manual input outside of this " \
         f"interface:\n" \
         f"• press 'y' to retain metal ions for MD simulations\n" \
-        f"• press 'n' to not onclude metal ions in your MD simulations\n" \
+        f"• press 'n' not to include metal ions in your MD simulations\n" \
     #if there are metals in pdb, there is a choice if they stay for MD or they are removed
     if unique_metals:
         while True:
@@ -378,6 +380,63 @@ def metals_pdb():
     pass
 
 def waters_pdb():
+    # getting het_atms from pdb file
+    het_atoms = read_het_atoms_pdb()
+    # getting het atms as csv
+    df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
+    # changing naming of columns
+    df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
+    #list containing names of water residues
+    water_list = ['HOH', 'WAT']
+    #getting unique residues
+    unique_res = df.residue_name.unique()
+    unique_res = unique_res.tolist()
+    #creating another list that will contain naming of water residues that are present in the pdb
+    unique_water = []
+    for x in water_list:
+        if x in unique_res:
+            unique_water.append(x)
+    #taking each water molecule from pdb and putting them in a single string
+    for x in unique_water:
+        single_water_pdb = '\n'.join([s for s in het_atoms if x in s])
+        waters_pdb = ''.join(single_water_pdb)
+    waters_number = len(waters_pdb.split('\n'))
+    USER_CHOICE_WATERS = f"\nThere are {waters_number} water molecules in your structure.\n" \
+        f"Water molecules that are present in PDB structures are leftovers from experiments carried out in order to obtain" \
+        f"protein's structure. There is no straightforward answer if they should be kept for MD simulations or not - " \
+        f"basically water around proteins should equilibrate rather fast and their origin (either from experiment or" \
+        f"added with some software) should not matter that much. Noteworthy, even if you want to keep crystal waters" \
+        f"for MD, A LOT more waters will need to be added in order to ensure a proper solvation of the protein." \
+        f"Retaining water molecules that were discovered within experiment is strongly advised important if water molecules" \
+        f"play a role in enzymatic catalysis or they somehow stabilize the protein's structure. Nonetheless, the choice is yours. \n" \
+        f"Would you like to retain water molecules located within experiment for your MD simulations?\n" \
+        f"• press 'y' if you want to retain them\n" \
+        f"• press 'n' if you want to delete water molecules originally present in your structure\n" \
+    #if there are waters in the pdb, user needs to make a decision
+    if unique_water:
+        while True:
+            try:
+                user_input_waters = str(input(USER_CHOICE_WATERS).lower())
+                if user_input_waters == 'y':
+                    #saving crystallographic waters to a separate file
+                    with open(f"{x}.pdb", "w") as f:
+                        f.write(waters_pdb)
+                    #saving info about crystallographic waters to a control file
+                    save_to_file(f"waters = {unique_water}\n", filename)
+                    break
+                elif user_input_waters == 'n':
+                    #if user decides to omit crystallographic waters, nothing needs to be done
+                    break
+            except:
+                print('The input that you have provided is not valid')
+
+
+
+    #for x in unique_water:
+        #with open(f"{x}.pdb", "w") as f:
+        #    f.write(waters_pdb)
+
+
     pass
 
 prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb, metals_pdb, waters_pdb]

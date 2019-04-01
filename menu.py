@@ -1,6 +1,5 @@
 import topology_preparation.topology_prep
 
-
 print("Hello and welcome to Simple Amber (SAmber) created by Szymon Zaczek!\n"
       "This piece of software makes running Molecular Dynamics easy and straightforward, allowing non-experts "
       "in the field of computational chemistry to use Amber\n- one of the most renowned Molecular Dynamics packages available.\n"
