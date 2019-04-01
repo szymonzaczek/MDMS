@@ -429,17 +429,81 @@ def waters_pdb():
                     break
             except:
                 print('The input that you have provided is not valid')
-
-
-
-    #for x in unique_water:
-        #with open(f"{x}.pdb", "w") as f:
-        #    f.write(waters_pdb)
-
-
     pass
 
-prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb, metals_pdb, waters_pdb]
+
+def ligands_parameters():
+    #finding ligands residues in prep file
+    control = read_file(filename)
+    ligands = 'ligands.*=.*\[(.*)\]'
+    ligands_match = re.search(ligands, control).group(1)
+    #removing quotes from string
+    ligands_string = ligands_match.replace("'", "")
+    #removing whitespaces and turning string into a list
+    ligands_list = re.sub(r'\s', '', ligands_string).split(',')
+    #getting necessary infor for antechamber input
+    USER_CHOICE_CHARGE_MODEL = f"Please specify the charge model that you would like to apply to your ligands. If you want" \
+        f"to employ RESP charges, you will need to manually modify antechamber input files.\n" \
+        f"Please note that AM1-BCC charge model is a recommended choice.\n" \
+        f"Following options are available:\n" \
+        f"• 'cm1' - CM1 charge model\n" \
+        f"• 'esp' - ESP (Kollman) charge model\n" \
+        f"• 'gas' - Gasteiger charge model\n" \
+        f"• 'bcc' - AM1-BCC charge model\n" \
+        f"• 'cm2' - CM2 charge model\n" \
+        f"• 'mul' - Mulliken charge model\n" \
+        f"Please, provide one of the options from available answers (single-quoted words specified above):\n"
+    USER_CHOICE_ATOM_TYPES = f"Please, specify which atom types you would like to assign to your ligands.\n" \
+        f"Please note that GAFF2 is a recommended choice.\n" \
+        f"Following options are available:\n" \
+        f"• 'gaff2' - General Amber Force Field, version 2\n" \
+        f"• 'gaff' - General Amber Force Field, older version of GAFF2\n" \
+        f"• 'bcc' - for AM1-BCC atom types\n"
+    #those must be looped on, since each ligand might have different charge and multiplicity
+    USER_CHOICE_CHARGE = f"Please, provide the net charge of your ligand:\n"
+    USER_CHOICE_MULTIPLICITY = f"Please, provide multiplicity of your ligand:\n"
+    #the whole function will only do something, if ligands_list have anything in it
+    charge_model = ''
+    atoms_type = ''
+    if ligands_list:
+        # specifying charge model
+        while True:
+            try:
+                user_input_charge_model = str(input(USER_CHOICE_CHARGE_MODEL).lower())
+                if user_input_charge_model == 'cm1':
+                    charge_model = 'cm1'
+                elif user_input_charge_model == 'esp':
+                    charge_model = 'esp'
+                elif user_input_charge_model == 'gas':
+                    charge_model = 'gas'
+                elif user_input_charge_model == 'bcc':
+                    charge_model = 'bcc'
+                elif user_input_charge_model == 'cm2':
+                    charge_model = 'cm2'
+                elif user_input_charge_model == 'mul':
+                    charge_model = 'mul'
+                save_to_file(f"charge_model = {charge_model}\n", filename)
+                break
+            except:
+                print('The input that you have provided is not valid.')
+        #specifying atom types
+        while True:
+            try:
+                user_input_atom_types = str(input(USER_CHOICE_ATOM_TYPES).lower())
+                if user_input_atom_types == 'bcc':
+                    atoms_type = 'bcc'
+                elif user_input_atom_types == 'gaff':
+                    atoms_type = 'gaff'
+                elif user_input_atom_types == 'gaff2':
+                    atoms_type = 'gaff2'
+                save_to_file(f"atoms_type = {atoms_type}\n", filename)
+                break
+            except:
+                print('The input that you have provided is not valid')
+    pass
+
+
+prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb, metals_pdb, waters_pdb, ligands_parameters,]
 #prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb]
 
 methods_generator = (y for y in prep_functions)
@@ -455,4 +519,3 @@ def queue_methods():
             #I do not know if this prompt is necessary
             print('\nProgram has not finished normally - it appears that something was wrong with your structure. \nApply changes and try again!\n')
             break
-#
