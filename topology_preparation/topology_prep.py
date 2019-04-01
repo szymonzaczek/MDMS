@@ -516,11 +516,36 @@ def ligands_parameters():
                     print("The input that you have provided is not valid")
         save_to_file(f"ligands_charges = {lig_charges}\n", filename)
         save_to_file(f"ligands_multiplicities = {lig_multiplicities}\n", filename)
+    pass
 
+def antechamber_input():
+    #finding ligands residues in control file
+    control = read_file(filename)
+    ligands = 'ligands.*=.*\[(.*)\]'
+    ligands_match = re.search(ligands, control).group(1)
+    #removing quotes from string
+    ligands_string = ligands_match.replace("'", "")
+    #removing whitespaces and turning string into a list
+    ligands_list = re.sub(r'\s', '', ligands_string).split(',')
+    #getting charge_model info
+    charge_model = 'charge_model\s*=\s*([a-z]*[A-Z]*[1-9]*)'
+    charge_model_match = re.search(charge_model, control).group(1)
+    charge_model_string = charge_model_match
+    #getting atom_types info
+    atoms_type = 'atoms_type\s*=\s*([a-z]*[A-Z]*[1-9]*)'
+    atoms_type_match = re.seatch(atoms_type, control).group(1)
+    atoms_type_string = atoms_type_match
+    #finding ligands' charges in control file
+    ligands_charges = 'ligands_charges\s*=\s*\[(.*)\]'
+    ligands_charges_match = re.search(ligands_charges, control).group(1)
+    #ligands_charges_list = ligands_charges
+    pass
+
+def parmchk_input():
     pass
 
 
-prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb, metals_pdb, waters_pdb, ligands_parameters,]
+prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb, metals_pdb, waters_pdb, ligands_parameters, antechamber_input, parmchk_input]
 #prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb]
 
 methods_generator = (y for y in prep_functions)
@@ -529,7 +554,7 @@ def queue_methods():
     next(methods_generator, None)
     global stop_generator
     stop_generator = False
-    for x in prep_functions:#
+    for x in prep_functions:
         x()
         # if a condition is met, generator is stopped
         if stop_generator == True:
