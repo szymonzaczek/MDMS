@@ -518,7 +518,7 @@ def ligands_parameters():
         save_to_file(f"ligands_multiplicities = {lig_multiplicities}\n", filename)
     pass
 
-def antechamber_input():
+def antechamber_parmchk_input():
     #finding ligands residues in control file
     control = read_file(filename)
     ligands = 'ligands.*=.*\[(.*)\]'
@@ -530,22 +530,38 @@ def antechamber_input():
     #getting charge_model info
     charge_model = 'charge_model\s*=\s*([a-z]*[A-Z]*[1-9]*)'
     charge_model_match = re.search(charge_model, control).group(1)
-    charge_model_string = charge_model_match
     #getting atom_types info
     atoms_type = 'atoms_type\s*=\s*([a-z]*[A-Z]*[1-9]*)'
-    atoms_type_match = re.seatch(atoms_type, control).group(1)
-    atoms_type_string = atoms_type_match
+    atoms_type_match = re.search(atoms_type, control).group(1)
     #finding ligands' charges in control file
     ligands_charges = 'ligands_charges\s*=\s*\[(.*)\]'
     ligands_charges_match = re.search(ligands_charges, control).group(1)
-    #ligands_charges_list = ligands_charges
-    pass
+    #removing whitespaces and turning to a list
+    ligands_charges_list = re.sub(r'\s', '', ligands_charges_match).split(',')
+    #changing individual entries from string to integers
+    for x in range(0, len(ligands_charges_list)):
+        ligands_charges_list[x] = int(ligands_charges_list[x])
+    #finding ligands multiplicities in control file
+    ligands_multiplicities = 'ligands_multiplicities\s*=\s*\[(.*)\]'
+    ligands_multiplicities_match = re.search(ligands_multiplicities, control).group(1)
+    # removing whitespaces and turning to a list
+    ligands_multiplicities_list = re.sub(r'\s', '', ligands_multiplicities_match).split(',')
+    #changing individual entries from string to integers
+    for x in range(0, len(ligands_multiplicities_list)):
+        ligands_multiplicities_list[x] = int(ligands_multiplicities_list[x])
+    #creating antechamber inputs
+    for x in range(0, len(ligands_list)):
+        antechamber_input = f"antechamber -fi pdb -fo mol2 -i {ligands_list[x]}.pdb -o {ligands_list[x]}.mol2 -at {atoms_type_match} -c {charge_model_match} -pf y -nc {ligands_charges_list[x]} -m {ligands_multiplicities_list[x]}"
+        print(antechamber_input)
+        parmchk_input = f"parmchk2 -i {ligands_list[x]}.mol2 -o {ligands_list[x]}.frcmod -f mol2 -s {atoms_type_match}"
+        print(parmchk_input)
+
 
 def parmchk_input():
     pass
 
 
-prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb, metals_pdb, waters_pdb, ligands_parameters, antechamber_input, parmchk_input]
+prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb, metals_pdb, waters_pdb, ligands_parameters, antechamber_parmchk_input]
 #prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb]
 
 methods_generator = (y for y in prep_functions)
