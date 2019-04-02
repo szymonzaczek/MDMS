@@ -3,6 +3,7 @@ import numpy
 import fnmatch
 import pandas as pd
 import re
+import subprocess
 from Bio.PDB import *
 from pathlib import Path
 
@@ -553,9 +554,10 @@ def antechamber_parmchk_input():
     for x in range(0, len(ligands_list)):
         antechamber_input = f"antechamber -fi pdb -fo mol2 -i {ligands_list[x]}.pdb -o {ligands_list[x]}.mol2 -at {atoms_type_match} -c {charge_model_match} -pf y -nc {ligands_charges_list[x]} -m {ligands_multiplicities_list[x]}"
         print(antechamber_input)
+        subprocess.run(antechamber_input)
         parmchk_input = f"parmchk2 -i {ligands_list[x]}.mol2 -o {ligands_list[x]}.frcmod -f mol2 -s {atoms_type_match}"
         print(parmchk_input)
-
+        subprocess.run(parmchk_input)
 
 def parmchk_input():
     pass
