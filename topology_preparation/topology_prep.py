@@ -96,7 +96,7 @@ def init_pdb():
                     except Exception:
                         print('The path that you have provided is not valid. Please, provide the correct path to the given file.')
                 print(f'\nThe path that you provided: {pdb_path}')
-                save_to_file(f"pdb = {pdb_path}", filename)
+                save_to_file(f"pdb = {pdb_path}\n", filename)
             elif user_input_struc == 'n':
                 #PDB structure downloaded from RCSB
                 USER_INPUT_ID = (f"Please, provide PDB ID (4 characters) of the species that you would like to investigate.\n")
