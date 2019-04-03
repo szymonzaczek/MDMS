@@ -10,10 +10,16 @@ from pathlib import Path
 def file_naming():
     #getting name for a control file, which will containg all info
     global filename
-    filename_inp: str = Path(input('Please, provide a name for the file that will contain every piece of information for running SAmber:\n'))
-    filename = filename_inp
-    if filename.exists() == True:
-        os.remove(filename)
+    while True:
+        try:
+            filename_inp: str = Path(input('Please, provide a path to the file that contains every piece of information for running SAmber (it should be already generated):\n'))
+            filename = filename_inp
+            if filename.exists() == True:
+                break
+            else:
+                print('There is no such file.')
+        except:
+            print('Please, provide valid input')
 
 
 def save_to_file(content, filename):
@@ -232,7 +238,7 @@ def parmchk_input():
     pass
 
 
-top_prep_functions = [hydrogen_check, ligands_parameters, antechamber_parmchk_input]
+top_prep_functions = [file_naming, hydrogen_check, ligands_parameters, antechamber_parmchk_input]
 #prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb]
 
 methods_generator = (y for y in top_prep_functions)

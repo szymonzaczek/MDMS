@@ -25,13 +25,9 @@ def menu():
             if user_input_menu == 'p':
                 print('You will be getting an initial structure for your system. Buckle up!\n')
                 initial_structure.initial_struc.queue_methods()
-                #put this at the end of the above module
                 print('You have completed the first step required for running MD simulations. Congratulations')
-                print(f'\nthis is user_input menu = {user_input_menu}\n')
-                pass
             if user_input_menu == 't':
                 print('You will obtain topology and coordinate files for Amber. Buckle up!\n')
-                #this is not working, since filename is not provided - FIX THIS
                 topology_preparation.topology_prep.queue_methods()
                 # put this at the end of the above module
                 print('You have completed the next step required for running MD simulations. Congratulations')
@@ -43,7 +39,7 @@ def menu():
                 break
             else:
                 #this clause gets executed whereas it should not - FIX THIS
-                print('jestesmy tu.')
+                print('this should not be executed')
         except:
             print('Please, provide a valid input.')
 
