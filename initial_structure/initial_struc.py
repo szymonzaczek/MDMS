@@ -9,7 +9,9 @@ from pathlib import Path
 def file_naming():
     #getting name for a control file, which will containg all info
     global filename
-    filename_inp: str = Path(input('Please, provide a name for the file that will contain every piece of information for running SAmber:\n'))
+    filename_inp: str = Path(input('Please, provide name for the file that will contain every piece of information for running SAmber. '
+                                   '\nPlease, kepp in mind that if a file with that exact name exists, it will be overwritten.\n'
+                                   'Please, provide name of the file:\n'))
     filename = filename_inp
     if filename.exists() == True:
         os.remove(filename)

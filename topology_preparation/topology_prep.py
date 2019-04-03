@@ -3,6 +3,7 @@ import fnmatch
 import pandas as pd
 import re
 import subprocess
+import fileinput
 from Bio.PDB import *
 from pathlib import Path
 
@@ -116,31 +117,53 @@ def hydrogen_check():
             hydrogen_count = len(hydrogen_match.iloc[:, 0])
             # storing info about amount of hydrogens in a list
             hydrogens_amount.append(hydrogen_count)
-        print(hydrogens_amount[0])
-        print(type(hydrogens_amount[0]))
+        stop = False
         for x in range(0, len(ligands_list)):
             if hydrogens_amount[x] == 0:
-                USER_CHOICE_HYDROGENS = (f"Even though there are {atoms_amount[x]} atoms in your ligand, there are no "
-                                         f"hydrogen atoms. Please keep in mind that all of the ligands MUST have all the"
-                                         f"necessary hydrogen atoms in their structure")
+                USER_CHOICE_HYDROGENS = (f"Even though there are {atoms_amount[x]} atoms in {ligands_list[x]} ligand, there are no "
+                                         f"hydrogen atoms. Please keep in mind that all of the ligands MUST have all the "
+                                         f"necessary hydrogen atoms in their structures. If you do not add chemically-"
+                                         f"relevant hydrogen atoms to your ligands, your MD simulations will provide "
+                                         f"unrealistic insight.\n"
+                                         f"Are you sure that {ligands_list[x]} ligand should not have any hydrogen atoms?\n"
+                                         f"• press 'y' to continue\n"
+                                         f"• press 'n' to stop SAmber run\n")
+                while True:
+                    try:
+                        user_input_hydrogens = str(input(USER_CHOICE_HYDROGENS).lower())
+                        if user_input_hydrogens == 'y':
+                            break
+                        elif user_input_hydrogens == 'n':
+                            stop = True
+                            break
+                    except:
+                        print('Please, provide valid input')
+                if stop == True:
+                    break
+                else:
+                    pass
+        if stop == True:
+            stop_interface()
 
 
-            #USER_CHOICE_HYDROGENS = f"There are f{len(ligands_list)} in your system. They"
-            #for x in range(0, df_len):
-            #    hydrogen_present = df.iloc[[x, 0]].str.contains('H')
-            #    if hydrogen_present:
-            #        hydrogens_amount = hydrogens_amount + 1
-            #print(hydrogens_amount)
-            #hydrogen_mask = df[df.columns[0]].str.contains('O')
-            #print(hydrogen_mask)
-            #ligand_file = read_file(f"{ligand}.pdb")
-            #print(ligand_file)
-    pass
+def clearing_control():
+    # name of temporary file that will store what is important
+    filetemp = 'temp.txt'
+    # list of parameters that will be stripped out of control file
+    parameters = ['charge_model', 'atoms_type', 'ligands_charges', 'ligands_multiplicities']
+    # writing content of control file without parameters in parameters list to the temporary file
+    with open(f"{filename}") as oldfile, open(filetemp, 'w') as newfile:
+        for line in oldfile:
+            if not any(parameters in line for parameters in parameters):
+                newfile.write(line)
+    # replacing control file with temporary file
+    os.replace(filetemp, filename)
 
 
 def ligands_parameters():
-    #finding ligands residues in prep file
+    # reading control file
     control = read_file(filename)
+    # finding ligands residues in prep file
     ligands = 'ligands.*=.*\[(.*)\]'
     ligands_match = re.search(ligands, control).group(1)
     #removing quotes from string
@@ -283,7 +306,7 @@ def parmchk_input():
     pass
 
 
-top_prep_functions = [file_naming, hydrogen_check, ligands_parameters, antechamber_parmchk_input]
+top_prep_functions = [file_naming, clearing_control, hydrogen_check, ligands_parameters, antechamber_parmchk_input]
 #prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb]
 
 methods_generator = (y for y in top_prep_functions)

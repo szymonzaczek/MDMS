@@ -25,6 +25,7 @@ def menu():
             if user_input_menu == 'p':
                 print('You will be getting an initial structure for your system. Buckle up!\n')
                 initial_structure.initial_struc.queue_methods()
+                # this will also get printed if completion was not succesfull - it should be ported to the given file
                 print('You have completed the first step required for running MD simulations. Congratulations')
             if user_input_menu == 't':
                 print('You will obtain topology and coordinate files for Amber. Buckle up!\n')
