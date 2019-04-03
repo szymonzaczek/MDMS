@@ -211,53 +211,66 @@ def ligands_parameters():
                 user_input_charge_model = str(input(USER_CHOICE_CHARGE_MODEL).lower())
                 if user_input_charge_model == 'cm1':
                     charge_model = 'cm1'
+                    break
                 elif user_input_charge_model == 'esp':
                     charge_model = 'esp'
+                    break
                 elif user_input_charge_model == 'gas':
                     charge_model = 'gas'
+                    break
                 elif user_input_charge_model == 'bcc':
                     charge_model = 'bcc'
+                    break
                 elif user_input_charge_model == 'cm2':
                     charge_model = 'cm2'
+                    break
                 elif user_input_charge_model == 'mul':
                     charge_model = 'mul'
-                save_to_file(f"charge_model = {charge_model}\n", filename)
-                break
+                    break
             except:
                 print('The input that you have provided is not valid.')
+        save_to_file(f"charge_model = {charge_model}\n", filename)
         #specifying atom types
         while True:
             try:
                 user_input_atom_types = str(input(USER_CHOICE_ATOM_TYPES).lower())
                 if user_input_atom_types == 'bcc':
                     atoms_type = 'bcc'
+                    break
                 elif user_input_atom_types == 'gaff':
                     atoms_type = 'gaff'
+                    break
                 elif user_input_atom_types == 'gaff2':
                     atoms_type = 'gaff2'
-                save_to_file(f"atoms_type = {atoms_type}\n", filename)
-                break
+                    break
             except:
                 print('The input that you have provided is not valid')
+        save_to_file(f"atoms_type = {atoms_type}\n", filename)
         #specifying charges and multiplicity for each ligand
         lig_charges = []
         lig_multiplicities = []
         for x in ligands_list:
             # those must be looped on, since each ligand might have different charge and multiplicity
             USER_CHOICE_CHARGE = f"Please, provide the net charge of {x} ligand (integer value):\n"
-            USER_CHOICE_MULTIPLICITY = f"Please, provide multiplicity of {x} ligand (positive integer value):\n"
             while True:
                 try:
                     user_input_charge = int(input(USER_CHOICE_CHARGE))
-                    user_input_multiplicity = int(input(USER_CHOICE_MULTIPLICITY))
-                    if user_input_multiplicity < 1:
-                        raise Exception
                     lig_charges.append(user_input_charge)
-                    lig_multiplicities.append(user_input_multiplicity)
                     break
                 except:
                     print("The input that you have provided is not valid")
         save_to_file(f"ligands_charges = {lig_charges}\n", filename)
+        for x in ligands_list:
+            USER_CHOICE_MULTIPLICITY = f"Please, provide multiplicity of {x} ligand (positive integer value):\n"
+            while True:
+                try:
+                    user_input_multiplicity = int(input(USER_CHOICE_MULTIPLICITY))
+                    if user_input_multiplicity < 1:
+                        raise Exception
+                    lig_multiplicities.append(user_input_multiplicity)
+                    break
+                except:
+                    print("The input that you have provided is not valid")
         save_to_file(f"ligands_multiplicities = {lig_multiplicities}\n", filename)
     pass
 
