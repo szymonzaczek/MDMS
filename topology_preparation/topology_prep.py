@@ -89,7 +89,52 @@ def read_het_atoms_pdb():
 
 
 def hydrogen_check():
-    #Checking if hydrogens are added to ligands file
+    # Checking if hydrogens are added to ligands file
+    control = read_file(filename)
+    ligands = 'ligands.*=.*\[(.*)\]'
+    ligands_match = re.search(ligands, control).group(1)
+    # removing quotes from string
+    ligands_string = ligands_match.replace("'", "")
+    # removing whitespaces and turning string into a list
+    ligands_list = re.sub(r'\s', '', ligands_string).split(',')
+    # storing info about how many atoms are in ligands
+    atoms_amount = []
+    # storing info about how many hydrogen atoms are in ligands
+    hydrogens_amount = []
+    # following clause will be executed only if there are ligands in the control file
+    if ligands_list:
+        for ligand in ligands_list:
+            # reading 3rd column (pandas numbering - 2nd) from ligand.pdb - if there are no hydrogens in residue names, there are no hydrogens in the whole file
+            df = pd.read_csv(f'{ligand}.pdb', header=None, delim_whitespace=True, usecols=[2])
+            # getting info how many atoms are in a ligand
+            df_len = len(df.iloc[:, 0])
+            # storing info in list, which will contain info about all ligands
+            atoms_amount.append(df_len)
+            # establishing if there are hydrogens in atom names
+            hydrogen_match = (df[df.iloc[:, 0].str.match('H')])
+            # counting how many hydrogens were in a ligand
+            hydrogen_count = len(hydrogen_match.iloc[:, 0])
+            # storing info about amount of hydrogens in a list
+            hydrogens_amount.append(hydrogen_count)
+        print(hydrogens_amount[0])
+        print(type(hydrogens_amount[0]))
+        for x in range(0, len(ligands_list)):
+            if hydrogens_amount[x] == 0:
+                USER_CHOICE_HYDROGENS = (f"Even though there are {atoms_amount[x]} atoms in your ligand, there are no "
+                                         f"hydrogen atoms. Please keep in mind that all of the ligands MUST have all the"
+                                         f"necessary hydrogen atoms in their structure")
+
+
+            #USER_CHOICE_HYDROGENS = f"There are f{len(ligands_list)} in your system. They"
+            #for x in range(0, df_len):
+            #    hydrogen_present = df.iloc[[x, 0]].str.contains('H')
+            #    if hydrogen_present:
+            #        hydrogens_amount = hydrogens_amount + 1
+            #print(hydrogens_amount)
+            #hydrogen_mask = df[df.columns[0]].str.contains('O')
+            #print(hydrogen_mask)
+            #ligand_file = read_file(f"{ligand}.pdb")
+            #print(ligand_file)
     pass
 
 

@@ -432,7 +432,41 @@ def waters_pdb():
     pass
 
 
-prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb, metals_pdb, waters_pdb]
+def hydrogens_prompt():
+    # Reminding that user must add hydrogens to ligands
+    control = read_file(filename)
+    ligands = 'ligands.*=.*\[(.*)\]'
+    ligands_match = re.search(ligands, control).group(1)
+    # removing quotes from string
+    ligands_string = ligands_match.replace("'", "")
+    # removing whitespaces and turning string into a list
+    ligands_list = re.sub(r'\s', '', ligands_string).split(',')
+    USER_CHOICE_HYDROGENS = (f"\n!!WARNING!!\n" \
+        f"You have chosen to include ligands molecules in your system. In order to correctly proceed to MD simulations," \
+        f" hydrogen atoms must be added to your ligands molecules, whenever necessary. Adding hydrogens is outside of " \
+        f"scope of SAmber, therefore you must use other software to do so, such as OpenBabel, PyMOL, Chimera, LigPrep," \
+        f" Avogadro or any other that suites you best. In order to best utilize SAmber, just edit PDB files that were generated" \
+        f" with SAmber and overwrite them when you will have already added hydrogens.\n" \
+        f"In order to proceed, all of the ligands must have all of the necessary hydrogen atoms.\n" \
+        f"Have you added hydrogen atoms to all of the ligands?\n" \
+        f"• press 'y' to continue\n" \
+        f"• press 'n' to stop SAmber run\n")
+    # following clause will be executed only if there are ligands in the control file
+    if ligands_list:
+        while True:
+            try:
+                user_input_hydrogens = str(input(USER_CHOICE_HYDROGENS).lower())
+                if user_input_hydrogens == 'y':
+                    break
+                elif user_input_hydrogens == 'n':
+                    stop_interface()
+                    break
+                pass
+            except:
+                print('Please, provide valid input')
+
+
+prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb, metals_pdb, waters_pdb, hydrogens_prompt]
 
 methods_generator = (y for y in prep_functions)
 
@@ -449,4 +483,4 @@ def queue_methods():
             #I do not know if this prompt is necessary
             print('\nProgram has not finished normally - it appears that something was wrong with your structure. \nApply changes and try again!\n')
             break
-    print('koniec')
+    #print('initial struc is finished')
