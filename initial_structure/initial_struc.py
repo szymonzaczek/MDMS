@@ -55,7 +55,6 @@ def read_remark_pdb():
             # looking for lines starting with remark and appending them to a list
             if line.startswith('REMARK'):
                 pdb_remark.append(line.strip())
-    print('read_remark blad')
     return pdb_remark
 
 def read_het_atoms_pdb():
@@ -386,6 +385,7 @@ def metals_pdb():
                     print('You have provided wrong input.')
         pass
 
+
 def waters_pdb():
     # getting het_atms from pdb file
     het_atoms = read_het_atoms_pdb()
@@ -406,39 +406,40 @@ def waters_pdb():
             if x in unique_res:
                 unique_water.append(x)
         #taking each water molecule from pdb and putting them in a single string
-        for x in unique_water:
-            single_water_pdb = '\n'.join([s for s in het_atoms if x in s])
-            waters_pdb = ''.join(single_water_pdb)
-        waters_number = len(waters_pdb.split('\n'))
-        USER_CHOICE_WATERS = f"\nThere are {waters_number} water molecules in your structure.\n" \
-            f"Water molecules that are present in PDB structures are leftovers from experiments carried out in order to obtain" \
-            f"protein's structure. There is no straightforward answer if they should be kept for MD simulations or not - " \
-            f"basically water around proteins should equilibrate rather fast and their origin (either from experiment or" \
-            f"added with some software) should not matter that much. Noteworthy, even if you want to keep crystal waters " \
-            f"for MD, A LOT more waters will need to be added in order to ensure a proper solvation of the protein." \
-            f"Retaining water molecules that were discovered within experiment is strongly advised important if water molecules " \
-            f"play a role in enzymatic catalysis or they somehow stabilize the protein's structure. Nonetheless, the choice is yours. \n" \
-            f"Would you like to retain water molecules located within experiment for your MD simulations?\n" \
-            f"• press 'y' if you want to retain them\n" \
-            f"• press 'n' if you want to delete water molecules originally present in your structure\n" \
-        #if there are waters in the pdb, user needs to make a decision
         if unique_water:
-            while True:
-                try:
-                    user_input_waters = str(input(USER_CHOICE_WATERS).lower())
-                    if user_input_waters == 'y':
-                        #saving crystallographic waters to a separate file
-                        with open(f"{x}.pdb", "w") as f:
-                            f.write(waters_pdb)
-                        #saving info about crystallographic waters to a control file
-                        save_to_file(f"waters = {unique_water}\n", filename)
-                        break
-                    elif user_input_waters == 'n':
-                        #if user decides to omit crystallographic waters, nothing needs to be done
-                        break
-                except:
-                    print('The input that you have provided is not valid')
-        pass
+            for x in unique_water:
+                single_water_pdb = '\n'.join([s for s in het_atoms if x in s])
+                waters_pdb = ''.join(single_water_pdb)
+            waters_number = len(waters_pdb.split('\n'))
+            USER_CHOICE_WATERS = f"\nThere are {waters_number} water molecules in your structure.\n" \
+                f"Water molecules that are present in PDB structures are leftovers from experiments carried out in order to obtain" \
+                f"protein's structure. There is no straightforward answer if they should be kept for MD simulations or not - " \
+                f"basically water around proteins should equilibrate rather fast and their origin (either from experiment or" \
+                f"added with some software) should not matter that much. Noteworthy, even if you want to keep crystal waters " \
+                f"for MD, A LOT more waters will need to be added in order to ensure a proper solvation of the protein." \
+                f"Retaining water molecules that were discovered within experiment is strongly advised important if water molecules " \
+                f"play a role in enzymatic catalysis or they somehow stabilize the protein's structure. Nonetheless, the choice is yours. \n" \
+                f"Would you like to retain water molecules located within experiment for your MD simulations?\n" \
+                f"• press 'y' if you want to retain them\n" \
+                f"• press 'n' if you want to delete water molecules originally present in your structure\n" \
+            #if there are waters in the pdb, user needs to make a decision
+            if unique_water:
+                while True:
+                    try:
+                        user_input_waters = str(input(USER_CHOICE_WATERS).lower())
+                        if user_input_waters == 'y':
+                            #saving crystallographic waters to a separate file
+                            with open(f"{x}.pdb", "w") as f:
+                                f.write(waters_pdb)
+                            #saving info about crystallographic waters to a control file
+                            save_to_file(f"waters = {unique_water}\n", filename)
+                            break
+                        elif user_input_waters == 'n':
+                            #if user decides to omit crystallographic waters, nothing needs to be done
+                            break
+                    except:
+                        print('The input that you have provided is not valid')
+            pass
 
 
 def hydrogens_prompt():
