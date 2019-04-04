@@ -354,8 +354,13 @@ def pdb_process():
     control = read_file(filename)
     structure = 'pdb\s*=\s*(.*)'
     structure_match = re.search(structure, control).group(1)
-
-
+    # copying original PDB file so it will be retained after files operations
+    struc_copy = f"cp {structure_match} original_{ligands_list[x]}"
+    subprocess.run([f"{struc_copy}"], shell=True)
+    # input for pdb4amber
+    pdb4amber_input = f"pdb4amber original_{struc_copy} > {structure_match} "
+    # running pdb4amber (both original and remade files are retained but later on remade ligands will be operated on
+    subprocess.run([f"{pdb4amber_input}"], shell=True)
     pass
 
 
