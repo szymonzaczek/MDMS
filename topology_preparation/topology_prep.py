@@ -253,17 +253,22 @@ def ligands_parameters():
             # those must be looped on, since each ligand might have different charge and multiplicity
             USER_CHOICE_CHARGE = f"Please, provide the net charge of {x} ligand (integer value):\n"
             while True:
+                # this loop gets info about ligands charges
                 try:
+                    # this line already tests if input is integer
                     user_input_charge = int(input(USER_CHOICE_CHARGE))
                     lig_charges.append(user_input_charge)
                     break
                 except:
                     print("The input that you have provided is not valid")
+        # once charges are known and good, they are put into control file
         save_to_file(f"ligands_charges = {lig_charges}\n", filename)
         for x in ligands_list:
+            # this loop gets info about ligands multipicities
             USER_CHOICE_MULTIPLICITY = f"Please, provide multiplicity of {x} ligand (positive integer value):\n"
             while True:
                 try:
+                    # multiplicity must be integer but also must be positive
                     user_input_multiplicity = int(input(USER_CHOICE_MULTIPLICITY))
                     if user_input_multiplicity < 1:
                         raise Exception
@@ -271,6 +276,7 @@ def ligands_parameters():
                     break
                 except:
                     print("The input that you have provided is not valid")
+        # once multiplicity is good, its saved into control file
         save_to_file(f"ligands_multiplicities = {lig_multiplicities}\n", filename)
     pass
 
@@ -290,12 +296,12 @@ def antechamber_parmchk_input():
     #getting atom_types info
     atoms_type = 'atoms_type\s*=\s*([a-z]*[A-Z]*[1-9]*)'
     atoms_type_match = re.search(atoms_type, control).group(1)
-    #finding ligands' charges in control file
+    # finding ligands' charges in control file
     ligands_charges = 'ligands_charges\s*=\s*\[(.*)\]'
     ligands_charges_match = re.search(ligands_charges, control).group(1)
-    #removing whitespaces and turning to a list
+    # removing whitespaces and turning to a list
     ligands_charges_list = re.sub(r'\s', '', ligands_charges_match).split(',')
-    #changing individual entries from string to integers
+    # changing individual entries from string to integers
     for x in range(0, len(ligands_charges_list)):
         ligands_charges_list[x] = int(ligands_charges_list[x])
     #finding ligands multiplicities in control file
@@ -306,34 +312,54 @@ def antechamber_parmchk_input():
     #changing individual entries from string to integers
     for x in range(0, len(ligands_multiplicities_list)):
         ligands_multiplicities_list[x] = int(ligands_multiplicities_list[x])
-    #creating antechamber inputs
+    # prior to to antechamber and parmchk execution, check ligands pdb with pdb4amber
     for x in range(0, len(ligands_list)):
+        # copying original ligand PDB file - output from pdb4amber will be supplied to antechamber and parmchk
+        ligand_copy = f"cp {ligands_list[x]}.pdb {ligands_list[x]}_original.pdb"
+        subprocess.run([f"{ligand_copy}"], shell=True)
+        # input for pdb4amber
+        pdb4amber_input = f"pdb4amber {ligands_list[x]}_original.pdb > {ligands_list[x]}.pdb "
+        # running pdb4amber (both original and remade files are retained but later on remade ligands will be operated on
+        subprocess.run([f"{pdb4amber_input}"], shell=True)
+    # creating antechamber and parmchk inputs
+    for x in range(0, len(ligands_list)):
+        # input for antechamber
         antechamber_input = f"antechamber -fi pdb -fo mol2 -i {ligands_list[x]}.pdb -o {ligands_list[x]}.mol2 -at {atoms_type_match} -c {charge_model_match} -pf y -nc {ligands_charges_list[x]} -m {ligands_multiplicities_list[x]}"
+        # running antechamber
         subprocess.run([f"{antechamber_input}"], shell=True)
+        # checking if mol2 was succesfully created
         mol2_path = Path(f'{ligands_list[x]}.mol2')
         if file_check(mol2_path) == False:
-            print(f"Antechamber has failed to determine atomic charges for {ligands_list[x]} ligand. Please, have a look"
-                  f" at 'sqm.out' file for more info")
+            # if mol2 was not created, loop stops and user is returned to menu
+            print(f"\nAntechamber has failed to determine atomic charges for {ligands_list[x]} ligand. Please, have a look"
+                  f" at output files for more info.\n")
             break
+        # input for parmchk
         parmchk_input = f"parmchk2 -i {ligands_list[x]}.mol2 -o {ligands_list[x]}.frcmod -f mol2 -s {atoms_type_match}"
+        # running parmchk
         subprocess.run([f"{parmchk_input}"], shell=True)
+        # checking if frcmod was successfully created
         frcmod_path = Path(f'{ligands_list[x]}.frcmod')
         if file_check(frcmod_path) == False:
-            print(f"Parmchk has failed to run correctly for {ligands_list[x]} ligand. Please, check validity of"
-                  f" {ligands_list[x]}.mol2 file.")
+            # if frcmod was not created, loop stops and user is returned to menu
+            print(f"\nParmchk has failed to run correctly for {ligands_list[x]} ligand. Please, check validity of"
+                  f" {ligands_list[x]}.mol2 file.\n")
             break
 
 
+def pdb_process():
+    # This function strips original PDB of anything apart from protein, checks its validity with pdb4amber and create
+    # PDB complex of protein and ligands, which will be passed onto tleap
+    # reading pdb from control file
+    control = read_file(filename)
+    structure = 'pdb\s*=\s*(.*)'
+    structure_match = re.search(structure, control).group(1)
 
 
-
-
-def parmchk_input():
     pass
 
 
 top_prep_functions = [file_naming, clearing_control, hydrogen_check, ligands_parameters, antechamber_parmchk_input]
-#prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb]
 
 methods_generator = (y for y in top_prep_functions)
 
