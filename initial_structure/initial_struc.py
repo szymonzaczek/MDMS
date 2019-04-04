@@ -10,7 +10,7 @@ def file_naming():
     #getting name for a control file, which will containg all info
     global filename
     filename_inp: str = Path(input('Please, provide name for the file that will contain every piece of information for running SAmber. '
-                                   '\nPlease, kepp in mind that if a file with that exact name exists, it will be overwritten.\n'
+                                   '\nPlease, keep in mind that if a file with that exact name exists, it will be overwritten.\n'
                                    'Please, provide name of the file:\n'))
     filename = filename_inp
     if filename.exists() == True:
@@ -55,6 +55,7 @@ def read_remark_pdb():
             # looking for lines starting with remark and appending them to a list
             if line.startswith('REMARK'):
                 pdb_remark.append(line.strip())
+    print('read_remark blad')
     return pdb_remark
 
 def read_het_atoms_pdb():
@@ -166,7 +167,7 @@ def init_pdb():
                 raise Exception
             break
         except Exception:
-            print("The input that you've provided is not valid. Please, provide a valid input. Tu mamy blad")
+            print("The input that you've provided is not valid. Please, provide a valid input.")
 
 def missing_atoms_pdb():
     #getting lines starting with remark from a pdb file
