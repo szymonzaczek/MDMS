@@ -318,7 +318,7 @@ def antechamber_parmchk_input():
         ligand_copy = f"cp {ligands_list[x]}.pdb {ligands_list[x]}_original.pdb"
         subprocess.run([f"{ligand_copy}"], shell=True)
         # input for pdb4amber
-        pdb4amber_input = f"pdb4amber {ligands_list[x]}_original.pdb > {ligands_list[x]}.pdb "
+        pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_original.pdb -o {ligands_list[x]}.pdb "
         # running pdb4amber (both original and remade files are retained but later on remade ligands will be operated on
         subprocess.run([f"{pdb4amber_input}"], shell=True)
     # creating antechamber and parmchk inputs
@@ -350,6 +350,9 @@ def antechamber_parmchk_input():
 def pdb_process():
     # This function strips original PDB of anything apart from protein, checks its validity with pdb4amber and create
     # PDB complex of protein and ligands, which will be passed onto tleap
+    # this will inform user what is being done
+    print('\nRight now your PDB will be processed in order to ensure a proper working with Amber software. If there'
+          ' are any missing atoms in amino acids, they will be automatically added with pdb4amber program.\n')
     # reading pdb from control file
     control = read_file(filename)
     structure = 'pdb\s*=\s*(.*)'
@@ -357,14 +360,17 @@ def pdb_process():
     # copying original PDB file so it will be retained after files operations
     struc_copy = f"cp {structure_match} original_{ligands_list[x]}"
     subprocess.run([f"{struc_copy}"], shell=True)
-    # input for pdb4amber
-    pdb4amber_input = f"pdb4amber original_{struc_copy} > {structure_match} "
+    # input for pdb4amber - ligands are removed
+    pdb4amber_input = f"pdb4amber -i original_{struc_copy} --add-missing-atoms -p -o no_lig_{structure_match}"
     # running pdb4amber (both original and remade files are retained but later on remade ligands will be operated on
     subprocess.run([f"{pdb4amber_input}"], shell=True)
+    # putting ligands and protein back together
+
+    #
     pass
 
 
-top_prep_functions = [file_naming, clearing_control, hydrogen_check, ligands_parameters, antechamber_parmchk_input]
+top_prep_functions = [file_naming, clearing_control, hydrogen_check, ligands_parameters, antechamber_parmchk_input, pdb_process]
 
 methods_generator = (y for y in top_prep_functions)
 
