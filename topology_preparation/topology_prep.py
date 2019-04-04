@@ -309,11 +309,24 @@ def antechamber_parmchk_input():
     #creating antechamber inputs
     for x in range(0, len(ligands_list)):
         antechamber_input = f"antechamber -fi pdb -fo mol2 -i {ligands_list[x]}.pdb -o {ligands_list[x]}.mol2 -at {atoms_type_match} -c {charge_model_match} -pf y -nc {ligands_charges_list[x]} -m {ligands_multiplicities_list[x]}"
-        print(antechamber_input)
         subprocess.run([f"{antechamber_input}"], shell=True)
+        mol2_path = Path(f'{ligands_list[x]}.mol2')
+        if file_check(mol2_path) == False:
+            print(f"Antechamber has failed to determine atomic charges for {ligands_list[x]} ligand. Please, have a look"
+                  f" at 'sqm.out' file for more info")
+            break
         parmchk_input = f"parmchk2 -i {ligands_list[x]}.mol2 -o {ligands_list[x]}.frcmod -f mol2 -s {atoms_type_match}"
-        print(parmchk_input)
         subprocess.run([f"{parmchk_input}"], shell=True)
+        frcmod_path = Path(f'{ligands_list[x]}.frcmod')
+        if file_check(frcmod_path) == False:
+            print(f"Parmchk has failed to run correctly for {ligands_list[x]} ligand. Please, check validity of"
+                  f" {ligands_list[x]}.mol2 file.")
+            break
+
+
+
+
+
 
 def parmchk_input():
     pass
