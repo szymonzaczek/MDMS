@@ -243,196 +243,202 @@ def missing_res_pdb():
 def ligands_pdb():
     #getting het_atms from pdb file
     het_atoms = read_het_atoms_pdb()
-    #reading het_atoms as columns - since finding unique residues are sought after, 4 first columns are enough
-    df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
-    #changing naming of columns
-    #df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name', 'chain', 'residue_nr', 'x', 'y', 'z', 'occupancy', 'temp_factor', 'element']
-    df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
-    #getting unique residues
-    unique_res = df.residue_name.unique()
-    unique_res = unique_res.tolist()
-    #creating another list that will contain only worthwile ligands
-    unique_ligands = unique_res
-    #removing waters from unique residues
-    water_list = ['HOH', 'WAT']
-    #remove common metal atoms from unique residues - they will be addressed later on
-    metal_list = ['K', 'CA', 'MN', 'CO', 'NA', 'FE', 'MG', 'SR', 'BA', 'NI', 'CU', 'ZN', 'CD']
-    #remove other common from unique residues - leftovers after experiments
-    exp_leftovers_list = ['SCN', 'ACT', 'EDO', 'CL', 'PGE', 'PG4', 'PEG', 'P6G', 'OLC', '1PE', 'CYN', 'I', 'NO3']
-    #cleaning unique_ligands list so that will only contain ligands that should be acted upon
-    for x in water_list:
-        if x in unique_ligands:
-            unique_ligands.remove(x)
-    for x in metal_list:
-        if x in unique_ligands:
-            unique_ligands.remove(x)
-    for x in exp_leftovers_list:
-        if x in unique_ligands:
-            unique_ligands.remove(x)
-    unique_ligands_str = '\n'.join(unique_ligands)
-    nr_unique_ligands = len(unique_ligands)
-    USER_CHOICE_LIGANDS = (f"There are {nr_unique_ligands} unique residues in your PDB file which are not amino acids and waters.\n"
-                           f"Each ligand that will be retained for simulations, will require parametrization.\n"
-                           f"Which residues you would like to keep for simulations? "
-                           f"Unique residues are:\n"
-                           f"{unique_ligands_str}\n"
-                           f"Please specify, which residues will be treated as ligands in your simulation (provide their exact name, "
-                           f"separating each entry by a comma - if you decide to not include ligands, just press enter):\n")
-    #table for storing ligands kept for simulations, which are present in pdb
-    ligands = []
-    #loop for choosing which ligands to keep
-    while True:
-        try:
-            #getting input ligands from users
-            user_input_ligands = str(input(USER_CHOICE_LIGANDS).upper())
-            #turning input into a list, ensuring that no matter how much spaces are inserted everything is fine
-            input_ligands = re.sub(r'\s', '', user_input_ligands).split(',')
-            #checking if inputted residues are in unique_ligands list - if yes, appending them to ligands list
-            for x in input_ligands:
-                if x in unique_ligands:
-                    ligands.append(x)
-            #this loop ensures that user picked all the ligands that he wanted
-            while True:
-                USER_CHOICE_LIG_CONT = (f"So far, you've chosen following residues to be included as ligands in your simulations: {ligands}.\n"
-                                        f"Would you like to add more ligands, or would you like to continue?\n"
-                                        f"• press 'a' in order to add more ligands\n"
-                                        f"• press 'c' in order to continue to next step\n")
-                try:
-                    #if user decides to keep adding, procedure is repeated
-                    user_input_lig_cont = str(input(USER_CHOICE_LIG_CONT).lower())
-                    if user_input_lig_cont == 'a':
-                        user_input_ligands = str(input(USER_CHOICE_LIGANDS).upper())
-                        #turning input into a list
-                        input_ligands = re.sub(r'\s', '', user_input_ligands).split(',')
-                        for x in input_ligands:
-                            if x in unique_ligands:
-                                #checking, if specified ligand is already present in ligands list
-                                if x not in ligands:
-                                    ligands.append(x)
-                    elif user_input_lig_cont == 'c':
-                        #if user decides to finish, ligands are saved to the control file
-                        save_to_file(f"ligands = {ligands}\n", filename)
-                        #lines containing specified ligands are saved to separate pdb files
-                        for x in ligands:
-                            ligands_pdb = '\n'.join([s for s in het_atoms if x in s])
-                            with open(f"{x}.pdb", "w") as f:
-                                f.write(ligands_pdb)
-                        break
-                except:
-                    pass
-            break
-        except:
-            print("You've provided wrong residues")
-            pass
-    print(f"Ligands that will be included in your system are: {ligands}")
-    pass
+    # it will only get executed if there are hetatoms records in PDB
+    if het_atoms:
+        #reading het_atoms as columns - since finding unique residues are sought after, 4 first columns are enough
+        df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
+        #changing naming of columns
+        #df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name', 'chain', 'residue_nr', 'x', 'y', 'z', 'occupancy', 'temp_factor', 'element']
+        df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
+        #getting unique residues
+        unique_res = df.residue_name.unique()
+        unique_res = unique_res.tolist()
+        #creating another list that will contain only worthwile ligands
+        unique_ligands = unique_res
+        #removing waters from unique residues
+        water_list = ['HOH', 'WAT']
+        #remove common metal atoms from unique residues - they will be addressed later on
+        metal_list = ['K', 'CA', 'MN', 'CO', 'NA', 'FE', 'MG', 'SR', 'BA', 'NI', 'CU', 'ZN', 'CD']
+        #remove other common from unique residues - leftovers after experiments
+        exp_leftovers_list = ['SCN', 'ACT', 'EDO', 'CL', 'PGE', 'PG4', 'PEG', 'P6G', 'OLC', '1PE', 'CYN', 'I', 'NO3']
+        #cleaning unique_ligands list so that will only contain ligands that should be acted upon
+        for x in water_list:
+            if x in unique_ligands:
+                unique_ligands.remove(x)
+        for x in metal_list:
+            if x in unique_ligands:
+                unique_ligands.remove(x)
+        for x in exp_leftovers_list:
+            if x in unique_ligands:
+                unique_ligands.remove(x)
+        unique_ligands_str = '\n'.join(unique_ligands)
+        nr_unique_ligands = len(unique_ligands)
+        USER_CHOICE_LIGANDS = (f"There are {nr_unique_ligands} unique residues in your PDB file which are not amino acids and waters.\n"
+                               f"Each ligand that will be retained for simulations, will require parametrization.\n"
+                               f"Which residues you would like to keep for simulations? "
+                               f"Unique residues are:\n"
+                               f"{unique_ligands_str}\n"
+                               f"Please specify, which residues will be treated as ligands in your simulation (provide their exact name, "
+                               f"separating each entry by a comma - if you decide to not include ligands, just press enter):\n")
+        #table for storing ligands kept for simulations, which are present in pdb
+        ligands = []
+        #loop for choosing which ligands to keep
+        while True:
+            try:
+                #getting input ligands from users
+                user_input_ligands = str(input(USER_CHOICE_LIGANDS).upper())
+                #turning input into a list, ensuring that no matter how much spaces are inserted everything is fine
+                input_ligands = re.sub(r'\s', '', user_input_ligands).split(',')
+                #checking if inputted residues are in unique_ligands list - if yes, appending them to ligands list
+                for x in input_ligands:
+                    if x in unique_ligands:
+                        ligands.append(x)
+                #this loop ensures that user picked all the ligands that he wanted
+                while True:
+                    USER_CHOICE_LIG_CONT = (f"So far, you've chosen following residues to be included as ligands in your simulations: {ligands}.\n"
+                                            f"Would you like to add more ligands, or would you like to continue?\n"
+                                            f"• press 'a' in order to add more ligands\n"
+                                            f"• press 'c' in order to continue to next step\n")
+                    try:
+                        #if user decides to keep adding, procedure is repeated
+                        user_input_lig_cont = str(input(USER_CHOICE_LIG_CONT).lower())
+                        if user_input_lig_cont == 'a':
+                            user_input_ligands = str(input(USER_CHOICE_LIGANDS).upper())
+                            #turning input into a list
+                            input_ligands = re.sub(r'\s', '', user_input_ligands).split(',')
+                            for x in input_ligands:
+                                if x in unique_ligands:
+                                    #checking, if specified ligand is already present in ligands list
+                                    if x not in ligands:
+                                        ligands.append(x)
+                        elif user_input_lig_cont == 'c':
+                            #if user decides to finish, ligands are saved to the control file
+                            save_to_file(f"ligands = {ligands}\n", filename)
+                            #lines containing specified ligands are saved to separate pdb files
+                            for x in ligands:
+                                ligands_pdb = '\n'.join([s for s in het_atoms if x in s])
+                                with open(f"{x}.pdb", "w") as f:
+                                    f.write(ligands_pdb)
+                            break
+                    except:
+                        pass
+                break
+            except:
+                print("You've provided wrong residues")
+                pass
+        print(f"Ligands that will be included in your system are: {ligands}")
+        pass
 
 def metals_pdb():
     #getting het_atms from pdb file
     het_atoms = read_het_atoms_pdb()
-    #getting het atms as csv
-    df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
-    #changing naming of columns
-    df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
-    #metal list that was used in ligands_pdb function
-    metal_list = ['K', 'CA', 'MN', 'CO', 'NA', 'FE', 'MG', 'SR', 'BA', 'NI', 'CU', 'ZN', 'CD']
-    #getting unique residues
-    unique_res = df.residue_name.unique()
-    unique_res = unique_res.tolist()
-    #creating another list that will contain only metal ligands
-    unique_metals = []
-    for x in metal_list:
-        if x in unique_res:
-            unique_metals.append(x)
-    unique_metals_string = ', '.join(unique_metals)
-    USER_CHOICE_METALS = f"\nThere are following metal ions in your PDB structure: {unique_metals_string}. " \
-        f"Obtaining force field parameters for metal ions " \
-        f"is outside of scope of this program but you might follow tutorials written by Pengfei Li and Kenneth M. Merz Jr., " \
-        f"which are available on Amber Website (http://ambermd.org/tutorials/advanced/tutorial20/index.htm).\n" \
-        f"Please keep in mind that sometimes metal ions play an important role in proteins' functioning and ommitting them " \
-        f"in MD simulations will provide unrealistic insights. Nonetheless, metal ions might also be just leftovers after " \
-        f"experiments (metal ions are normally present in water solutions, from which protein structures are obtained).\n" \
-        f"If you do not know if metal ions that are present in your structure are relevant, make a visual inspection of " \
-        f"your structure and try to determine if this metal is strongly coordinated by the protein. " \
-        f"If it is mostly coordinated " \
-        f"by water or it is placed right next to negatively charged amino acid (such as C - terminus), you're good to " \
-        f"skip it. Otherwise, most likely you should include it in your system.\n" \
-        f"Do you want to retain metal ions for MD simulations? \nIt will require your further manual input outside of this " \
-        f"interface:\n" \
-        f"• press 'y' to retain metal ions for MD simulations\n" \
-        f"• press 'n' not to include metal ions in your MD simulations\n" \
-    #if there are metals in pdb, there is a choice if they stay for MD or they are removed
-    if unique_metals:
-        while True:
-            try:
-                user_input_metals = str(input(USER_CHOICE_METALS).lower())
-                if user_input_metals == 'y':
-                    #metals are cut out to a separate PDB and info is saved in a control file
-                    save_to_file(f"metals = {unique_metals}\n", filename)
-                    # lines containing specified ligands are saved to separate pdb files
-                    for x in unique_metals:
-                        metals_pdb = '\n'.join([s for s in het_atoms if x in s])
-                        with open(f"{x}.pdb", "w") as f:
-                            f.write(metals_pdb)
-                    break
-                elif user_input_metals == 'n':
-                    #metals will be ignored - no further action required
-                    break
-            except:
-                print('You have provided wrong input.')
-    pass
+    # it will only get executed if there are hetatoms records in PDB
+    if het_atoms:
+        #getting het atms as csv
+        df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
+        #changing naming of columns
+        df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
+        #metal list that was used in ligands_pdb function
+        metal_list = ['K', 'CA', 'MN', 'CO', 'NA', 'FE', 'MG', 'SR', 'BA', 'NI', 'CU', 'ZN', 'CD']
+        #getting unique residues
+        unique_res = df.residue_name.unique()
+        unique_res = unique_res.tolist()
+        #creating another list that will contain only metal ligands
+        unique_metals = []
+        for x in metal_list:
+            if x in unique_res:
+                unique_metals.append(x)
+        unique_metals_string = ', '.join(unique_metals)
+        USER_CHOICE_METALS = f"\nThere are following metal ions in your PDB structure: {unique_metals_string}. " \
+            f"Obtaining force field parameters for metal ions " \
+            f"is outside of scope of this program but you might follow tutorials written by Pengfei Li and Kenneth M. Merz Jr., " \
+            f"which are available on Amber Website (http://ambermd.org/tutorials/advanced/tutorial20/index.htm).\n" \
+            f"Please keep in mind that sometimes metal ions play an important role in proteins' functioning and ommitting them " \
+            f"in MD simulations will provide unrealistic insights. Nonetheless, metal ions might also be just leftovers after " \
+            f"experiments (metal ions are normally present in water solutions, from which protein structures are obtained).\n" \
+            f"If you do not know if metal ions that are present in your structure are relevant, make a visual inspection of " \
+            f"your structure and try to determine if this metal is strongly coordinated by the protein. " \
+            f"If it is mostly coordinated " \
+            f"by water or it is placed right next to negatively charged amino acid (such as C - terminus), you're good to " \
+            f"skip it. Otherwise, most likely you should include it in your system.\n" \
+            f"Do you want to retain metal ions for MD simulations? \nIt will require your further manual input outside of this " \
+            f"interface:\n" \
+            f"• press 'y' to retain metal ions for MD simulations\n" \
+            f"• press 'n' not to include metal ions in your MD simulations\n" \
+        #if there are metals in pdb, there is a choice if they stay for MD or they are removed
+        if unique_metals:
+            while True:
+                try:
+                    user_input_metals = str(input(USER_CHOICE_METALS).lower())
+                    if user_input_metals == 'y':
+                        #metals are cut out to a separate PDB and info is saved in a control file
+                        save_to_file(f"metals = {unique_metals}\n", filename)
+                        # lines containing specified ligands are saved to separate pdb files
+                        for x in unique_metals:
+                            metals_pdb = '\n'.join([s for s in het_atoms if x in s])
+                            with open(f"{x}.pdb", "w") as f:
+                                f.write(metals_pdb)
+                        break
+                    elif user_input_metals == 'n':
+                        #metals will be ignored - no further action required
+                        break
+                except:
+                    print('You have provided wrong input.')
+        pass
 
 def waters_pdb():
     # getting het_atms from pdb file
     het_atoms = read_het_atoms_pdb()
-    # getting het atms as csv
-    df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
-    # changing naming of columns
-    df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
-    #list containing names of water residues
-    water_list = ['HOH', 'WAT']
-    #getting unique residues
-    unique_res = df.residue_name.unique()
-    unique_res = unique_res.tolist()
-    #creating another list that will contain naming of water residues that are present in the pdb
-    unique_water = []
-    for x in water_list:
-        if x in unique_res:
-            unique_water.append(x)
-    #taking each water molecule from pdb and putting them in a single string
-    for x in unique_water:
-        single_water_pdb = '\n'.join([s for s in het_atoms if x in s])
-        waters_pdb = ''.join(single_water_pdb)
-    waters_number = len(waters_pdb.split('\n'))
-    USER_CHOICE_WATERS = f"\nThere are {waters_number} water molecules in your structure.\n" \
-        f"Water molecules that are present in PDB structures are leftovers from experiments carried out in order to obtain" \
-        f"protein's structure. There is no straightforward answer if they should be kept for MD simulations or not - " \
-        f"basically water around proteins should equilibrate rather fast and their origin (either from experiment or" \
-        f"added with some software) should not matter that much. Noteworthy, even if you want to keep crystal waters " \
-        f"for MD, A LOT more waters will need to be added in order to ensure a proper solvation of the protein." \
-        f"Retaining water molecules that were discovered within experiment is strongly advised important if water molecules " \
-        f"play a role in enzymatic catalysis or they somehow stabilize the protein's structure. Nonetheless, the choice is yours. \n" \
-        f"Would you like to retain water molecules located within experiment for your MD simulations?\n" \
-        f"• press 'y' if you want to retain them\n" \
-        f"• press 'n' if you want to delete water molecules originally present in your structure\n" \
-    #if there are waters in the pdb, user needs to make a decision
-    if unique_water:
-        while True:
-            try:
-                user_input_waters = str(input(USER_CHOICE_WATERS).lower())
-                if user_input_waters == 'y':
-                    #saving crystallographic waters to a separate file
-                    with open(f"{x}.pdb", "w") as f:
-                        f.write(waters_pdb)
-                    #saving info about crystallographic waters to a control file
-                    save_to_file(f"waters = {unique_water}\n", filename)
-                    break
-                elif user_input_waters == 'n':
-                    #if user decides to omit crystallographic waters, nothing needs to be done
-                    break
-            except:
-                print('The input that you have provided is not valid')
-    pass
+    # it will only get executed if there are hetatoms records in PDB
+    if het_atoms:
+        # getting het atms as csv
+        df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
+        # changing naming of columns
+        df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
+        #list containing names of water residues
+        water_list = ['HOH', 'WAT']
+        #getting unique residues
+        unique_res = df.residue_name.unique()
+        unique_res = unique_res.tolist()
+        #creating another list that will contain naming of water residues that are present in the pdb
+        unique_water = []
+        for x in water_list:
+            if x in unique_res:
+                unique_water.append(x)
+        #taking each water molecule from pdb and putting them in a single string
+        for x in unique_water:
+            single_water_pdb = '\n'.join([s for s in het_atoms if x in s])
+            waters_pdb = ''.join(single_water_pdb)
+        waters_number = len(waters_pdb.split('\n'))
+        USER_CHOICE_WATERS = f"\nThere are {waters_number} water molecules in your structure.\n" \
+            f"Water molecules that are present in PDB structures are leftovers from experiments carried out in order to obtain" \
+            f"protein's structure. There is no straightforward answer if they should be kept for MD simulations or not - " \
+            f"basically water around proteins should equilibrate rather fast and their origin (either from experiment or" \
+            f"added with some software) should not matter that much. Noteworthy, even if you want to keep crystal waters " \
+            f"for MD, A LOT more waters will need to be added in order to ensure a proper solvation of the protein." \
+            f"Retaining water molecules that were discovered within experiment is strongly advised important if water molecules " \
+            f"play a role in enzymatic catalysis or they somehow stabilize the protein's structure. Nonetheless, the choice is yours. \n" \
+            f"Would you like to retain water molecules located within experiment for your MD simulations?\n" \
+            f"• press 'y' if you want to retain them\n" \
+            f"• press 'n' if you want to delete water molecules originally present in your structure\n" \
+        #if there are waters in the pdb, user needs to make a decision
+        if unique_water:
+            while True:
+                try:
+                    user_input_waters = str(input(USER_CHOICE_WATERS).lower())
+                    if user_input_waters == 'y':
+                        #saving crystallographic waters to a separate file
+                        with open(f"{x}.pdb", "w") as f:
+                            f.write(waters_pdb)
+                        #saving info about crystallographic waters to a control file
+                        save_to_file(f"waters = {unique_water}\n", filename)
+                        break
+                    elif user_input_waters == 'n':
+                        #if user decides to omit crystallographic waters, nothing needs to be done
+                        break
+                except:
+                    print('The input that you have provided is not valid')
+        pass
 
 
 def hydrogens_prompt():
@@ -440,33 +446,35 @@ def hydrogens_prompt():
     control = read_file(filename)
     ligands = 'ligands.*=.*\[(.*)\]'
     ligands_match = re.search(ligands, control).group(1)
-    # removing quotes from string
-    ligands_string = ligands_match.replace("'", "")
-    # removing whitespaces and turning string into a list
-    ligands_list = re.sub(r'\s', '', ligands_string).split(',')
-    USER_CHOICE_HYDROGENS = (f"\n!!WARNING!!\n" \
-        f"You have chosen to include ligands molecules in your system. In order to correctly proceed to MD simulations," \
-        f" hydrogen atoms must be added to your ligands molecules, whenever necessary. Adding hydrogens is outside of " \
-        f"scope of SAmber, therefore you must use other software to do so, such as OpenBabel, PyMOL, Chimera, LigPrep," \
-        f" Avogadro or any other that suites you best. In order to best utilize SAmber, just edit PDB files that were generated" \
-        f" with SAmber and overwrite them when you will have already added hydrogens.\n" \
-        f"In order to proceed, all of the ligands must have all of the necessary hydrogen atoms.\n" \
-        f"Have you added hydrogen atoms to all of the ligands?\n" \
-        f"• press 'y' to continue\n" \
-        f"• press 'n' to stop SAmber run\n")
-    # following clause will be executed only if there are ligands in the control file
-    if ligands_list:
-        while True:
-            try:
-                user_input_hydrogens = str(input(USER_CHOICE_HYDROGENS).lower())
-                if user_input_hydrogens == 'y':
-                    break
-                elif user_input_hydrogens == 'n':
-                    stop_interface()
-                    break
-                pass
-            except:
-                print('Please, provide valid input')
+    # function will only be executed if there were ligands chosen
+    if ligands_match:
+        # removing quotes from string
+        ligands_string = ligands_match.replace("'", "")
+        # removing whitespaces and turning string into a list
+        ligands_list = re.sub(r'\s', '', ligands_string).split(',')
+        USER_CHOICE_HYDROGENS = (f"\n!!WARNING!!\n" \
+            f"You have chosen to include ligands molecules in your system. In order to correctly proceed to MD simulations," \
+            f" hydrogen atoms must be added to your ligands molecules, whenever necessary. Adding hydrogens is outside of " \
+            f"scope of SAmber, therefore you must use other software to do so, such as OpenBabel, PyMOL, Chimera, LigPrep," \
+            f" Avogadro or any other that suites you best. In order to best utilize SAmber, just edit PDB files that were generated" \
+            f" with SAmber and overwrite them when you will have already added hydrogens.\n" \
+            f"In order to proceed, all of the ligands must have all of the necessary hydrogen atoms.\n" \
+            f"Have you added hydrogen atoms to all of the ligands?\n" \
+            f"• press 'y' to continue\n" \
+            f"• press 'n' to stop SAmber run\n")
+        # following clause will be executed only if there are ligands in the control file
+        if ligands_list:
+            while True:
+                try:
+                    user_input_hydrogens = str(input(USER_CHOICE_HYDROGENS).lower())
+                    if user_input_hydrogens == 'y':
+                        break
+                    elif user_input_hydrogens == 'n':
+                        stop_interface()
+                        break
+                    pass
+                except:
+                    print('Please, provide valid input')
 
 
 prep_functions = [file_naming, init_pdb, missing_atoms_pdb, missing_res_pdb, ligands_pdb, metals_pdb, waters_pdb, hydrogens_prompt]
