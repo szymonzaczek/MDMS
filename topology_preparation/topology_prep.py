@@ -375,10 +375,10 @@ def pdb_process():
     # stripping of extension from structure - this way it will be easier to get proper names, i.e. 4zaf_old.pdb
     structure_match = structure_match.split('.')[0]
     # copying original PDB file so it will be retained after files operations
-    struc_copy = f"cp {structure_match} {structure_match}_original.pdb"
+    struc_copy = f"cp {structure_match}.pdb {structure_match}_original.pdb"
     subprocess.run([f"{struc_copy}"], shell=True)
     # input for pdb4amber - ligands are removed
-    pdb4amber_input = f"pdb4amber -i {struc_match}_original.pdb --add-missing-atoms -p -o {structure_match}_no_lig.pdb"
+    pdb4amber_input = f"pdb4amber -i {structure_match}_original.pdb --add-missing-atoms -p -o {structure_match}_no_lig.pdb"
     # running pdb4amber (both original and remade files are retained but later on remade ligands will be operated on
     subprocess.run([f"{pdb4amber_input}"], shell=True)
     # putting ligands and protein back together
@@ -400,9 +400,10 @@ def pdb_process():
         for ligand in ligands_list:
             ligands_files.append(f"{ligand}.pdb")
         # using context manager to open structure_match_full.pdb
+        struc_no_lig = f"{structure_match}_no_lig.pdb"
         with open(f"{structure_match}_full.pdb", 'a') as file:
             # first, protein is saved to full structure
-            file.write(f"{structure_match}_no_lig.pdb")
+            file.write(struc_no_lig.read())
             # then ligands are saved to full structure
             for ligand in ligands_list:
                 file.write(ligand.read())
