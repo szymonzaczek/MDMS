@@ -398,24 +398,27 @@ def pdb_process():
         # appending ligands filenames to the list
         for ligand in ligands_list:
             ligands_files.append(f"{ligand}.pdb")
-        # using context manager to open structure_match_full.pdb
+        # protein without any ligands
         struc_no_lig = f"{structure_match}_no_lig.pdb"
-        print(f"ligands_files = {ligands_files}")
+        # creating list storing filenames that will create the whole complex
         full_files = []
+        # protein filename appended
         full_files.append(struc_no_lig)
+        # appending ligands filenames
         for ligand in ligands_files:
             full_files.append(ligand)
-        #full_files.append(ligands_files)
-        with open(f"{structure_match}_full.pdb", 'w') as outfile:
-            for fname in filenames:
+        complex_raw = f"{structure_match}_raw.pdb"
+        # using context manager to concatenate protein and ligands together
+        with open(complex, 'w') as outfile:
+            # iterating over each file in full_files list
+            for fname in full_files:
+                # opening each file and writing it to outfile
                 with open(fname) as infile:
                     outfile.write(infile.read())
-        #with open(f"{structure_match}_full.pdb", 'a') as file:
-        #    # first, protein is saved to full structure
-        #    file.write(struc_no_lig.read())
-        #    # then ligands are saved to full structure
-        #    for ligand in ligands_list:
-        #        file.write(ligand.read())
+        # name of the pdb file that will be an input for tleap
+        complex = f"{structure_match}_full.pdb"
+        # processing protein-ligand complex pdb file with pdb4amber
+        pdb4amber_input_complex = f"pdb4amber -i {complex_raw} -o {complex}"
         print('there were ligands and it succeeded')
     print('it succeeded')
     pass
