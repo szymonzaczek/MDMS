@@ -400,9 +400,12 @@ def pdb_process():
             ligands_files.append(f"{ligand}.pdb")
         # using context manager to open structure_match_full.pdb
         struc_no_lig = f"{structure_match}_no_lig.pdb"
+        print(f"ligands_files = {ligands_files}")
         full_files = []
         full_files.append(struc_no_lig)
-        full_files.append(ligands_files)
+        for ligand in ligands_files:
+            full_files.append(ligand)
+        #full_files.append(ligands_files)
         with open(f"{structure_match}_full.pdb", 'w') as outfile:
             for fname in filenames:
                 with open(fname) as infile:
