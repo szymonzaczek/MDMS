@@ -383,8 +383,7 @@ def pdb_process():
     subprocess.run([f"{pdb4amber_input}"], shell=True)
     # putting ligands and protein back together
 
-    # finding ligands residues in control file
-    control = read_file(filename)
+    # finding ligands residues in control file#
     ligands = 'ligands.*=.*\[(.*)\]'
     ligands_match = re.search(ligands, control)
     if ligands_match:
@@ -401,12 +400,19 @@ def pdb_process():
             ligands_files.append(f"{ligand}.pdb")
         # using context manager to open structure_match_full.pdb
         struc_no_lig = f"{structure_match}_no_lig.pdb"
-        with open(f"{structure_match}_full.pdb", 'a') as file:
-            # first, protein is saved to full structure
-            file.write(struc_no_lig.read())
-            # then ligands are saved to full structure
-            for ligand in ligands_list:
-                file.write(ligand.read())
+        full_files = []
+        full_files.append(struc_no_lig)
+        full_files.append(ligands_files)
+        with open(f"{structure_match}_full.pdb", 'w') as outfile:
+            for fname in filenames:
+                with open(fname) as infile:
+                    outfile.write(infile.read())
+        #with open(f"{structure_match}_full.pdb", 'a') as file:
+        #    # first, protein is saved to full structure
+        #    file.write(struc_no_lig.read())
+        #    # then ligands are saved to full structure
+        #    for ligand in ligands_list:
+        #        file.write(ligand.read())
         print('there were ligands and it succeeded')
     print('it succeeded')
     pass
