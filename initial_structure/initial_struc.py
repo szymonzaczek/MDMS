@@ -55,7 +55,10 @@ def read_remark_pdb():
             # looking for lines starting with remark and appending them to a list
             if line.startswith('REMARK'):
                 pdb_remark.append(line.strip())
-    return pdb_remark
+    if pdb_remark:
+        return pdb_remark
+    else:
+        return None
 
 def read_het_atoms_pdb():
     # retrieving pdb file name from control file
@@ -70,10 +73,14 @@ def read_het_atoms_pdb():
             #looking for lines starting with hetatm and appending them to a list
             if line.startswith('HETATM'):
                 pdb_hetatoms.append(line.strip())
-    # saving het_atoms to a csv file - it will be easier to read it then
-    with open('het_atoms.csv', 'w') as f:
-        f.write('\n'.join(pdb_hetatoms))
-    return pdb_hetatoms
+    # het atoms will only be saved if there are any het_atoms
+    if pdb_hetatoms:
+        # saving het_atoms to a csv file - it will be easier to read it then
+        with open('het_atoms.csv', 'w') as f:
+            f.write('\n'.join(pdb_hetatoms))
+        return pdb_hetatoms
+    else:
+        return None
 
 
 def init_pdb():
@@ -170,52 +177,57 @@ def init_pdb():
 
 def missing_atoms_pdb():
     #getting lines starting with remark from a pdb file
+    print('missing_atoms_pdb')
     pdb_remark = read_remark_pdb()
-    #looking for missing atoms in remark lines
-    missing_atom = ''.join([s for s in pdb_remark if "MISSING ATOM" in s])
-    #getting remark nr
-    if missing_atom:
-        remark = '(REMARK.[0-9]+)'
-        remark_match = re.search(remark, missing_atom).group(1)
-        #getting string containg all info about missing atoms
-        remark_with_missing_atom = '\n'.join(([s for s in pdb_remark if remark_match in s]))
-        #making string easier to read
-        missing_atom_prompt = re.sub(remark, "", remark_with_missing_atom)
-        #if there is a missing atom, print what was found inside pdb file along with warning
-        if remark_match != None:
-            print("\nWARNING!!!\nIt appears that your PDB file contains missing atoms. They might be added in following steps by"
-                  " LEaP, however the better choice would be to use a homology modelling software to do so.\n"
-                  "Please, proceed with caution.\n"
-                  "Information about missing atom from PDB file: ")
-            print(missing_atom_prompt)
-            USER_CHOICE_CONT = "Would you like to continue with SAmber execution, or rather right now you would like to " \
-                               "add missing atoms? Please, provide your choice:\n" \
-                               "• press 'y' to continue\n" \
-                               "• press 'n' to quit\n"
-            while True:
-                try:
-                    user_input_cont = str(input(USER_CHOICE_CONT)).lower()
-                    if user_input_cont == 'y':
-                        pass
-                    elif user_input_cont == 'n':
-                        stop_interface()
+    # if there are no pdb_remark, skip this function
+    if pdb_remark:
+        #looking for missing atoms in remark lines
+        missing_atom = ''.join([s for s in pdb_remark if "MISSING ATOM" in s])
+        #getting remark nr
+        if missing_atom:
+            remark = '(REMARK.[0-9]+)'
+            remark_match = re.search(remark, missing_atom).group(1)
+            #getting string containg all info about missing atoms
+            remark_with_missing_atom = '\n'.join(([s for s in pdb_remark if remark_match in s]))
+            #making string easier to read
+            missing_atom_prompt = re.sub(remark, "", remark_with_missing_atom)
+            #if there is a missing atom, print what was found inside pdb file along with warning
+            if remark_match != None:
+                print("\nWARNING!!!\nIt appears that your PDB file contains missing atoms. They might be added in following steps by"
+                      " LEaP, however the better choice would be to use a homology modelling software to do so.\n"
+                      "Please, proceed with caution.\n"
+                      "Information about missing atom from PDB file: ")
+                print(missing_atom_prompt)
+                USER_CHOICE_CONT = "Would you like to continue with SAmber execution, or rather right now you would like to " \
+                                   "add missing atoms? Please, provide your choice:\n" \
+                                   "• press 'y' to continue\n" \
+                                   "• press 'n' to quit\n"
+                while True:
+                    try:
+                        user_input_cont = str(input(USER_CHOICE_CONT)).lower()
+                        if user_input_cont == 'y':
+                            pass
+                        elif user_input_cont == 'n':
+                            stop_interface()
+                            break
+                        else:
+                            raise ValueError
                         break
-                    else:
-                        raise ValueError
+                    except ValueError:
+                        print('Please, provide a valid input. Error 213921')
                     break
-                except ValueError:
-                    print('Please, provide a valid input. Error 213921')
-                break
+            else:
+                pass
         else:
             pass
-    else:
-        pass
 
 def missing_res_pdb():
     # getting lines starting with remark from a pdb file
+    print('missing_res_pdb')
     pdb_remark = read_remark_pdb()
-    # looking for missing atoms in remark lines if pdb_remark has any content
+    # if there are no pdb_remark, skip this function
     if pdb_remark:
+        # looking for missing atoms in remark lines if pdb_remark has any content
         missing_res = ''.join([s for s in pdb_remark if "MISSING RESIDUES" in s])
         if missing_res:
             remark = '(REMARK.[0-9]+)'
@@ -241,6 +253,7 @@ def missing_res_pdb():
 
 def ligands_pdb():
     #getting het_atms from pdb file
+    print('ligands_pdb')
     het_atoms = read_het_atoms_pdb()
     # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
@@ -330,6 +343,7 @@ def ligands_pdb():
 
 def metals_pdb():
     #getting het_atms from pdb file
+    print('metals_pdb')
     het_atoms = read_het_atoms_pdb()
     # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
@@ -388,6 +402,7 @@ def metals_pdb():
 
 def waters_pdb():
     # getting het_atms from pdb file
+    print('waters_pdb')
     het_atoms = read_het_atoms_pdb()
     # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
@@ -444,11 +459,14 @@ def waters_pdb():
 
 def hydrogens_prompt():
     # Reminding that user must add hydrogens to ligands
+    # reading control file
     control = read_file(filename)
     ligands = 'ligands.*=.*\[(.*)\]'
-    ligands_match = re.search(ligands, control).group(1)
+    ligands_match = re.search(ligands, control)
     # function will only be executed if there were ligands chosen
     if ligands_match:
+        # taking only ligands' entries values
+        ligands_match = ligands_match.group(1)
         # removing quotes from string
         ligands_string = ligands_match.replace("'", "")
         # removing whitespaces and turning string into a list
@@ -495,4 +513,3 @@ def queue_methods():
             #I do not know if this prompt is necessary
             print('\nProgram has not finished normally - it appears that something was wrong with your structure. \nApply changes and try again!\n')
             break
-    #print('initial struc is finished')
