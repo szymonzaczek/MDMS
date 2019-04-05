@@ -409,7 +409,7 @@ def pdb_process():
             full_files.append(ligand)
         complex_raw = f"{structure_match}_raw.pdb"
         # using context manager to concatenate protein and ligands together
-        with open(complex, 'w') as outfile:
+        with open(complex_raw, 'w') as outfile:
             # iterating over each file in full_files list
             for fname in full_files:
                 # opening each file and writing it to outfile
@@ -419,6 +419,8 @@ def pdb_process():
         complex = f"{structure_match}_full.pdb"
         # processing protein-ligand complex pdb file with pdb4amber
         pdb4amber_input_complex = f"pdb4amber -i {complex_raw} -o {complex}"
+        # running pdb4amber
+        subprocess.run([f"{pdb4amber_input_complex}"], shell=True)
         print('there were ligands and it succeeded')
     print('it succeeded')
     pass
