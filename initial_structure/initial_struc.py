@@ -401,8 +401,9 @@ def ligands_pdb():
                                         ligands.append(x)
                         elif user_input_lig_cont == 'c':
                             # if user decides to finish, ligands are saved to
-                            # the control file
-                            save_to_file(f"ligands = {ligands}\n", filename)
+                            # the control file, if they exist
+                            if ligands:
+                                save_to_file(f"ligands = {ligands}\n", filename)
                             # lines containing specified ligands are saved to
                             # separate pdb files
                             for x in ligands:

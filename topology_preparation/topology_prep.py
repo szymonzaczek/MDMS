@@ -101,11 +101,35 @@ def read_het_atoms_pdb():
         return None
 
 
+def clearing_control():
+    print('clearing control')
+    # name of temporary file that will store what is important
+    filetemp = 'temp.txt'
+    # list of parameters that will be stripped out of control file
+    parameters = [
+        'charge_model',
+        'atoms_type',
+        'ligands_charges',
+        'ligands_multiplicities']
+    # writing content of control file without parameters in parameters list to
+    # the temporary file
+    with open(f"{filename}") as oldfile, open(filetemp, 'w') as newfile:
+        for line in oldfile:
+            if not any(parameters in line for parameters in parameters):
+                newfile.write(line)
+    # replacing control file with temporary file
+    os.replace(filetemp, filename)
+
+
 def hydrogen_check():
     # Checking if hydrogens are added to ligands file
+    print('hydrogen check')
     control = read_file(filename)
     ligands = r'ligands.*=.*\[(.*)\]'
+    print('before')
     ligands_match = re.search(ligands, control)
+    print(ligands_match)
+    print('after')
     if ligands_match:
         # taking only ligands entries
         ligands_match = ligands_match.group(1)
@@ -166,26 +190,8 @@ def hydrogen_check():
                 stop_interface()
 
 
-def clearing_control():
-    # name of temporary file that will store what is important
-    filetemp = 'temp.txt'
-    # list of parameters that will be stripped out of control file
-    parameters = [
-        'charge_model',
-        'atoms_type',
-        'ligands_charges',
-        'ligands_multiplicities']
-    # writing content of control file without parameters in parameters list to
-    # the temporary file
-    with open(f"{filename}") as oldfile, open(filetemp, 'w') as newfile:
-        for line in oldfile:
-            if not any(parameters in line for parameters in parameters):
-                newfile.write(line)
-    # replacing control file with temporary file
-    os.replace(filetemp, filename)
-
-
 def ligands_parameters():
+    print('ligands parameters')
     # reading control file
     control = read_file(filename)
     # finding ligands residues in prep file
