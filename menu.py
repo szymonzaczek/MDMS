@@ -45,9 +45,9 @@ def menu():
                 print('You will be guided on how to run your simulations. Buckle up!\n')
             elif user_input_menu == 'q':
                 break
-            else:
-                # this clause gets executed whereas it should not - FIX THIS
-                print('this should not be executed')
+            #else:
+            #    # this clause gets executed whereas it should not - FIX THIS
+            #    print('this should not be executed')
         except BaseException:
             print('Please, provide a valid input.')
 

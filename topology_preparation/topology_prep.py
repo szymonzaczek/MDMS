@@ -414,7 +414,7 @@ def pdb_process():
     # creating list storing filenames that will create the whole complex
     full_files = []
     # protein without any ligands
-    struc_no_lig = f"{structure_match}_no_lig.pdb"
+    struc_no_lig = f"{structure_match_splitted}_no_lig.pdb"
     # protein filename appended
     full_files.append(struc_no_lig)
     if waters_match:
@@ -462,7 +462,7 @@ def pdb_process():
         # appending ligands filenames
         for ligand in ligands_files:
             full_files.append(ligand)
-    complex_raw = f"{structure_match}_raw.pdb"
+    complex_raw = f"{structure_match_splitted}_raw.pdb"
     # using context manager to concatenate protein and ligands together
     print(full_files)
     with open(complex_raw, 'w') as outfile:
@@ -472,11 +472,103 @@ def pdb_process():
             with open(fname) as infile:
                 outfile.write(infile.read())
     # name of the pdb file that will be an input for tleap
-    complex = f"{structure_match}_full.pdb"
+    complex = f"{structure_match_splitted}_full.pdb"
     # processing protein-ligand complex pdb file with pdb4amber
     pdb4amber_input_complex = f"pdb4amber -i {complex_raw} -o {complex}"
     # running pdb4amber
     subprocess.run([f"{pdb4amber_input_complex}"], shell=True)
+
+
+def tleap_input():
+    input_file = 'tleap.in'
+    # reading pdb from control file
+    control = read_file(filename)
+    structure = r'pdb\s*=\s*(.*)'
+    structure_match = re.search(structure, control).group(1)
+    # stripping of extension from structure - this way it will be easier to
+    # get proper names, i.e. 4zaf_old.pdb
+    structure_match_splitted = structure_match.split('.')[0]
+    # name of the pdb file that will be an input for tleap
+    complex = f"{structure_match_splitted}_full.pdb"
+    # options for tleap
+    # protein force field
+    USER_CHOICE_PROTEIN_FF = (
+        f"Please, choose force field which will be used for the protein during your simulations.\n"
+        f"Please, note that the recommended choice is ff14SB.\n"
+        f"The following options are available:\n"
+        f"- 'ff14sb'\n"
+        f"- 'ff15ipq'\n"
+        f"- 'fb15'\n"
+        f"- 'ff03'\n"
+        f"- 'ff03ua'\n"
+        f"Please, provide your choice:\n"
+    )
+    while True:
+        try:
+            # user chooses which protein force field to use
+            user_input_protein_ff = str(input(USER_CHOICE_PROTEIN_FF).lower())
+            if user_input_protein_ff == 'ff14sb':
+                # changing co capitals SB so it will be accepted by tleap
+                user_input_protein_ff = 'ff14SB'
+                break
+            elif user_input_protein_ff == 'ff15ipq':
+                break
+            elif user_input_protein_ff == 'fb15':
+                break
+            elif user_input_protein_ff == 'ff03':
+                user_input_protein_ff = 'ff03.r1'
+                break
+            elif user_input_protein_ff == 'ff03ua':
+                break
+        except:
+            print('Provided input is not valid.')
+    # saving choice to control file and tleap input
+    save_to_file(f"ff = {user_input_protein_ff}\n", filename)
+    with open(input_file, "w") as f:
+        f.write(f"source leaprc.protein.{user_input_protein_ff}")
+    # finding if there are ligands in control file
+    ligands = r'ligands\s*=\s*\[(.*)\]'
+    ligands_match = re.search(ligands, control)
+    if ligands_match:
+        # if there are ligands, find which force field was used
+        lig_ff = r'atoms_type\s*=\s*(.*)'
+        lig_ff_match = re.search(lig_ff, control).group(1)
+        # saving match to tleap input
+        with open(input_file, "w") as f:
+            f.write(f"source leaprc.{lig_ff_match}")
+    # water force field
+    water_ff_list = ['tip3p', 'tip4p', 'tip4pew', 'tip5p', 'spce', 'spceb', 'opc', 'opc3', 'pol3', 'tip3pfb', 'tip4pfb']
+    USER_CHOICE_WATER_FF = (
+        f"Please, choose force field which will be used for water during your simulations.\n"
+        f"Please, note that the most common choice is tip3p.\n"
+        f"The following options are available:"
+        f"- 'tip3p'\n"
+        f"- 'tip4p'\n"
+        f"- 'tip4pew'\n"
+        f"- 'tip5p'\n"
+        f"- 'spce'\n"
+        f"- 'spceb'\n"
+        f"- 'opc'\n"
+        f"- 'opc3'\n"
+        f"- 'pol3'\n"
+        f"- 'tip3pfb'\n"
+        f"- 'tip4pfb'\n"
+        f"Please, provide your choice:\n"
+        f""
+    )
+    while True:
+        try:
+            # getting user input
+            user_input_water_ff = str(input(USER_CHOICE_WATER_FF).lower())
+            if user_input_water_ff in water_ff_list:
+                break
+        except:
+            print('Provided input is not valid')
+    # saving water force field choice to control file and tleap input
+    save_to_file(f"wat_ff = {user_input_water_ff}\n", filename)
+    with open(input_file, "w") as f:
+        f.write(f"loadamberparams frcmod.{user_input_water_ff}")
+
 
 
 
@@ -486,7 +578,8 @@ top_prep_functions = [
     hydrogen_check,
     ligands_parameters,
     antechamber_parmchk_input,
-    pdb_process]
+    pdb_process,
+    tleap_input]
 
 methods_generator = (y for y in top_prep_functions)
 
