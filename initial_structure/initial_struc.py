@@ -161,10 +161,8 @@ def init_pdb():
                     if len(pdbs) > 1:
                         # this list will contain index numbers from pdbs list
                         pdbs_ind = []
-                        print(pdbs)
                         last_el_pdbs = pdbs[-1]
                         len_pdbs = pdbs.index(last_el_pdbs)
-                        print(len_pdbs)
                         prompt = (
                             'It appears that there are multiple files that contain PDB ID that you '
                             'specified in the current directory. To assure proper working of the software,'
@@ -181,10 +179,13 @@ def init_pdb():
                             # with
                             try:
                                 user_input_pdb = int(input(USER_CHOICE_PDB))
+                                print(pdbs_ind)
                                 if user_input_pdb in pdbs_ind:
                                     pdbs = pdbs[user_input_pdb]
+                                    # # making sure that the structure ends with pdb
+                                    # pdb_renamed = re.sub(r'ent', 'pdb', pdbs)
+                                    # os.rename(pdbs, pdb_renamed)
                                     # saving final choice
-                                    print(pdbs)
                                     save_to_file(f"pdb = {pdbs}\n", filename)
                                     break
                             except BaseException:

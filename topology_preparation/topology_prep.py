@@ -209,11 +209,7 @@ def ligands_parameters():
             f"to employ RESP charges, you will need to manually modify antechamber input files.\n" \
             f"Please note that AM1-BCC charge model is a recommended choice.\n" \
             f"Following options are available:\n" \
-            f"• 'cm1' - CM1 charge model\n" \
-            f"• 'esp' - ESP (Kollman) charge model\n" \
-            f"• 'gas' - Gasteiger charge model\n" \
             f"• 'bcc' - AM1-BCC charge model\n" \
-            f"• 'cm2' - CM2 charge model\n" \
             f"• 'mul' - Mulliken charge model\n" \
             f"Please, provide one of the options from available answers (single-quoted words specified above):\n"
         USER_CHOICE_ATOM_TYPES = f"Please, specify which atom types you would like to assign to your ligands.\n" \
@@ -224,20 +220,6 @@ def ligands_parameters():
             f"• 'bcc' - for AM1-BCC atom types\n"
         # the whole function will only do something, if ligands_list have
         # anything in it
-        charge_model = ''
-        atoms_type = ''
-        REMINDER = f"\n!!WARNING!!\n" \
-            f"You have chosen to include ligands molecules in your system. In order to correctly proceed to MD simulations," \
-            f" hydrogen atoms must be added to your ligands molecules, whenever necessary. Adding hydrogens is outside of " \
-            f"scope of SAmber, therefore you must use other software to do so, such as OpenBabel, PyMOL, Chimera, LigPrep," \
-            f" Avogadro or any other that suites you best. In order to best utilize SAmber, just edit PDB files that were generated" \
-            f"throughout SAmber usage and overwrite them when you will have already added hydrogens.\n" \
-            f"In order to proceed, all of the ligands must have all of the necessary hydrogen atoms.\n" \
-            f"Have you added hydrogen atoms to all of the ligands?\n" \
-            f"• press 'y' to continue" \
-            f"• press 'n' to stop SAmber run" \
-            f"or manually " \
-            f""
         if ligands_list:
             # prompting user that he MUSTS have hydrogens already added to the
             # specifying charge model
@@ -411,20 +393,60 @@ def pdb_process():
     structure_match = re.search(structure, control).group(1)
     # stripping of extension from structure - this way it will be easier to
     # get proper names, i.e. 4zaf_old.pdb
-    structure_match = structure_match.split('.')[0]
+    structure_match_splitted = structure_match.split('.')[0]
     # copying original PDB file so it will be retained after files operations
-    struc_copy = f"cp {structure_match}.pdb {structure_match}_original.pdb"
+    struc_copy = f"cp {structure_match} {structure_match_splitted}_original.pdb"
     subprocess.run([f"{struc_copy}"], shell=True)
     # input for pdb4amber - ligands are removed
-    pdb4amber_input = f"pdb4amber -i {structure_match}_original.pdb --add-missing-atoms -p -o {structure_match}_no_lig.pdb"
+    pdb4amber_input = f"pdb4amber -i {structure_match_splitted}_original.pdb --add-missing-atoms -p -o {structure_match_splitted}_no_lig.pdb"
     # running pdb4amber (both original and remade files are retained but later
     # on remade ligands will be operated on
     subprocess.run([f"{pdb4amber_input}"], shell=True)
-    # putting ligands and protein back together
-
-    # finding ligands residues in control file#
-    ligands = r'ligands.*=.*\[(.*)\]'
+    # finding ligands residues in control file
+    ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
+    # finding crystal waters residue in control file
+    waters = r'waters\s*=\s*\[(.*)\]'
+    waters_match = re.search(waters, control)
+    # finding metal residues in control file
+    metals = r'metals\s*=\s*\[(.*)\]'
+    metals_match = re.search(metals, control)
+    # creating list storing filenames that will create the whole complex
+    full_files = []
+    # protein without any ligands
+    struc_no_lig = f"{structure_match}_no_lig.pdb"
+    # protein filename appended
+    full_files.append(struc_no_lig)
+    if waters_match:
+        # taking only residues names
+        waters_match = waters_match.group(1)
+        # removing quotes from string
+        waters_string = waters_match.replace("'", "")
+        # removing whitespaces and turning string into a list
+        waters_list = re.sub(r'\s', '', waters_string).split(',')
+        # creating a list that will store waters filenames
+        waters_files = []
+        # appending waters filenames to the list
+        for water in waters_list:
+            waters_files.append(f"{water}.pdb")
+        # appending waters to files that will create final complex
+        for water in waters_files:
+            full_files.append(water)
+    if metals_match:
+        # taking only ligands entries
+        metals_match = metals_match.group(1)
+        # removing quotes from string
+        metals_string = metals_match.replace("'", "")
+        # removing whitespaces and turning string into a list
+        metals_list = re.sub(r'\s', '', metals_string).split(',')
+        # creating a list that will store ligands filenames
+        metals_files = []
+        # appending ligands filenames to the list
+        for metal in metals_list:
+            metals_files.append(f"{metal}.pdb")
+        # appending ligands filenames
+        for metal in metals_files:
+            full_files.append(metal)
     if ligands_match:
         # taking only ligands entries
         ligands_match = ligands_match.group(1)
@@ -437,32 +459,25 @@ def pdb_process():
         # appending ligands filenames to the list
         for ligand in ligands_list:
             ligands_files.append(f"{ligand}.pdb")
-        # protein without any ligands
-        struc_no_lig = f"{structure_match}_no_lig.pdb"
-        # creating list storing filenames that will create the whole complex
-        full_files = []
-        # protein filename appended
-        full_files.append(struc_no_lig)
         # appending ligands filenames
         for ligand in ligands_files:
             full_files.append(ligand)
-        complex_raw = f"{structure_match}_raw.pdb"
-        # using context manager to concatenate protein and ligands together
-        with open(complex_raw, 'w') as outfile:
-            # iterating over each file in full_files list
-            for fname in full_files:
-                # opening each file and writing it to outfile
-                with open(fname) as infile:
-                    outfile.write(infile.read())
-        # name of the pdb file that will be an input for tleap
-        complex = f"{structure_match}_full.pdb"
-        # processing protein-ligand complex pdb file with pdb4amber
-        pdb4amber_input_complex = f"pdb4amber -i {complex_raw} -o {complex}"
-        # running pdb4amber
-        subprocess.run([f"{pdb4amber_input_complex}"], shell=True)
-        print('there were ligands and it succeeded')
-    print('it succeeded')
-    pass
+    complex_raw = f"{structure_match}_raw.pdb"
+    # using context manager to concatenate protein and ligands together
+    print(full_files)
+    with open(complex_raw, 'w') as outfile:
+        # iterating over each file in full_files list
+        for fname in full_files:
+            # opening each file and writing it to outfile
+            with open(fname) as infile:
+                outfile.write(infile.read())
+    # name of the pdb file that will be an input for tleap
+    complex = f"{structure_match}_full.pdb"
+    # processing protein-ligand complex pdb file with pdb4amber
+    pdb4amber_input_complex = f"pdb4amber -i {complex_raw} -o {complex}"
+    # running pdb4amber
+    subprocess.run([f"{pdb4amber_input_complex}"], shell=True)
+
 
 
 top_prep_functions = [
