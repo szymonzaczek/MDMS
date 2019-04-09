@@ -480,7 +480,10 @@ def pdb_process():
 
 
 def tleap_input():
-    input_file = 'tleap.in'
+    input_file = Path('tleap.in')
+    # if input file already exists, remove it
+    if input_file.exists():
+        os.remove(input_file)
     # reading pdb from control file
     control = read_file(filename)
     structure = r'pdb\s*=\s*(.*)'
@@ -524,37 +527,30 @@ def tleap_input():
             print('Provided input is not valid.')
     # saving choice to control file and tleap input
     save_to_file(f"ff = {user_input_protein_ff}\n", filename)
-    with open(input_file, "w") as f:
-        f.write(f"source leaprc.protein.{user_input_protein_ff}")
-    # finding if there are ligands in control file
-    ligands = r'ligands\s*=\s*\[(.*)\]'
-    ligands_match = re.search(ligands, control)
-    if ligands_match:
-        # if there are ligands, find which force field was used
-        lig_ff = r'atoms_type\s*=\s*(.*)'
-        lig_ff_match = re.search(lig_ff, control).group(1)
-        # saving match to tleap input
-        with open(input_file, "w") as f:
-            f.write(f"source leaprc.{lig_ff_match}")
+    with open(input_file, "a") as f:
+        f.write(f"source leaprc.protein.{user_input_protein_ff}\n")
     # water force field
-    water_ff_list = ['tip3p', 'tip4p', 'tip4pew', 'tip5p', 'spce', 'spceb', 'opc', 'opc3', 'pol3', 'tip3pfb', 'tip4pfb']
+    water_ff_list = ['tip3p', 'tip4pew', 'spce']
+    # getting box info based on the chosen water ff
+    water_box_dict = {
+        'tip3p': 'TIP3PBOX',
+        'tip4pew': 'TIP4PEWBOX',
+        'spce': 'SPCBOX',
+    }
+    # getting ions parameters based on the chosen water ff
+    ions_dict = {
+        'tip3p': 'frcmod.ionsjc_tip3p',
+        'tip4pew': 'frcmod.ionsjc_tip4pew',
+        'spce': 'frcmod.ionsjc_spce'
+    }
     USER_CHOICE_WATER_FF = (
         f"Please, choose force field which will be used for water during your simulations.\n"
         f"Please, note that the most common choice is tip3p.\n"
-        f"The following options are available:"
+        f"The following options are available:\n"
         f"- 'tip3p'\n"
-        f"- 'tip4p'\n"
         f"- 'tip4pew'\n"
-        f"- 'tip5p'\n"
         f"- 'spce'\n"
-        f"- 'spceb'\n"
-        f"- 'opc'\n"
-        f"- 'opc3'\n"
-        f"- 'pol3'\n"
-        f"- 'tip3pfb'\n"
-        f"- 'tip4pfb'\n"
         f"Please, provide your choice:\n"
-        f""
     )
     while True:
         try:
@@ -566,10 +562,97 @@ def tleap_input():
             print('Provided input is not valid')
     # saving water force field choice to control file and tleap input
     save_to_file(f"wat_ff = {user_input_water_ff}\n", filename)
-    with open(input_file, "w") as f:
-        f.write(f"loadamberparams frcmod.{user_input_water_ff}")
-
-
+    # getting ions parameters
+    ions = ions_dict.get(user_input_water_ff)
+    # water and ion parameters put into tleap input
+    with open(input_file, "a") as f:
+        f.write(f"loadoff solvents.lib\n")
+        f.write(f"loadoff atomic_ions.lib")
+        f.write(f"loadamberparams frcmod.{user_input_water_ff}\n")
+        f.write(f"loadamberparams {ions}\n")
+    # finding if there are ligands in control file
+    ligands = r'ligands\s*=\s*\[(.*)\]'
+    ligands_match = re.search(ligands, control)
+    if ligands_match:
+        # if there are ligands, find which force field was used
+        lig_ff = r'atoms_type\s*=\s*(.*)'
+        lig_ff_match = re.search(lig_ff, control).group(1)
+        # saving match to tleap input
+        with open(input_file, "a") as f:
+            f.write(f"source leaprc.{lig_ff_match}\n")
+        # taking only ligands entries
+        ligands_match = ligands_match.group(1)
+        # removing quotes from string
+        ligands_string = ligands_match.replace("'", "")
+        # removing whitespaces and turning string into a list
+        ligands_list = re.sub(r'\s', '', ligands_string).split(',')
+        # putting mol2 and frcmod for each ligand into tleap input
+        for ligand in ligands_list:
+            with open(input_file, 'a') as f:
+                f.write(f"{ligand} = loadmol2 {ligand}.mol2\n")
+                f.write(f"loadamberparams {ligand}.frcmod")
+    # reading complex file
+    with open(input_file, 'a') as f:
+        f.write(f"mol = loadpdb {complex}\n")
+        # checking complex pdb for validity
+        f.write(f"check mol\n")
+    # provide filaneme for topology and coordinates
+    USER_CHOICE_NAME = "Please, provide name for the prefix for the topology and coordinates files.\n" \
+                       "Ideally, it should be just a few letters-long.\n" \
+                       "For instance, if you type 'my_complex' your topology will be named my_complex.prmtop" \
+                       " and coordinates will be named my_complex.inpcrd.\n" \
+                       "Please, provide your choice:\n"
+    while True:
+        try:
+            user_input_name = str(input(USER_CHOICE_NAME).lower)
+            break
+        except:
+            print("Please, provide valid input")
+    # saving chosen name to control file
+    save_to_file(f"top_name = {user_input_name}\n", filename)
+    # saving unsolvated file
+    with open(input_file, 'a') as f:
+        f.write(f"savepdb mol {user_input_name}_no_water.pdb")
+    # determining solvation box size
+    USER_CHOICE_WATERBOX_SIZE = (
+        f"Please, provide the size of a periodic solvent box around the complex (in Angstroms).\n"
+        f"Most commonly used values are between 8 - 14.\n"
+        f"Please, provide your choice:\n"
+    )
+    while True:
+        try:
+            user_input_waterbox_size = float(input(USER_CHOICE_WATERBOX_SIZE))
+            # solvatebox must be positive
+            if user_input_waterbox_size > 0:
+                # solvatebox should be between 8 and 14 - if it is not, user is informed that it may be troublesome
+                if user_input_waterbox_size < 8:
+                    print(f"You've chosen that solvent will create box of {user_input_waterbox_size} Angstroms around"
+                          f"complex. This is smaller than the recommended size. Such a box might not be enough"
+                          f"to properly solvate your complex.\n Please, proceed with caution")
+                    break
+                elif user_input_waterbox_size > 14:
+                    print(f"You've chosen that solvent will create box of {user_input_waterbox_size} Angstroms around"
+                          f"complex. This is larger than the recommended size. A vast amount of water molecules might"
+                          f"introduce very high computational cost.\n Please, proceed with caution."
+                          f"might Please, proceed with caution")
+                    break
+        except:
+            print('Please, provide valid input')
+        # save waterbox size to control file
+        save_to_file(f"box_size = {user_input_waterbox_size}\n", filename)
+        # get box info
+        waterbox = water_box_dict.get(user_input_water_ff)
+        # save everything about solvation to tleap input
+        with open(input_file, 'a') as f:
+            f.write(f"solvatebox mol {waterbox} {user_input_waterbox_size}\n")
+            f.write(f"addions mol Na+ 0\n")
+            f.write(f"addions mol Cl- 0\n")
+            f.write(f"savepdb mol {user_input_name}_solvated.pdb\n")
+            f.write(f"saveamberparm mol {user_input_name}.prmtop {user_input_name}.inpcrd\n")
+        # tleap input from a command line
+        input = f"tleap -f {input_file}"
+        # execute tleap input
+        subprocess.run([f"{input}"], shell=True)
 
 
 top_prep_functions = [
