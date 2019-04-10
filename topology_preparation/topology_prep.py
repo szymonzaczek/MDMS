@@ -636,6 +636,8 @@ def tleap_input():
                           f"introduce very high computational cost.\n Please, proceed with caution."
                           f"might Please, proceed with caution")
                     break
+                else:
+                    break
         except:
             print('Please, provide valid input')
     # save waterbox size to control file
