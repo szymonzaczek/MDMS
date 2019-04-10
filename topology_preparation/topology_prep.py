@@ -567,7 +567,7 @@ def tleap_input():
     # water and ion parameters put into tleap input
     with open(tleap_file, "a") as f:
         f.write(f"loadoff solvents.lib\n")
-        f.write(f"loadoff atomic_ions.lib")
+        f.write(f"loadoff atomic_ions.lib\n")
         f.write(f"loadamberparams frcmod.{user_input_water_ff}\n")
         f.write(f"loadamberparams {ions}\n")
     # finding if there are ligands in control file
@@ -590,7 +590,7 @@ def tleap_input():
         for ligand in ligands_list:
             with open(tleap_file, 'a') as f:
                 f.write(f"{ligand} = loadmol2 {ligand}.mol2\n")
-                f.write(f"loadamberparams {ligand}.frcmod")
+                f.write(f"loadamberparams {ligand}.frcmod\n")
     # reading complex file
     with open(tleap_file, 'a') as f:
         f.write(f"mol = loadpdb {complex}\n")
@@ -604,7 +604,7 @@ def tleap_input():
                        "Please, provide your choice:\n"
     while True:
         try:
-            user_input_name = str(input(USER_CHOICE_NAME).lower)
+            user_input_name = str(input(USER_CHOICE_NAME).lower())
             break
         except:
             print("Please, provide valid input")
@@ -612,7 +612,7 @@ def tleap_input():
     save_to_file(f"top_name = {user_input_name}\n", filename)
     # saving unsolvated file
     with open(tleap_file, 'a') as f:
-        f.write(f"savepdb mol {user_input_name}_no_water.pdb")
+        f.write(f"savepdb mol {user_input_name}_no_water.pdb\n")
     # determining solvation box size
     USER_CHOICE_WATERBOX_SIZE = (
         f"Please, provide the size of a periodic solvent box around the complex (in Angstroms).\n"
@@ -638,21 +638,21 @@ def tleap_input():
                     break
         except:
             print('Please, provide valid input')
-        # save waterbox size to control file
-        save_to_file(f"box_size = {user_input_waterbox_size}\n", filename)
-        # get box info
-        waterbox = water_box_dict.get(user_input_water_ff)
-        # save everything about solvation to tleap input
-        with open(tleap_file, 'a') as f:
-            f.write(f"solvatebox mol {waterbox} {user_input_waterbox_size}\n")
-            f.write(f"addions mol Na+ 0\n")
-            f.write(f"addions mol Cl- 0\n")
-            f.write(f"savepdb mol {user_input_name}_solvated.pdb\n")
-            f.write(f"saveamberparm mol {user_input_name}.prmtop {user_input_name}.inpcrd\n")
-        # tleap input from a command line
-        tleap_run = f"tleap -f {tleap_file}"
-        # execute tleap input
-        subprocess.run([f"{tleap_run}"], shell=True)
+    # save waterbox size to control file
+    save_to_file(f"box_size = {user_input_waterbox_size}\n", filename)
+    # get box info
+    waterbox = water_box_dict.get(user_input_water_ff)
+    # save everything about solvation to tleap input
+    with open(tleap_file, 'a') as f:
+        f.write(f"solvatebox mol {waterbox} {user_input_waterbox_size}\n")
+        f.write(f"addions mol Na+ 0\n")
+        f.write(f"addions mol Cl- 0\n")
+        f.write(f"savepdb mol {user_input_name}_solvated.pdb\n")
+        f.write(f"saveamberparm mol {user_input_name}.prmtop {user_input_name}.inpcrd\n")
+    # tleap input from a command line
+    tleap_run = f"tleap -f {tleap_file}"
+    # execute tleap input
+    subprocess.run([f"{tleap_run}"], shell=True)
 
 
 top_prep_functions = [
