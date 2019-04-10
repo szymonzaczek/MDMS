@@ -2,20 +2,20 @@ import initial_structure.initial_struc
 import topology_preparation.topology_prep
 
 print(
-    "Hello and welcome to Simple Amber (SAmber) created by Szymon Zaczek!\n"
+    "Hello and welcome to Molecular Dynamics Made Simple (MDMS) created by Szymon Zaczek!\n"
     "This piece of software makes running Molecular Dynamics easy and straightforward, allowing non-experts "
     "in the field of computational chemistry to use Amber\n- one of the most renowned Molecular Dynamics packages available.\n"
-    "If you use SAmber in your work, please, consider acknowledging my work by citing the original paper: xxx.\n"
+    "If you use MDMS in your work, please, consider acknowledging my work by citing the original paper: xxx.\n"
     "If you have any suggestions, queries, bug reports or simply questions about how to proceed with your work using "
-    "SAmber, please, contact me at: "
+    "MDMS, please, contact me at: "
     "szymon.zaczek@edu.p.lodz.pl\n")
 
 USER_CHOICE_MENU = """\nPlease specify, what you would like to do:
-• press 'p' for establishing the protein (or protein-ligand complex) initial structure
-• press 't' for preparing topology and coordinate files for Amber, which are necessary for running MD simulations
-• press 'i' for preparing Amber input files - they contain parameters for your simulations
-• press 'r' for running simulations
-• press 'q' in order to quit
+- press 'p' for establishing the protein (or protein-ligand complex) initial structure
+- press 't' for preparing topology and coordinate files for Amber, which are necessary for running MD simulations
+- press 'i' for preparing Amber input files - they contain parameters for your simulations
+- press 'r' for running simulations
+- press 'q' in order to quit
 Please, provide your choice: """
 
 

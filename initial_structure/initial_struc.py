@@ -102,8 +102,8 @@ def init_pdb():
     USER_CHOICE_STRUC = (
         "Please, provide information whether you have already downloaded the PDB file wthat will be investigated, \n"
         "or would you like to retrieve it from RSCB website by providing its PDB ID?\n"
-        "• press 'y' if you have already downloaded your PDB file\n"
-        "• press 'n' if you haven't downloaded your PDB file yet\n")
+        "- press 'y' if you have already downloaded your PDB file\n"
+        "- press 'n' if you haven't downloaded your PDB file yet\n")
     while True:
         try:
             user_input_struc = str(input(USER_CHOICE_STRUC).lower())
@@ -231,8 +231,8 @@ def missing_atoms_pdb():
                 print(missing_atom_prompt)
                 USER_CHOICE_CONT = "Would you like to continue with SAmber execution, or rather right now you would like to " \
                                    "add missing atoms? Please, provide your choice:\n" \
-                                   "• press 'y' to continue\n" \
-                                   "• press 'n' to quit\n"
+                                   "- press 'y' to continue\n" \
+                                   "- press 'n' to quit\n"
                 while True:
                     try:
                         user_input_cont = str(input(USER_CHOICE_CONT)).lower()
@@ -299,7 +299,6 @@ def ligands_pdb():
         # sought after, 4 first columns are enough
         df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
         # changing naming of columns
-        #df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name', 'chain', 'residue_nr', 'x', 'y', 'z', 'occupancy', 'temp_factor', 'element']
         df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
         # getting unique residues
         unique_res = df.residue_name.unique()
@@ -382,8 +381,8 @@ def ligands_pdb():
                 while True:
                     USER_CHOICE_LIG_CONT = (f"So far, you've chosen following residues to be included as ligands in your simulations: {ligands}.\n"
                                             f"Would you like to add more ligands, or would you like to continue?\n"
-                                            f"• press 'a' in order to add more ligands\n"
-                                            f"• press 'c' in order to continue to next step\n")
+                                            f"- press 'a' in order to add more ligands\n"
+                                            f"- press 'c' in order to continue to next step\n")
                     try:
                         # if user decides to keep adding, procedure is repeated
                         user_input_lig_cont = str(
@@ -425,7 +424,6 @@ def ligands_pdb():
 
 def metals_pdb():
     # getting het_atms from pdb file
-    print('metals_pdb')
     het_atoms = read_het_atoms_pdb()
     # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
@@ -471,8 +469,8 @@ def metals_pdb():
             f"skip it. Otherwise, most likely you should include it in your system.\n" \
             f"Do you want to retain metal ions for MD simulations? \nIt will require your further manual input outside of this " \
             f"interface:\n" \
-            f"• press 'y' to retain metal ions for MD simulations\n" \
-            f"• press 'n' not to include metal ions in your MD simulations\n" \
+            f"- press 'y' to retain metal ions for MD simulations\n" \
+            f"- press 'n' not to include metal ions in your MD simulations\n" \
             # if there are metals in pdb, there is a choice if they stay for MD
         # or they are removed
         if unique_metals:
@@ -501,7 +499,6 @@ def metals_pdb():
 
 def waters_pdb():
     # getting het_atms from pdb file
-    print('waters_pdb')
     het_atoms = read_het_atoms_pdb()
     # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
@@ -535,9 +532,12 @@ def waters_pdb():
                 f"for MD, A LOT more waters will need to be added in order to ensure a proper solvation of the protein." \
                 f"Retaining water molecules that were discovered within experiment is strongly advised important if water molecules " \
                 f"play a role in enzymatic catalysis or they somehow stabilize the protein's structure. Nonetheless, the choice is yours. \n" \
+                f"WARNING!\n" \
+                f"If you decide to include crystallographic waters for MD simulations, you will need to add hydrogens " \
+                f"to the PDB with those waters (you could use Avogadro, Pymol etc.).\n" \
                 f"Would you like to retain water molecules located within experiment for your MD simulations?\n" \
-                f"• press 'y' if you want to retain them\n" \
-                f"• press 'n' if you want to delete water molecules originally present in your structure\n" \
+                f"- press 'y' if you want to retain them\n" \
+                f"- press 'n' if you want to delete water molecules originally present in your structure\n" \
                 # if there are waters in the pdb, user needs to make a decision
             if unique_water:
                 while True:
@@ -578,13 +578,13 @@ def hydrogens_prompt():
         USER_CHOICE_HYDROGENS = (f"\n!!WARNING!!\n"
                                  f"You have chosen to include ligands molecules in your system. In order to correctly proceed to MD simulations,"
                                  f" hydrogen atoms must be added to your ligands molecules, whenever necessary. Adding hydrogens is outside of "
-                                 f"scope of SAmber, therefore you must use other software to do so, such as OpenBabel, PyMOL, Chimera, LigPrep,"
-                                 f" Avogadro or any other that suites you best. In order to best utilize SAmber, just edit PDB files that were generated"
-                                 f" with SAmber and overwrite them when you will have already added hydrogens.\n"
+                                 f"scope of MDMS, therefore you must use other software to do so, such as OpenBabel, PyMOL, Chimera, LigPrep,"
+                                 f" Avogadro or any other that suites you best. In order to best utilize MDMS, just edit PDB files that were generated"
+                                 f" with MDMS and overwrite them when you will have already added hydrogens.\n"
                                  f"In order to proceed, all of the ligands must have all of the necessary hydrogen atoms.\n"
                                  f"Have you added hydrogen atoms to all of the ligands?\n"
-                                 f"• press 'y' to continue\n"
-                                 f"• press 'n' to stop SAmber run\n")
+                                 f"- press 'y' to continue\n"
+                                 f"- press 'n' to stop MDMS run\n")
         # following clause will be executed only if there are ligands in the
         # control file
         if ligands_list:

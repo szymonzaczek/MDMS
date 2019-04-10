@@ -12,7 +12,7 @@ def file_naming():
     global filename
     while True:
         try:
-            filename_inp: str = Path(input('Please, provide a path to the file that contains every piece of information for running SAmber (it should be already generated):\n'))
+            filename_inp: str = Path(input('Please, provide a path to the file that contains every piece of information for running MDMS (it should be already generated):\n'))
             filename = filename_inp
             if filename.exists():
                 break
@@ -102,7 +102,6 @@ def read_het_atoms_pdb():
 
 
 def clearing_control():
-    print('clearing control')
     # name of temporary file that will store what is important
     filetemp = 'temp.txt'
     # list of parameters that will be stripped out of control file
@@ -123,13 +122,10 @@ def clearing_control():
 
 def hydrogen_check():
     # Checking if hydrogens are added to ligands file
-    print('hydrogen check')
     control = read_file(filename)
     ligands = r'ligands.*=.*\[(.*)\]'
-    print('before')
     ligands_match = re.search(ligands, control)
-    print(ligands_match)
-    print('after')
+    # if there are ligands, following clause will be executed
     if ligands_match:
         # taking only ligands entries
         ligands_match = ligands_match.group(1)
@@ -169,8 +165,8 @@ def hydrogen_check():
                                              f"relevant hydrogen atoms to your ligands, your MD simulations will provide "
                                              f"unrealistic insight.\n"
                                              f"Are you sure that {ligands_list[x]} ligand should not have any hydrogen atoms?\n"
-                                             f"• press 'y' to continue\n"
-                                             f"• press 'n' to stop SAmber run\n")
+                                             f"- press 'y' to continue\n"
+                                             f"- press 'n' to stop MDMS run\n")
                     while True:
                         try:
                             user_input_hydrogens = str(
@@ -191,7 +187,6 @@ def hydrogen_check():
 
 
 def ligands_parameters():
-    print('ligands parameters')
     # reading control file
     control = read_file(filename)
     # finding ligands residues in prep file
@@ -209,15 +204,15 @@ def ligands_parameters():
             f"to employ RESP charges, you will need to manually modify antechamber input files.\n" \
             f"Please note that AM1-BCC charge model is a recommended choice.\n" \
             f"Following options are available:\n" \
-            f"• 'bcc' - AM1-BCC charge model\n" \
-            f"• 'mul' - Mulliken charge model\n" \
+            f"- 'bcc' - AM1-BCC charge model\n" \
+            f"- 'mul' - Mulliken charge model\n" \
             f"Please, provide one of the options from available answers (single-quoted words specified above):\n"
         USER_CHOICE_ATOM_TYPES = f"Please, specify which atom types you would like to assign to your ligands.\n" \
             f"Please note that GAFF2 is a recommended choice.\n" \
             f"Following options are available:\n" \
-            f"• 'gaff2' - General Amber Force Field, version 2\n" \
-            f"• 'gaff' - General Amber Force Field, older version of GAFF2\n" \
-            f"• 'bcc' - for AM1-BCC atom types\n"
+            f"- 'gaff2' - General Amber Force Field, version 2\n" \
+            f"- 'gaff' - General Amber Force Field, older version of GAFF2\n" \
+            f"- 'bcc' - for AM1-BCC atom types\n"
         # the whole function will only do something, if ligands_list have
         # anything in it
         if ligands_list:
@@ -651,6 +646,7 @@ def tleap_input():
         f.write(f"addions mol Cl- 0\n")
         f.write(f"savepdb mol {user_input_name}_solvated.pdb\n")
         f.write(f"saveamberparm mol {user_input_name}.prmtop {user_input_name}.inpcrd\n")
+        f.write(f"quit\n")
     # tleap input from a command line
     tleap_run = f"tleap -f {tleap_file}"
     # execute tleap input
