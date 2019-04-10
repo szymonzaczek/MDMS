@@ -480,10 +480,10 @@ def pdb_process():
 
 
 def tleap_input():
-    input_file = Path('tleap.in')
+    tleap_file = Path('tleap.in')
     # if input file already exists, remove it
-    if input_file.exists():
-        os.remove(input_file)
+    if tleap_file.exists():
+        os.remove(tleap_file)
     # reading pdb from control file
     control = read_file(filename)
     structure = r'pdb\s*=\s*(.*)'
@@ -524,10 +524,10 @@ def tleap_input():
             elif user_input_protein_ff == 'ff03ua':
                 break
         except:
-            print('Provided input is not valid.')
+            print('Please, provide valid input')
     # saving choice to control file and tleap input
     save_to_file(f"ff = {user_input_protein_ff}\n", filename)
-    with open(input_file, "a") as f:
+    with open(tleap_file, "a") as f:
         f.write(f"source leaprc.protein.{user_input_protein_ff}\n")
     # water force field
     water_ff_list = ['tip3p', 'tip4pew', 'spce']
@@ -565,7 +565,7 @@ def tleap_input():
     # getting ions parameters
     ions = ions_dict.get(user_input_water_ff)
     # water and ion parameters put into tleap input
-    with open(input_file, "a") as f:
+    with open(tleap_file, "a") as f:
         f.write(f"loadoff solvents.lib\n")
         f.write(f"loadoff atomic_ions.lib")
         f.write(f"loadamberparams frcmod.{user_input_water_ff}\n")
@@ -578,7 +578,7 @@ def tleap_input():
         lig_ff = r'atoms_type\s*=\s*(.*)'
         lig_ff_match = re.search(lig_ff, control).group(1)
         # saving match to tleap input
-        with open(input_file, "a") as f:
+        with open(tleap_file, "a") as f:
             f.write(f"source leaprc.{lig_ff_match}\n")
         # taking only ligands entries
         ligands_match = ligands_match.group(1)
@@ -588,11 +588,11 @@ def tleap_input():
         ligands_list = re.sub(r'\s', '', ligands_string).split(',')
         # putting mol2 and frcmod for each ligand into tleap input
         for ligand in ligands_list:
-            with open(input_file, 'a') as f:
+            with open(tleap_file, 'a') as f:
                 f.write(f"{ligand} = loadmol2 {ligand}.mol2\n")
                 f.write(f"loadamberparams {ligand}.frcmod")
     # reading complex file
-    with open(input_file, 'a') as f:
+    with open(tleap_file, 'a') as f:
         f.write(f"mol = loadpdb {complex}\n")
         # checking complex pdb for validity
         f.write(f"check mol\n")
@@ -611,7 +611,7 @@ def tleap_input():
     # saving chosen name to control file
     save_to_file(f"top_name = {user_input_name}\n", filename)
     # saving unsolvated file
-    with open(input_file, 'a') as f:
+    with open(tleap_file, 'a') as f:
         f.write(f"savepdb mol {user_input_name}_no_water.pdb")
     # determining solvation box size
     USER_CHOICE_WATERBOX_SIZE = (
@@ -643,16 +643,16 @@ def tleap_input():
         # get box info
         waterbox = water_box_dict.get(user_input_water_ff)
         # save everything about solvation to tleap input
-        with open(input_file, 'a') as f:
+        with open(tleap_file, 'a') as f:
             f.write(f"solvatebox mol {waterbox} {user_input_waterbox_size}\n")
             f.write(f"addions mol Na+ 0\n")
             f.write(f"addions mol Cl- 0\n")
             f.write(f"savepdb mol {user_input_name}_solvated.pdb\n")
             f.write(f"saveamberparm mol {user_input_name}.prmtop {user_input_name}.inpcrd\n")
         # tleap input from a command line
-        input = f"tleap -f {input_file}"
+        tleap_run = f"tleap -f {tleap_file}"
         # execute tleap input
-        subprocess.run([f"{input}"], shell=True)
+        subprocess.run([f"{tleap_run}"], shell=True)
 
 
 top_prep_functions = [
