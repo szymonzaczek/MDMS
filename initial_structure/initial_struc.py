@@ -601,6 +601,34 @@ def hydrogens_prompt():
                 except BaseException:
                     print('Please, provide valid input')
 
+def sym_operations_prompt():
+    # Reminding user that he must perform crystallographic operations prior to next steps
+    # reading pdb file
+    pdb = 'pdb\s*=\s*(.*)'
+    pdb_match = re.search(pdb, control).group(1)
+    pdb_filename = pdb_match
+    # prompt that will be displayed to the user
+    USER_CHOICE_OL = f"Prior to proceeding to preparing topology and input coordinates, you need to make sure that your " \
+        f"structure has a fully functional oligomeric structure.\nFor instance, active site might be fully formed only if" \
+        f"there are 2 (or even more) mnonomeric units of the protein within the studied oligomer. Symmetry operations on" \
+        f" PDB files might be performed within various software, such as PyMOL or Swiss-PdbViewer.\n" \
+        f"For more info on what oligomeric structure you should proceed with, please, consult the paper " \
+        f"that reported obtaining {pdb_filename} crystal structure.\n" \
+        f"Are you sure, that {pdb_filename} has an appropriate oligomeric structure?\n" \
+        f"- press 'y' to continue\n" \
+        f"- press 'n' to stop MDMS \n"
+    while True:
+        try:
+            user_input_hydrogens = str(
+                input(USER_CHOICE_OL).lower())
+            if user_input_hydrogens == 'y':
+                break
+            elif user_input_hydrogens == 'n':
+                stop_interface()
+                break
+            pass
+        except BaseException:
+            print('Please, provide valid input')
 
 prep_functions = [
     file_naming,
@@ -610,7 +638,8 @@ prep_functions = [
     ligands_pdb,
     metals_pdb,
     waters_pdb,
-    hydrogens_prompt]
+    hydrogens_prompt,
+    sym_operations_prompt,]
 
 methods_generator = (y for y in prep_functions)
 
