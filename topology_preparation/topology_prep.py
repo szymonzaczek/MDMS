@@ -1,9 +1,7 @@
 import os
-import fnmatch
 import pandas as pd
 import re
 import subprocess
-from Bio.PDB import *
 from pathlib import Path
 
 
@@ -40,68 +38,14 @@ def file_check(file):
     return test
 
 
-def download_pdb(user_input_id):
-    # downloading pdb
-    pdbl = PDBList()
-    pdbl.retrieve_pdb_file(
-        user_input_id,
-        pdir='.',
-        file_format='pdb',
-        overwrite=True)
-
-
 def stop_interface():
     # enforce stopping the entire interface
     global stop_generator
     stop_generator = True
 
 
-def read_remark_pdb():
-    # retrieving pdb file name from control file
-    control = read_file(filename)
-    pdb = 'pdb\s*=\s*(.*)'
-    pdb_match = re.search(pdb, control).group(1)
-    pdb_filename = pdb_match
-    # creating list into which all of the remark lines will be appended
-    pdb_remark = []
-    # reading which lines starts with remark and saving it to a list
-    with open(f"{pdb_filename}", 'r') as file:
-        for line in file:
-            # looking for lines starting with remark and appending them to a
-            # list
-            if line.startswith('REMARK'):
-                pdb_remark.append(line.strip())
-    if pdb_remark:
-        return pdb_remark
-    else:
-        return None
-
-
-def read_het_atoms_pdb():
-    # retrieving pdb file name from control file
-    control = read_file(filename)
-    pdb = 'pdb\s*=\s*(.*)'
-    pdb_match = re.search(pdb, control).group(1)
-    pdb_filename = pdb_match
-    # cCreating list into which all of the hetatm lines will be appended
-    pdb_hetatoms = []
-    with open(f"{pdb_filename}", 'r') as file:
-        for line in file:
-            # looking for lines starting with hetatm and appending them to a
-            # list
-            if line.startswith('HETATM'):
-                pdb_hetatoms.append(line.strip())
-    # het atoms will only be saved if there are any het_atoms
-    if pdb_hetatoms:
-        # saving het_atoms to a csv file - it will be easier to read it then
-        with open('het_atoms.csv', 'w') as f:
-            f.write('\n'.join(pdb_hetatoms))
-        return pdb_hetatoms
-    else:
-        return None
-
-
 def clearing_control():
+    # this function clears control file from what will be inputted with topology_prep run
     # name of temporary file that will store what is important
     filetemp = 'temp.txt'
     # list of parameters that will be stripped out of control file
@@ -674,5 +618,6 @@ def queue_methods():
         # if a condition is met, generator is stopped
         if stop_generator:
             # I do not know if this prompt is necessary
-            print('\nProgram has not finished normally - it appears that something was wrong with your structure. \nApply changes and try again!\n')
+            print('\nProgram has not finished normally - it appears that something was wrong with your structure. \n'
+                  'Apply changes and try again!\n')
             break

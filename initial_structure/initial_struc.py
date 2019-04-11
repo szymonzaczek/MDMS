@@ -2,7 +2,6 @@ import os
 import fnmatch
 import pandas as pd
 import re
-import subprocess
 from Bio.PDB import *
 from pathlib import Path
 
