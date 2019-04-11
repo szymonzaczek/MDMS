@@ -45,9 +45,10 @@ def stop_interface():
 
 
 def clearing_control():
+    # it is passed on right now, since I do not know yet what paremeters will be derived here
     # this function clears control file from what will be inputted with amber_parameters run
     # name of temporary file that will store what is important
-    filetemp = 'temp.txt'
+    """filetemp = 'temp.txt'
     # list of parameters that will be stripped out of control file
     parameters = [
         'charge_model',
@@ -61,7 +62,7 @@ def clearing_control():
             if not any(parameters in line for parameters in parameters):
                 newfile.write(line)
     # replacing control file with temporary file
-    os.replace(filetemp, filename)
+    os.replace(filetemp, filename)"""
 
 
 def qm_or_not():
@@ -72,7 +73,7 @@ def qm_or_not():
         f"rather advised to use regular MD, which will allow covering bigger timescales.\n" \
         f"Do you want to perform QM/MM calculations?\n" \
         f"- press 'y' if you do\n" \
-        f"- press 'n' if you do not and you want to run regular MD" \
+        f"- press 'n' if you do not and you want to run regular MD\n" \
     # looping QM/MM choice
     while True:
         try:
@@ -87,13 +88,65 @@ def qm_or_not():
             print('Please, provide valid input')
 
 
+def qm_parameters():
+    # reading from control file if there is a qm part and then choose parameters for qm
+    # reading control file
+    control = read_file(filename)
+    # reading if qm was chosn or not
+    qm = r'qm\s*=\s*(.*)'
+    qm_match = re.search(qm, control)
+    # if QM/MM was chosen, ask about parameters
+    if qm_match:
+        qm_match = qm_match.group(1)
+        # defining if user have got qmcontrol file
+        USER_CHOICE_QMCONTROL = """\nDo you have a file containig &qmmm namelist with all the necessary information required\
+        for QM/MM simulations? You might have it from the previous MDMS run or by creating your own file following Amber
+        guidelines. If you do not have it, do not worry - we will create one in a moment!
+        - press 'y' if you do
+        - press any other key if you don't - a file with default parameters will be created in the current directory
+        Please, provide your choice:\n """
+        while True:
+            try:
+                user_input_qmcontrol = str(input(USER_CHOICE_QMCONTROL).lower())
+                if user_input_qmcontrol == 'y':
+                    # define path to qmcontrol file
+                    USER_CHOICE_QMPATH = f"Please, provide path to the file that contains parameters for the QM part" \
+                        f" for your simulations (it should only containg &qmmm namelist):\n"
+                    while True:
+                        try:
+                            user_input_qmpath = Path(input(USER_CHOICE_QMPATH))
+                            if file_check(user_input_qmpath) == True:
+                                # everything is good an we may close the loop
+                                break
+                            elif file_check(user_input_qmpath) == False:
+                                # there is no file with provided path and user is prompted to provide path again
+                                print('There is no such file. Please, provide a valid path')
+                        except:
+                            print('Please, provide a valid input')
+                    break
+                if user_input_qmcontrol == 'n':
+                    # defining qmatoms
+                    # defining spin
+                    # defining charge
+                    # define qmmethod
+                    break
+            except:
+                pass
+
+
+
+
+    pass
+
+
+
 amber_parameters_functions = [
     file_naming,
     clearing_control,
     qm_or_not,
 ]
 
-methods_generator = (y for y in top_prep_functions)
+methods_generator = (y for y in amber_parameters_functions)
 
 
 def queue_methods():
