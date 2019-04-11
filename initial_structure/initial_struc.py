@@ -55,7 +55,7 @@ def stop_interface():
 def read_remark_pdb():
     # retrieving pdb file name from control file
     control = read_file(filename)
-    pdb = 'pdb.=.(.*)'
+    pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
     # creating list into which all of the remark lines will be appended
@@ -76,7 +76,7 @@ def read_remark_pdb():
 def read_het_atoms_pdb():
     # retrieving pdb file name from control file
     control = read_file(filename)
-    pdb = 'pdb.=.(.*)'
+    pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
     # cCreating list into which all of the hetatm lines will be appended
@@ -604,14 +604,15 @@ def hydrogens_prompt():
 def sym_operations_prompt():
     # Reminding user that he must perform crystallographic operations prior to next steps
     # reading pdb file
+    control = read_file(filename)
     pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
     # prompt that will be displayed to the user
-    USER_CHOICE_OL = f"Prior to proceeding to preparing topology and input coordinates, you need to make sure that your " \
-        f"structure has a fully functional oligomeric structure.\nFor instance, active site might be fully formed only if" \
-        f"there are 2 (or even more) mnonomeric units of the protein within the studied oligomer. Symmetry operations on" \
-        f" PDB files might be performed within various software, such as PyMOL or Swiss-PdbViewer.\n" \
+    USER_CHOICE_OL = f"\n!!WARNING!!\nPrior to proceeding to preparing topology and input coordinates, you need to make" \
+        f" sure that your structure has a fully functional oligomeric structure.\nFor instance, active site might be " \
+        f"fully formed only if there are 2 (or even more) mnonomeric units of the protein within the studied oligomer. " \
+        f"Symmetry operations on PDB files might be performed within various software, such as PyMOL or Swiss-PdbViewer.\n" \
         f"For more info on what oligomeric structure you should proceed with, please, consult the paper " \
         f"that reported obtaining {pdb_filename} crystal structure.\n" \
         f"Are you sure, that {pdb_filename} has an appropriate oligomeric structure?\n" \
@@ -619,11 +620,11 @@ def sym_operations_prompt():
         f"- press 'n' to stop MDMS \n"
     while True:
         try:
-            user_input_hydrogens = str(
+            user_input_ol = str(
                 input(USER_CHOICE_OL).lower())
-            if user_input_hydrogens == 'y':
+            if user_input_ol == 'y':
                 break
-            elif user_input_hydrogens == 'n':
+            elif user_input_ol == 'n':
                 stop_interface()
                 break
             pass

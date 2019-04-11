@@ -59,7 +59,7 @@ def stop_interface():
 def read_remark_pdb():
     # retrieving pdb file name from control file
     control = read_file(filename)
-    pdb = 'pdb.=.(.*)'
+    pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
     # creating list into which all of the remark lines will be appended
@@ -80,7 +80,7 @@ def read_remark_pdb():
 def read_het_atoms_pdb():
     # retrieving pdb file name from control file
     control = read_file(filename)
-    pdb = 'pdb.=.(.*)'
+    pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
     # cCreating list into which all of the hetatm lines will be appended
