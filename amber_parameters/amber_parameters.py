@@ -48,13 +48,11 @@ def clearing_control():
     # it is passed on right now, since I do not know yet what paremeters will be derived here
     # this function clears control file from what will be inputted with amber_parameters run
     # name of temporary file that will store what is important
-    """filetemp = 'temp.txt'
+    filetemp = 'temp.txt'
     # list of parameters that will be stripped out of control file
     parameters = [
-        'charge_model',
-        'atoms_type',
-        'ligands_charges',
-        'ligands_multiplicities']
+        'qm',
+    ]
     # writing content of control file without parameters in parameters list to
     # the temporary file
     with open(f"{filename}") as oldfile, open(filetemp, 'w') as newfile:
@@ -62,7 +60,7 @@ def clearing_control():
             if not any(parameters in line for parameters in parameters):
                 newfile.write(line)
     # replacing control file with temporary file
-    os.replace(filetemp, filename)"""
+    os.replace(filetemp, filename)
 
 
 def qm_or_not():
@@ -99,43 +97,114 @@ def qm_parameters():
     if qm_match:
         qm_match = qm_match.group(1)
         # defining if user have got qmcontrol file
-        USER_CHOICE_QMCONTROL = """\nDo you have a file containig &qmmm namelist with all the necessary information required\
-        for QM/MM simulations? You might have it from the previous MDMS run or by creating your own file following Amber
-        guidelines. If you do not have it, do not worry - we will create one in a moment!
-        - press 'y' if you do
-        - press any other key if you don't - a file with default parameters will be created in the current directory
-        Please, provide your choice:\n """
+        USER_CHOICE_QMCONTROL = """\nDo you have a file containig &qmmm namelist with all the necessary information required
+for QM/MM simulations? You might have it from the previous MDMS run or by creating your own file following Amber
+guidelines. If you do not have it, do not worry - we will create one in a moment!
+- press 'y' if you do
+- press 'n' if you don't - a file with default parameters will be created in the current directory.
+Please, provide your choice:\n """
         while True:
             try:
                 user_input_qmcontrol = str(input(USER_CHOICE_QMCONTROL).lower())
                 if user_input_qmcontrol == 'y':
                     # define path to qmcontrol file
                     USER_CHOICE_QMPATH = f"Please, provide path to the file that contains parameters for the QM part" \
-                        f" for your simulations (it should only containg &qmmm namelist):\n"
+                        f" for your simulations (it should only contain &qmmm namelist):\n"
                     while True:
                         try:
-                            user_input_qmpath = Path(input(USER_CHOICE_QMPATH))
-                            if file_check(user_input_qmpath) == True:
+                            user_input_qmpath = str(input(USER_CHOICE_QMPATH))
+                            print(Path(user_input_qmpath))
+                            if file_check(Path(user_input_qmpath)) == True:
                                 # everything is good an we may close the loop
+                                save_to_file(f"qmcontrol = {user_input_qmpath}\n", filename)
                                 break
-                            elif file_check(user_input_qmpath) == False:
+                            elif file_check(Path(user_input_qmpath)) == False:
                                 # there is no file with provided path and user is prompted to provide path again
                                 print('There is no such file. Please, provide a valid path')
                         except:
                             print('Please, provide a valid input')
                     break
-                if user_input_qmcontrol == 'n':
+                elif user_input_qmcontrol == 'n':
                     # defining qmatoms
+                    USER_CHOICE_QMATOMS = f"Which atoms from your system should be treated with QM methods? Any valid " \
+                        f"Amber mask will work (for more info about masks refer to Amber manual).\n" \
+                        f"Please, provide your choice (Amber mask formatting is required:\n"
+                    while True:
+                        try:
+                            user_input_qmatoms = str(input(USER_CHOICE_QMATOMS).upper())
+                            break
+                        except:
+                            print('Please, provide valid input')
                     # defining spin
+                    USER_CHOICE_QMSPIN = f"What is the spin of the QM part of your system?\n" \
+                        f"Please, provide spin value for the QM part of your system (positive integer value):\n"
+                    while True:
+                        try:
+                            user_input_qmspin = int(input(USER_CHOICE_QMSPIN))
+                            if user_input_qmspin > 0:
+                                break
+                        except:
+                            print('Please, provide valid input')
                     # defining charge
+                    USER_CHOICE_QMCHARGE = f"What is the charge of the QM part of your system?\n" \
+                        f"Please, provide charge value for the QM part of your system (integer value):\n"
+                    while True:
+                        try:
+                            user_input_qmcharge = int(input(USER_CHOICE_QMCHARGE))
+                            break
+                        except:
+                            print('Please, provide valid input')
                     # define qmmethod
+                    USER_CHOICE_QMMETHOD = f"Which QM method would you like to use? The following options are available:\n" \
+                        f"- 'AM1'\n" \
+                        f"- 'PM3'\n" \
+                        f"- 'RM1'\n" \
+                        f"- 'MNDO'\n" \
+                        f"- 'PM3-PDDG'\n" \
+                        f"- 'MNDOD'\n" \
+                        f"- 'AM1D'\n" \
+                        f"- 'PM6'\n" \
+                        f"- 'DFTB2'\n" \
+                        f"- 'DFTB3'\n"
+                    qm_methods = ['AM1', 'PM3', 'RM1', 'MNDO', 'PM3-PDDG', 'MNDOD', 'AM1D', 'PM6', 'DFTB2', 'DFTB3']
+                    while True:
+                        try:
+                            user_input_qmmethod = str(input(USER_CHOICE_QMMETHOD).upper())
+                            if user_input_qmmethod in qm_methods:
+                                break
+                        except:
+                            print('Please, provide valid input')
+                    qm_input = 'qmcontrol.in'
+                    # if qm_input already exist, remove it
+                    if file_check(Path(qm_input)):
+                        os.remove(Path(qm_input))
+                    # save qm info to qm_input
+                    with open(qm_input, 'w') as file:
+                        file.write(f"&qmmm,\n"
+                                   f"qmmask = {user_input_qmatoms},\n"
+                                   f"spin = {user_input_qmspin},\n"
+                                   f"qmcharge = {user_input_qmcharge},\n"
+                                   f"qmshake = 0,\n"
+                                   f"qm_ewald = 1,\n"
+                                   f"qm_pme = 1,\n"
+                                   f"qm_theory = {user_input_qmmethod},\n"
+                                   f"printcharges = 1,\n"
+                                   f"writepdb = 1,\n"
+                                   f"/")
+                    save_to_file(f"qmcontrol = {qm_input}", filename)
                     break
+                #break
             except:
-                pass
+                print('Please, provide valid input')
 
 
+def steps_to_perform():
+    # getting info what simulations to perform
+    USER_CHOICE_MINIMIZATION = f""
+    pass
 
 
+def md_parameters():
     pass
 
 
@@ -144,6 +213,9 @@ amber_parameters_functions = [
     file_naming,
     clearing_control,
     qm_or_not,
+    qm_parameters,
+    steps_to_perform,
+    md_parameters
 ]
 
 methods_generator = (y for y in amber_parameters_functions)
