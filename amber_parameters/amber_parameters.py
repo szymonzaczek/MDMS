@@ -77,10 +77,11 @@ def qm_or_not():
         try:
             user_input_qm = str(input(USER_CHOICE_QM).lower())
             if user_input_qm == 'y':
+                # if QM is to be performed, save info to control file
                 save_to_file(f"qm = True\n", filename)
                 break
             elif user_input_qm == 'n':
-                save_to_file(f"qm = False\n", filename)
+                # if not, do not save anything
                 break
         except:
             print('Please, provide valid input')
@@ -204,10 +205,10 @@ def steps_to_perform():
                             ", then heated to the target temperature, equilibrated, and only then a regular production runs " \
                             "should be performed. Nonetheless, for some reasons, you might want to skip minimization, " \
                             "heating  and equilibration (i. e. you might have performed it in another software) and " \
-                            "immediately head to production simulations. This is advised only if you know exactly what "
+                            "immediately head to production simulations. This is advised only if you know exactly what " \
                             "you are doing though.\n" \
                             "Which procedure for simulations you want to follow?\n" \
-                            "- press 'n' for a normal procedure - minimization, heating and production\n" \
+                            "- press 'n' for a normal procedure - minimization, heating, equilibration and production\n" \
                             "- press 'p' if you only want to run production simulations\n" \
                             "Please, provide your choice:\n"
     while True:
@@ -225,14 +226,153 @@ def steps_to_perform():
             print('Please, provide valid input')
     # after loop is closed, save info to the control file
     save_to_file(f"procedure = {steps}\n", filename)
-    pass""
+    pass
+
+
+def default_parameters(step):
+    # function storing default parameters for individual simulations steps
+    # defining def_params
+    def_params = ""
+    if step == 'min':
+        def_params = """&cntrl
+ imin=1, 
+ ntx=1,
+ irest=0,
+ maxcyc=4000, 
+ ncyc=2000,
+ cut=8.0, 
+ ntb=1,  
+ ntpr=100,
+ nmropt=0, 
+ ntr=0,
+ ifqnt=0
+/"""
+    elif step == 'heat':
+        def_params = """&cntrl
+ imin = 0, #min or md
+ irest = 0, #rest or not
+ ntx = 1, #reading initial coordinates
+ ntb = 1, #periodic box, 1 = constant volume, 2 = constant pressure
+ ntp = 0, #constant pressure, 0 = nope, 1 = yep
+ cut = 8.0, #cutoff, 8 usually enough - higher needs a lot of computational time
+ ntc = 2, #shake definition
+ ntf = 2, #shake, bond interactions involving H atoms are omitted
+ tempi = 0.0, #initial temp
+ temp0 = 300.0, #target temp
+ ntt = 3, #thermostat, 3 = Langevind dynamics (probably the best choice atm)
+ gamma_ln = 2.0, #collision frequency, it should be a good value
+ nstlim = 25000, #nr of steps
+ dt = 0.002, #timestep
+ ntpr = 100, #how often energy is saved
+ ntwx = 500, #how often trajectory is saved
+ ntwr = 5000, #how often restart is saved
+ ig=-1, #random seed
+ ifqnt=0, #qmmm or not
+ nmropt=1,#NMR restraints, used to control temperature
+/
+&wt type='TEMP0', istep1=0, istep2=25000, value1=0.0, value2=300.0 /
+&wt type='END' /
+"""
+    elif step == 'equi':
+        def_params = """&cntrl
+ imin = 0, 
+ irest = 1, 
+ ntx = 5,
+ ntb = 2, #constant pressure
+ ntp = 1,
+ taup = 2.0, #pressure relaxation time, should be between 1 to 5
+ cut = 8.0, 
+ ntc = 2, 
+ ntf = 2,
+ tempi = 300.0, 
+ temp0 = 300.0,
+ ntt = 3, 
+ gamma_ln = 2.0,
+ nstlim = 75000, 
+ dt = 0.002,
+ ntpr = 500, 
+ ntwx = 500, 
+ ntwr = 5000,
+ ig=-1, 
+ ifqnt=0,
+ nmropt=0
+/"""
+    elif step == 'prod':
+        def_params = """&cntrl
+ imin = 0, 
+ irest = 1, 
+ ntx = 5,
+ ntb = 2,  
+ ntp = 1,
+ taup = 2.0,
+ cut = 8.0, 
+ ntc = 2, 
+ ntf = 2,
+ tempi = 300.0, 
+ temp0 = 300.0,
+ ntt = 3, 
+ gamma_ln = 2.0,
+ nstlim = 10000000, 
+ dt = 0.002,
+ ntpr = 500, 
+ ntwx = 2500, 
+ ntwr = 20000
+ ig=-1, 
+ ifqnt=0,
+ nmropt=0
+/"""
+    return def_params
+
 
 
 def md_parameters():
     # Determining MD parameters
+    # reading info from control file
     control = read_file(filename)
     steps = r'procedure.*=.*\[(.*)\]'
-    steps_match = re.search(ligands, control).group(1)
+    steps_match = re.search(steps, control).group(1)
+    # removing quotes from string
+    steps_string = steps_match.replace("'", "")
+    # removing whitespaces and turning string into a list
+    steps_list = re.sub(r'\s', '', steps_string).split(',')
+    # formatting steps, so it will be printed in a nicer way
+    steps_dict = {
+        'min': 'minimization',
+        'heat': 'heating',
+        'equi': 'equilibiration',
+        'prod': 'production'
+                  }
+    # loop iterating over each step that is to be performed
+    for step in steps_list:
+        # printing default parameters for the step
+        def_params = default_parameters(step)
+        print(f"For {steps_dict.get(step)}, default input file looks as follows:\n"
+              f"{def_params}")
+        # choice if user wants to change default parameters (more info on individual parameters will be provided when
+        # user will consider changing them)
+        USER_CHOICE_DEF_PARAMS = f"You might either stick to the default parameters, or change their individual values.\n" \
+            f"Please keep in mind that not only each protein is different but also computational resources that are " \
+            f"available to you may significantly differ from a standard HPC resource, for which this program was designed," \
+            f" therefore you SHOULD consider every parameter carefully. Default values are rather a proposition, which" \
+            f" will work correctly but are not likely to be optimal.\n" \
+            f"Would you like to use default parameters that will control your {steps_dict.get(step)} run, or you'd" \
+            f" rather change some of those values?\n" \
+            f"- press 'y' if you want to use default parameters\n" \
+            f"- press 'n' if you want to change parameters\n" \
+            f"Please, provide your choice:\n"
+        while True:
+            try:
+                user_input_def_params = str(input(USER_CHOICE_DEF_PARAMS).lower())
+                if user_input_def_params == 'y':
+                    # default parameters for this step will be used
+                    break
+                elif user_input_def_params == 'n':
+                    # user wants to change parameters and here he will have the chance to do so
+                    break
+            except:
+                print('Please, provide valid input')
+        pass
+
     pass
 
 
