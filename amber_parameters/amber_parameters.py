@@ -191,7 +191,7 @@ Please, provide your choice:\n """
                                    f"printcharges = 1,\n"
                                    f"writepdb = 1,\n"
                                    f"/")
-                    save_to_file(f"qmcontrol = {qm_input}", filename)
+                    save_to_file(f"qmcontrol = {qm_input}\n", filename)
                     break
                 #break
             except:
@@ -200,11 +200,39 @@ Please, provide your choice:\n """
 
 def steps_to_perform():
     # getting info what simulations to perform
-    USER_CHOICE_MINIMIZATION = f""
-    pass
+    USER_CHOICE_PROCEDURE = "\nIn most cases, the investigated protein/protein-ligand complex should be at first minimized" \
+                            ", then heated to the target temperature, equilibrated, and only then a regular production runs " \
+                            "should be performed. Nonetheless, for some reasons, you might want to skip minimization, " \
+                            "heating  and equilibration (i. e. you might have performed it in another software) and " \
+                            "immediately head to production simulations. This is advised only if you know exactly what "
+                            "you are doing though.\n" \
+                            "Which procedure for simulations you want to follow?\n" \
+                            "- press 'n' for a normal procedure - minimization, heating and production\n" \
+                            "- press 'p' if you only want to run production simulations\n" \
+                            "Please, provide your choice:\n"
+    while True:
+        try:
+            user_input_procedure = str(input(USER_CHOICE_PROCEDURE).lower())
+            if user_input_procedure == 'n':
+                # if normal procedure is chose, run everything
+                steps = ['min', 'heat', 'equi', 'prod']
+                break
+            elif user_input_procedure == 'p':
+                # run only production
+                steps = ['prod']
+                break
+        except:
+            print('Please, provide valid input')
+    # after loop is closed, save info to the control file
+    save_to_file(f"procedure = {steps}\n", filename)
+    pass""
 
 
 def md_parameters():
+    # Determining MD parameters
+    control = read_file(filename)
+    steps = r'procedure.*=.*\[(.*)\]'
+    steps_match = re.search(ligands, control).group(1)
     pass
 
 
