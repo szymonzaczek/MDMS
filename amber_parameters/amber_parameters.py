@@ -1,7 +1,5 @@
 import os
-import pandas as pd
 import re
-import subprocess
 from pathlib import Path
 
 
@@ -52,6 +50,7 @@ def clearing_control():
     # list of parameters that will be stripped out of control file
     parameters = [
         'qm',
+        'procedure'
     ]
     # writing content of control file without parameters in parameters list to
     # the temporary file
@@ -249,26 +248,26 @@ def default_parameters(step):
 /"""
     elif step == 'heat':
         def_params = """&cntrl
- imin = 0, #min or md
- irest = 0, #rest or not
- ntx = 1, #reading initial coordinates
- ntb = 1, #periodic box, 1 = constant volume, 2 = constant pressure
- ntp = 0, #constant pressure, 0 = nope, 1 = yep
- cut = 8.0, #cutoff, 8 usually enough - higher needs a lot of computational time
- ntc = 2, #shake definition
- ntf = 2, #shake, bond interactions involving H atoms are omitted
- tempi = 0.0, #initial temp
- temp0 = 300.0, #target temp
- ntt = 3, #thermostat, 3 = Langevind dynamics (probably the best choice atm)
- gamma_ln = 2.0, #collision frequency, it should be a good value
- nstlim = 25000, #nr of steps
- dt = 0.002, #timestep
- ntpr = 100, #how often energy is saved
- ntwx = 500, #how often trajectory is saved
- ntwr = 5000, #how often restart is saved
- ig=-1, #random seed
- ifqnt=0, #qmmm or not
- nmropt=1,#NMR restraints, used to control temperature
+ imin = 0, 
+ irest = 0, 
+ ntx = 1, 
+ ntb = 1, 
+ ntp = 0, 
+ cut = 8.0, 
+ ntc = 2, 
+ ntf = 2, 
+ tempi = 0.0, 
+ temp0 = 300.0, 
+ ntt = 3, 
+ gamma_ln = 2.0, 
+ nstlim = 25000, 
+ dt = 0.002, 
+ ntpr = 100, 
+ ntwx = 500, 
+ ntwr = 5000, 
+ ig=-1, 
+ ifqnt=0, 
+ nmropt=1,
 /
 &wt type='TEMP0', istep1=0, istep2=25000, value1=0.0, value2=300.0 /
 &wt type='END' /
@@ -316,7 +315,7 @@ def default_parameters(step):
  dt = 0.002,
  ntpr = 500, 
  ntwx = 2500, 
- ntwr = 20000
+ ntwr = 20000,
  ig=-1, 
  ifqnt=0,
  nmropt=0
@@ -324,9 +323,32 @@ def default_parameters(step):
     return def_params
 
 
-
 def md_parameters():
     # Determining MD parameters
+    # here there is info store about individual parameters
+    parameters_dict = {
+        'imin': 'defining minimization (imin = 0) or dynamics (imin = 1)',
+        'irest': 'defining if simulations is restarted (irest = 0) or not (irest = 1)',
+        'ntx': 'defining a way in which coordinates are read',
+        'ntb': 'periodic box defintion - constant volume (ntb = 1) or constant pressure (ntb = 2)',
+        'cut': 'cutoff radius for nonbonded interactions in Angstroms, 8 is usually a good value',
+        'ntc': 'SHAKE algorithm - if turned on (ntc = 2) hydrogen bonds are restrained',
+        'ntf': 'force evaluation, if SHAKE is turned on, bond interactions involving H should be omitted (ntf = 2)',
+        'tempi': 'initial temperature',
+        'temp0': 'target temperature',
+        'ntt': 'thermostat type, Langevin Dynamics is defined as ntt = 3 and is probably the best choice',
+        'gamma_ln': 'collision frequency, should be between 2.0 and 5.0',
+        'nstlim': 'number of MD steps to be performed',
+        'dt': 'timestep value (in ps), with SHAKE turned on 0.002 is the max reasonable value',
+        'ntpr': 'print the energy information every n-th steps',
+        'ntwx': 'saves coordinates every n-th steps',
+        'ntwr': 'saves restart files every n-th steps',
+        'ig': 'setting random seed',
+        'ifqnt': 'turning on QM/MM (ifqnt = 1) or not (ifqnt = 0)',
+        'nmropt': 'turning NMR restraints on (nmropt = 1), could be also used for controlling temperature',
+        'maxcyc': 'maximum number of minimization steps',
+        'ncyc': 'after n-steps, change to conjugate gradient optimization instead of steepest descent'
+    }
     # reading info from control file
     control = read_file(filename)
     steps = r'procedure.*=.*\[(.*)\]'
@@ -354,7 +376,7 @@ def md_parameters():
             f"Please keep in mind that not only each protein is different but also computational resources that are " \
             f"available to you may significantly differ from a standard HPC resource, for which this program was designed," \
             f" therefore you SHOULD consider every parameter carefully. Default values are rather a proposition, which" \
-            f" will work correctly but are not likely to be optimal.\n" \
+            f" will work correctly but are not likely to be optimal for your case.\n" \
             f"Would you like to use default parameters that will control your {steps_dict.get(step)} run, or you'd" \
             f" rather change some of those values?\n" \
             f"- press 'y' if you want to use default parameters\n" \
@@ -364,13 +386,97 @@ def md_parameters():
             try:
                 user_input_def_params = str(input(USER_CHOICE_DEF_PARAMS).lower())
                 if user_input_def_params == 'y':
-                    # default parameters for this step will be used
+                    # default parameters for this step will be saved to the file
+                    file_step = def_params
                     break
                 elif user_input_def_params == 'n':
                     # user wants to change parameters and here he will have the chance to do so
+                    # list containing parameters for this step
+                    parameters_list = []
+                    # dictionary containing parameters and its values
+                    parameters_values_dict = {}
+                    # printing parameters that are in the default file for the current step
+                    for line in def_params.splitlines():
+                        # changing string to the desired format
+                        # removing whitespaces
+                        line = re.sub(r'\s', '', line)
+                        # removing commas in string
+                        line = re.sub(r'\,', '', line)
+                        # getting list of two elements for a single line (parameter and its default value
+                        parameter_value = line.split('=')
+                        # if cntrl line or the last line is considered, this is skipped
+                        if parameter_value[0] == '&cntrl' or parameter_value[0] == '/':
+                            continue
+                        # storing parameters in a list
+                        parameters_list.append(parameter_value[0])
+                        # storing parameters and their values in a dictionary
+                        parameters_values_dict.update({parameter_value[0]: parameter_value[1]})
+                    # prompt which parameters user would like to change
+                    USER_CHOICE_PARAMS = f"There are following parameters defined for {steps_dict.get(step)}:\n" \
+                        f"{parameters_list}\n" \
+                        f"Would you like to change of them, or you'd rather define additional parameters to this list?\n" \
+                        f"- type 'parameter_code' (for instance 'cut') in order to change its value\n" \
+                        f"- type 'a' in order to add additional parameter\n" \
+                        f"- type 'q' if you want to stop modifying parameters for {steps_dict.get(step)} step.\n" \
+                        f"Please, provide your choice:\n"
+                    while True:
+                        try:
+                            user_input_params = str(input(USER_CHOICE_PARAMS).lower())
+                            # if input is in parameters list, print this parameter value with info what it is doing
+                            if user_input_params == 'a':
+                                # adding additional parameters to the current step
+                                pass
+                            elif user_input_params == 'q':
+                                # quitting changing parameters - saving all of the current values
+                                # converting dictionary with parameters to string
+                                parameters_values_string = str(parameters_values_dict)
+                                # formatting outputs so it will be perfect
+                                parameters_values_string = re.sub(r'\'', '', parameters_values_string)
+                                parameters_values_string = re.sub(r'\s', '', parameters_values_string)
+                                parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
+                                parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
+                                parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
+                                parameters_values_string = re.sub(r'\}', '\n/', parameters_values_string)
+                                file_step = parameters_values_string
+                                break
+                            elif user_input_params in parameters_list:
+                                print(parameters_values_dict)
+                                USER_CHOICE_PARAM_VALUE = f"You chose to change value of the '{user_input_params}' parameter.\n" \
+                                    f"This parameter does the following job:\n" \
+                                    f"{parameters_dict.get(user_input_params)}\n" \
+                                    f"Its current value is set to:\n" \
+                                    f"{parameters_values_dict.get(user_input_params)}\n" \
+                                    f"What value would you like to use for your simulations?. Please, provide your choice:\n"
+                                while True:
+                                    try:
+                                        user_input_param_value = (input(USER_CHOICE_PARAM_VALUE))
+                                        # if user inputs 0, just put it into the dictionary
+                                        if user_input_param_value == '0':
+                                            parameters_values_dict.update({user_input_params: user_input_param_value})
+                                            break
+                                        # otherwise check if it can be changed to float; if yes, it must
+                                        # be numerical value and can be put into dictionary, otherwise halt
+                                        else:
+                                            input_float = float(user_input_param_value)
+                                            parameters_values_dict.update({user_input_params: user_input_param_value})
+                                            break
+                                    except ValueError:
+                                        print('Please, provide correct (numerical) value for this parameter')
+                            # escaping user_input_params loop, should not really exist
+                            #break
+                        except:
+                            pass
                     break
             except:
                 print('Please, provide valid input')
+        # checking if step.in file exists - if yes it is deleted
+        if file_check(Path(f"{step}.in")):
+            os.remove(Path(f"{step}.in"))
+        # save parameters for the current step to the input file
+        with open(f"{step}.in", 'w') as file:
+            file.write(file_step)
+        # saving info into control file
+        save_to_file(f"{step} = {step}.in\n", filename)
         pass
 
     pass
