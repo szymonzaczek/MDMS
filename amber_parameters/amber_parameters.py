@@ -50,7 +50,11 @@ def clearing_control():
     # list of parameters that will be stripped out of control file
     parameters = [
         'qm',
-        'procedure'
+        'procedure',
+        'min',
+        'heat',
+        'equi',
+        'prod'
     ]
     # writing content of control file without parameters in parameters list to
     # the temporary file
@@ -63,7 +67,7 @@ def clearing_control():
 
 
 def qm_or_not():
-    # asking user if he wants to perform QM/MM calculations and getting necessary parameters
+    # asking user if he wants to perform QM/MM calculations
     USER_CHOICE_QM = f"\nDo you want to perform QM/MM calculations?\nPlease, keep in mind that such simulations" \
         f"are MUCH more computationally expensive than regular MD. However, this is THE ONLY way to capture " \
         f"chemical structures' alterations within AMBER. For observing physical properties though, it is " \
@@ -86,11 +90,148 @@ def qm_or_not():
             print('Please, provide valid input')
 
 
+def steps_to_perform():
+    # getting info what simulations to perform
+    USER_CHOICE_PROCEDURE = "\nIn most cases, the investigated protein/protein-ligand complex should be at first minimized" \
+                            ", then heated to the target temperature, equilibrated, and only then a regular production runs " \
+                            "should be performed. Nonetheless, for some reasons, you might want to skip minimization, " \
+                            "heating  and equilibration (i. e. you might have performed it in another software) and " \
+                            "immediately head to production simulations. This is advised only if you know exactly what " \
+                            "you are doing though.\n" \
+                            "Which procedure for simulations you want to follow?\n" \
+                            "- press 'n' for a normal procedure - minimization, heating, equilibration and production\n" \
+                            "- press 'p' if you only want to run production simulations\n" \
+                            "Please, provide your choice:\n"
+    while True:
+        try:
+            user_input_procedure = str(input(USER_CHOICE_PROCEDURE).lower())
+            if user_input_procedure == 'n':
+                # if normal procedure is chose, run everything
+                steps = ['min', 'heat', 'equi', 'prod']
+                break
+            elif user_input_procedure == 'p':
+                # run only production
+                steps = ['prod']
+                break
+        except:
+            print('Please, provide valid input')
+    # after loop is closed, save info to the control file
+    save_to_file(f"procedure = {steps}\n", filename)
+    pass
+
+
+def default_parameters(step):
+    # function storing default parameters for individual simulations steps
+    # reading control file
+    control = read_file(filename)
+    # reading if qm was chosen or not
+    qm = r'qm\s*=\s*(.*)'
+    qm_match = re.search(qm, control)
+    # set ifqnt val to 0; if qm was specified, change its value to 1
+    ifqnt_val = 0
+    if qm_match:
+        ifqnt_val = 1
+    # defining def_params
+    def_params = ""
+    if step == 'min':
+        def_params = """&cntrl
+ imin=1, 
+ ntx=1,
+ irest=0,
+ maxcyc=4000, 
+ ncyc=2000,
+ cut=8.0, 
+ ntb=1,  
+ ntpr=100,
+ nmropt=0, 
+ ntr=0,
+ ifqnt={ifqnt}
+/
+""".format(ifqnt=ifqnt_val)
+    elif step == 'heat':
+        def_params = """&cntrl
+ imin = 0, 
+ irest = 0, 
+ ntx = 1, 
+ ntb = 1, 
+ ntp = 0, 
+ cut = 8.0, 
+ ntc = 2, 
+ ntf = 2, 
+ tempi = 0.0, 
+ temp0 = 300.0, 
+ ntt = 3, 
+ gamma_ln = 2.0, 
+ nstlim = 25000, 
+ dt = 0.002, 
+ ntpr = 100, 
+ ntwx = 500, 
+ ntwr = 5000, 
+ ig=-1, 
+ ifqnt={ifqnt}, 
+ nmropt=1,
+/
+&wt type='TEMP0', istep1=0, istep2=25000, value1=0.0, value2=300.0 /
+&wt type='END' /
+""".format(ifqnt=ifqnt_val)
+    elif step == 'equi':
+        def_params = """&cntrl
+ imin = 0, 
+ irest = 1, 
+ ntx = 5,
+ ntb = 2, #constant pressure
+ ntp = 1,
+ taup = 2.0, #pressure relaxation time, should be between 1 to 5
+ cut = 8.0, 
+ ntc = 2, 
+ ntf = 2,
+ tempi = 300.0, 
+ temp0 = 300.0,
+ ntt = 3, 
+ gamma_ln = 2.0,
+ nstlim = 75000, 
+ dt = 0.002,
+ ntpr = 500, 
+ ntwx = 500, 
+ ntwr = 5000,
+ ig=-1, 
+ ifqnt={ifqnt},
+ nmropt=0
+/
+""".format(ifqnt=ifqnt_val)
+    elif step == 'prod':
+        def_params = """&cntrl
+ imin = 0, 
+ irest = 1, 
+ ntx = 5,
+ ntb = 2,  
+ ntp = 1,
+ taup = 2.0,
+ cut = 8.0, 
+ ntc = 2, 
+ ntf = 2,
+ tempi = 300.0, 
+ temp0 = 300.0,
+ ntt = 3, 
+ gamma_ln = 2.0,
+ nstlim = 10000000, 
+ dt = 0.002,
+ ntpr = 500, 
+ ntwx = 2500, 
+ ntwr = 20000,
+ ig=-1, 
+ ifqnt={ifqnt},
+ nmropt=0
+/
+""".format(ifqnt=ifqnt_val)
+    return def_params
+
+
 def qm_parameters():
     # reading from control file if there is a qm part and then choose parameters for qm
     # reading control file
     control = read_file(filename)
-    # reading if qm was chosn or not
+    # reading if qm was chosen or not
     qm = r'qm\s*=\s*(.*)'
     qm_match = re.search(qm, control)
     # if QM/MM was chosen, ask about parameters
@@ -116,7 +257,7 @@ Please, provide your choice:\n """
                             print(Path(user_input_qmpath))
                             if file_check(Path(user_input_qmpath)) == True:
                                 # everything is good an we may close the loop
-                                save_to_file(f"qmcontrol = {user_input_qmpath}\n", filename)
+                                save_to_file(f"qm_control = {user_input_qmpath}\n", filename)
                                 break
                             elif file_check(Path(user_input_qmpath)) == False:
                                 # there is no file with provided path and user is prompted to provide path again
@@ -128,7 +269,7 @@ Please, provide your choice:\n """
                     # defining qmatoms
                     USER_CHOICE_QMATOMS = f"Which atoms from your system should be treated with QM methods? Any valid " \
                         f"Amber mask will work (for more info about masks refer to Amber manual).\n" \
-                        f"Please, provide your choice (Amber mask formatting is required:\n"
+                        f"Please, provide your choice (Amber mask formatting is required):\n"
                     while True:
                         try:
                             user_input_qmatoms = str(input(USER_CHOICE_QMATOMS).upper())
@@ -174,7 +315,7 @@ Please, provide your choice:\n """
                                 break
                         except:
                             print('Please, provide valid input')
-                    qm_input = 'qmcontrol.in'
+                    qm_input = 'qm_control.in'
                     # if qm_input already exist, remove it
                     if file_check(Path(qm_input)):
                         os.remove(Path(qm_input))
@@ -191,146 +332,20 @@ Please, provide your choice:\n """
                                    f"printcharges = 1,\n"
                                    f"writepdb = 1,\n"
                                    f"/")
-                    save_to_file(f"qmcontrol = {qm_input}\n", filename)
+                    save_to_file(f"qm_control = {qm_input}\n", filename)
                     break
                 #break
             except:
                 print('Please, provide valid input')
 
 
-def steps_to_perform():
-    # getting info what simulations to perform
-    USER_CHOICE_PROCEDURE = "\nIn most cases, the investigated protein/protein-ligand complex should be at first minimized" \
-                            ", then heated to the target temperature, equilibrated, and only then a regular production runs " \
-                            "should be performed. Nonetheless, for some reasons, you might want to skip minimization, " \
-                            "heating  and equilibration (i. e. you might have performed it in another software) and " \
-                            "immediately head to production simulations. This is advised only if you know exactly what " \
-                            "you are doing though.\n" \
-                            "Which procedure for simulations you want to follow?\n" \
-                            "- press 'n' for a normal procedure - minimization, heating, equilibration and production\n" \
-                            "- press 'p' if you only want to run production simulations\n" \
-                            "Please, provide your choice:\n"
-    while True:
-        try:
-            user_input_procedure = str(input(USER_CHOICE_PROCEDURE).lower())
-            if user_input_procedure == 'n':
-                # if normal procedure is chose, run everything
-                steps = ['min', 'heat', 'equi', 'prod']
-                break
-            elif user_input_procedure == 'p':
-                # run only production
-                steps = ['prod']
-                break
-        except:
-            print('Please, provide valid input')
-    # after loop is closed, save info to the control file
-    save_to_file(f"procedure = {steps}\n", filename)
-    pass
-
-
-def default_parameters(step):
-    # function storing default parameters for individual simulations steps
-    # defining def_params
-    def_params = ""
-    if step == 'min':
-        def_params = """&cntrl
- imin=1, 
- ntx=1,
- irest=0,
- maxcyc=4000, 
- ncyc=2000,
- cut=8.0, 
- ntb=1,  
- ntpr=100,
- nmropt=0, 
- ntr=0,
- ifqnt=0
-/"""
-    elif step == 'heat':
-        def_params = """&cntrl
- imin = 0, 
- irest = 0, 
- ntx = 1, 
- ntb = 1, 
- ntp = 0, 
- cut = 8.0, 
- ntc = 2, 
- ntf = 2, 
- tempi = 0.0, 
- temp0 = 300.0, 
- ntt = 3, 
- gamma_ln = 2.0, 
- nstlim = 25000, 
- dt = 0.002, 
- ntpr = 100, 
- ntwx = 500, 
- ntwr = 5000, 
- ig=-1, 
- ifqnt=0, 
- nmropt=1,
-/
-&wt type='TEMP0', istep1=0, istep2=25000, value1=0.0, value2=300.0 /
-&wt type='END' /
-"""
-    elif step == 'equi':
-        def_params = """&cntrl
- imin = 0, 
- irest = 1, 
- ntx = 5,
- ntb = 2, #constant pressure
- ntp = 1,
- taup = 2.0, #pressure relaxation time, should be between 1 to 5
- cut = 8.0, 
- ntc = 2, 
- ntf = 2,
- tempi = 300.0, 
- temp0 = 300.0,
- ntt = 3, 
- gamma_ln = 2.0,
- nstlim = 75000, 
- dt = 0.002,
- ntpr = 500, 
- ntwx = 500, 
- ntwr = 5000,
- ig=-1, 
- ifqnt=0,
- nmropt=0
-/"""
-    elif step == 'prod':
-        def_params = """&cntrl
- imin = 0, 
- irest = 1, 
- ntx = 5,
- ntb = 2,  
- ntp = 1,
- taup = 2.0,
- cut = 8.0, 
- ntc = 2, 
- ntf = 2,
- tempi = 300.0, 
- temp0 = 300.0,
- ntt = 3, 
- gamma_ln = 2.0,
- nstlim = 10000000, 
- dt = 0.002,
- ntpr = 500, 
- ntwx = 2500, 
- ntwr = 20000,
- ig=-1, 
- ifqnt=0,
- nmropt=0
-/"""
-    return def_params
-
-
 def md_parameters():
-    # Determining MD parameters
     # here there is info store about individual parameters
     parameters_dict = {
         'imin': 'defining minimization (imin = 0) or dynamics (imin = 1)',
         'irest': 'defining if simulations is restarted (irest = 0) or not (irest = 1)',
         'ntx': 'defining a way in which coordinates are read',
-        'ntb': 'periodic box defintion - constant volume (ntb = 1) or constant pressure (ntb = 2)',
+        'ntb': 'periodic box definition - constant volume (ntb = 1) or constant pressure (ntb = 2)',
         'cut': 'cutoff radius for nonbonded interactions in Angstroms, 8 is usually a good value',
         'ntc': 'SHAKE algorithm - if turned on (ntc = 2) hydrogen bonds are restrained',
         'ntf': 'force evaluation, if SHAKE is turned on, bond interactions involving H should be omitted (ntf = 2)',
@@ -380,7 +395,7 @@ def md_parameters():
             f"Would you like to use default parameters that will control your {steps_dict.get(step)} run, or you'd" \
             f" rather change some of those values?\n" \
             f"- press 'y' if you want to use default parameters\n" \
-            f"- press 'n' if you want to change parameters\n" \
+            f"- press 'n' if you want to change parameters (as well as perform QM/MM simulations)\n" \
             f"Please, provide your choice:\n"
         while True:
             try:
@@ -411,10 +426,18 @@ def md_parameters():
                         parameters_list.append(parameter_value[0])
                         # storing parameters and their values in a dictionary
                         parameters_values_dict.update({parameter_value[0]: parameter_value[1]})
+                    if step == 'equi':
+                        print(f"!!WARNING!!\n"
+                              f"If you want to choose the rate at which system is heated (what is controlled with "
+                              f"&wt type='TEMP0' statement) you need to perform it manually in the file controlling"
+                              f" {steps_dict.get(step)} step, prior to running your simulations.\n"
+                              f"Ideally, you will heat your system for as long as heating steps is happening and then"
+                              f" proceed with equilibration.\n")0
                     # prompt which parameters user would like to change
                     USER_CHOICE_PARAMS = f"There are following parameters defined for {steps_dict.get(step)}:\n" \
                         f"{parameters_list}\n" \
-                        f"Would you like to change of them, or you'd rather define additional parameters to this list?\n" \
+                        f"Would you like to change one of them, add another parameter to this list or perhaps" \
+                        f" you would like to carry out QM/MM calculations?\n" \
                         f"- type 'parameter_code' (for instance 'cut') in order to change its value\n" \
                         f"- type 'a' in order to add additional parameter\n" \
                         f"- type 'q' if you want to stop modifying parameters for {steps_dict.get(step)} step.\n" \
@@ -425,7 +448,33 @@ def md_parameters():
                             # if input is in parameters list, print this parameter value with info what it is doing
                             if user_input_params == 'a':
                                 # adding additional parameters to the current step
-                                pass
+                                USER_CHOICE_ADD_PARAM = (f"!!WARNING!!\n" \
+                                    f"You chose to provide additional parameters for {steps_dict.get(step)} step.\n" \
+                                    f"Keep in mind, that those parameters MUST be valid Amber parameters (see Manual " \
+                                    f"for detailed information).\n" \
+                                    f"The parameters that you will introduce MUST be consistent " \
+                                    f"with other parameters from {steps_dict.get(step)} step - for instance, you cannot" \
+                                    f" specify implicit solvation, if there are periodic boundary conditions applied." \
+                                    f" Otherwise, your simulation will not start due to Amber error.\n" \
+                                    f"Keep also in mind, that MDMS is not capable of checking validity of those " \
+                                    f"parameters - you will be notified that something is wrong when you will begin " \
+                                    f"running your simulations.\n" \
+                                    f"Please, provide name of the parameter that you would like to introduce:\n")
+                                while True:
+                                    try:
+                                        # providing name of the additional parameter
+                                        user_input_add_param = str(input(USER_CHOICE_ADD_PARAM).lower())
+                                        USER_CHOICE_ADD_PARAM_VALUE = (
+                                            f"Please, provide value for the {user_input_add_param} parameter:\n")
+                                        user_input_add_param_val = str(input(USER_CHOICE_ADD_PARAM_VALUE))
+                                        # check if it can be changed to float; if yes, it must
+                                        # be numerical value and can be put into dictionary, otherwise it is halted
+                                        user_input_add_param_val_float = float(user_input_add_param_val)
+                                        # saving new params into a dictionary
+                                        parameters_values_dict.update({user_input_add_param: user_input_add_param_val})
+                                        break
+                                    except:
+                                        print('Please, provide valid input.')
                             elif user_input_params == 'q':
                                 # quitting changing parameters - saving all of the current values
                                 # converting dictionary with parameters to string
@@ -454,7 +503,7 @@ def md_parameters():
                                         if user_input_param_value == '0':
                                             parameters_values_dict.update({user_input_params: user_input_param_value})
                                             break
-                                        # otherwise check if it can be changed to float; if yes, it must
+                                        # check if it can be changed to float; if yes, it must
                                         # be numerical value and can be put into dictionary, otherwise halt
                                         else:
                                             input_float = float(user_input_param_value)
@@ -482,14 +531,46 @@ def md_parameters():
     pass
 
 
+def qm_md_merging():
+    print("qm_md_merging")
+    # if there is qm, merge md and qm files
+    # reading control file
+    control = read_file(filename)
+    # reading if qm was chosen or not
+    qm = r'qm\s*=\s*(.*)'
+    qm_match = re.search(qm, control)
+    # if QM/MM was chosen, ask about parameters
+    if qm_match:
+        qm_match = qm_match.group(1)
+        # reading steps
+        steps = r'procedure.*=.*\[(.*)\]'
+        steps_match = re.search(steps, control).group(1)
+        # removing quotes from string
+        steps_string = steps_match.replace("'", "")
+        # removing whitespaces and turning string into a list
+        steps_list = re.sub(r'\s', '', steps_string).split(',')
+        prompt_qm = f"NOTE\n" \
+            f"Right now, qm_qontrol file will be appended to all of the files that contain parameters for your " \
+            f"simulations.\n"
+        print(prompt_qm)
+        for step in steps_list:
+            # read qm_control.inp
+            qm_control_pattern = r'qm_control\s*=\s*(.*)'
+            qm_control_match = re.search(qm_control_pattern, control).group(1)
+            qm_control = read_file(qm_control_match)
+            # append qm_control to step.in
+            with open(f"{step}.in", 'a') as file:
+                file.write(qm_control)
+
 
 amber_parameters_functions = [
     file_naming,
     clearing_control,
+    steps_to_perform,
     qm_or_not,
     qm_parameters,
-    steps_to_perform,
-    md_parameters
+    md_parameters,
+    qm_md_merging
 ]
 
 methods_generator = (y for y in amber_parameters_functions)
