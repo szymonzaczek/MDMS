@@ -1,6 +1,7 @@
 import initial_structure.initial_struc
 import topology_preparation.topology_prep
 import amber_parameters.amber_parameters
+import running_simulations.run_simulations
 
 print(
     "Hello and welcome to Molecular Dynamics Made Simple (MDMS) created by Szymon Zaczek!\n"
