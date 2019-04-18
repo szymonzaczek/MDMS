@@ -432,7 +432,7 @@ def md_parameters():
                               f"&wt type='TEMP0' statement) you need to perform it manually in the file controlling"
                               f" {steps_dict.get(step)} step, prior to running your simulations.\n"
                               f"Ideally, you will heat your system for as long as heating steps is happening and then"
-                              f" proceed with equilibration.\n")0
+                              f" proceed with equilibration.\n")
                     # prompt which parameters user would like to change
                     USER_CHOICE_PARAMS = f"There are following parameters defined for {steps_dict.get(step)}:\n" \
                         f"{parameters_list}\n" \

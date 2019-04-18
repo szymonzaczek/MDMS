@@ -94,8 +94,73 @@ def queue_or_terminal():
             print('Please, provide valid input')
 
 
+def sander_or_pmemd():
+    # sander or pmemd choice
+    USER_CHOICE_PROGRAM = f"Within Amber, there are 2 programs for running MD simulations: Sander and PMEMD.\n" \
+        f"Sander is distributed along with Ambertools and is free to use.\n" \
+        f"PMEMD offers improved performance over Sander, though its functionality is slightly limited. Nonetheless," \
+        f" if you want to perform regular MD simulations, PMEMD will most likely be the better choice, if it is " \
+        f"available to you.\n" \
+        f"- press 's' for using Sander\n" \
+        f"- press 'p' for using PMEMD\n" \
+        f"Please, provide your choice:\n"
+    while True:
+        try:
+            user_input_program = str(input(USER_CHOICE_PROGRAM).lower)
+            # break only if input is 's' or 'p'
+            if user_input_program == 's':
+                save_to_file(f"program = sander\n", filename)
+                break
+            elif user_input_program == 'p':
+                save_to_file(f"program = pmemd\n", filename)
+                break
+        except:
+            print('Please, provide valid input.')
+
+
+def serial_or_parallel():
+    # serial or parallel execution
+    # reading info about sander or pmemd choice
+    engine = r'program\s*=\s*(.*)'
+    engine_match = re.search(engine, control).group(1)
+    # finding what run do we proceed with
+    run_type = r'run_type\s*=\s*(.*)'
+    run_type_match = re.search(run_type, control).group(1)
+    USER_CHOICE_PARALLELISM = f"For your simulations you might either use serial or parallel {run_type_match} code." \
+        f"Parallel code is obviously faster and allow for using multiple processors for a single simulation. It requires" \
+        f" though parallel version of {run_type_match} built along "
+    #HERE you must write the remainder
+
+
+def running_simulations():
+    # finding which engine will be run
+    engine = r'program\s*=\s*(.*)'
+    engine_match = re.search(engine, control).group(1)
+    # finding what run do we proceed with
+    run_type = r'run_type\s*=\s*(.*)'
+    run_type_match = re.search(run_type, control).group(1)
+    if run_type_match == 'queue':
+        pass
+    elif run_type_match == 'terminal':
+        pass
+
+
+
+    # finding what run do we proceed with
+    run_type = r'run_type\s*=\s*(.*)'
+    run_type_match = re.search(run_type, control).group(1)
+    if run_type_match == 'queue':
+        pass
+    elif run_type_match == 'terminal':
+        pass
+    pass
+
+
 run_functions = [
     file_naming,
+    queue_or_terminal,
+    sander_or_pmemd,
+    running_simulations
 ]
 
 
