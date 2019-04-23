@@ -44,6 +44,7 @@ def menu():
                 amber_parameters.amber_parameters.queue_methods()
             elif user_input_menu == 'r':
                 print('You will be guided on how to run your simulations. Buckle up!\n')
+                running_simulations.run_simulations.queue_methods()
             elif user_input_menu == 'q':
                 break
             #else:
