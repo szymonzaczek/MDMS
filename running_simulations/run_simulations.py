@@ -236,13 +236,26 @@ def running_simulations():
                 for x in range(0, len(steps_list)):
                     # first execution of script requires inpcrd, further ones requires coordinates from previous step
                     if x == 0:
-                        file.write(f"\nmpirun -np {nr_processors_match} {engine_match}.MPI -O -i {steps_input_list[x]} -o {steps_list[x]}.out -c {top_name_match}.inpcrd "
-                           f"-p {top_name_match}.prmtop -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo")
+                        file.write(f"\nmpirun -np {nr_processors_match} {engine_match}.MPI -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {top_name_match}.inpcrd "
+                           f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo")
                     else:
-                        file.write(f"\nmpirun -np {nr_processors_match} {engine_match}.MPI -O -i {steps_input_list[x]} -o {steps_list[x]}.out -c {steps_list[x-1]}.ncrst "
-                           f"-p {top_name_match}.prmtop -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo")
-        elif parallelism_match == 'single':
-            # HERE I STOPPED
+                        file.write(f"\nmpirun -np {nr_processors_match} {engine_match}.MPI -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {steps_list[x-1]}.ncrst "
+                           f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo")
+        elif parallelism_match == 'serial':
+            with open(job_name, 'w') as file:
+                file.write(read_file(queue_script_match))
+                for x in range(0, len(steps_list)):
+                # first execution of script requires inpcrd, further ones requires coordinates from previous step
+                if x == 0:
+                    file.write(f"{engine_match} -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {top_name_match}.inpcrd "
+                               f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo")
+                else:
+                    file.write(f"{engine_match} -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {steps_list[x-1]}.ncrst "
+                               f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo")
+        # after executing parallel or serial, job is submitted to the queue
+        job_script = f"{command_match} {job_name}"
+        print(job_script)
+        subprocess.run([f"{job_script}"], shell=True)
             pass
         pass
     elif run_type_match == 'terminal':
