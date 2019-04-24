@@ -134,7 +134,8 @@ def default_parameters(step):
     # defining def_params
     def_params = ""
     if step == 'min':
-        def_params = """&cntrl
+        def_params = """{step}
+&cntrl
  imin=1, 
  ntx=1,
  irest=0,
@@ -147,9 +148,10 @@ def default_parameters(step):
  ntr=0,
  ifqnt={ifqnt}
 /
-""".format(ifqnt=ifqnt_val)
+""".format(ifqnt=ifqnt_val, step=step)
     elif step == 'heat':
-        def_params = """&cntrl
+        def_params = """{step}
+&cntrl
  imin = 0, 
  irest = 0, 
  ntx = 1, 
@@ -173,9 +175,10 @@ def default_parameters(step):
 /
 &wt type='TEMP0', istep1=0, istep2=25000, value1=0.0, value2=300.0 /
 &wt type='END' /
-""".format(ifqnt=ifqnt_val)
+""".format(ifqnt=ifqnt_val, step=step)
     elif step == 'equi':
-        def_params = """&cntrl
+        def_params = """{step}
+&cntrl
  imin = 0, 
  irest = 1, 
  ntx = 5,
@@ -198,9 +201,10 @@ def default_parameters(step):
  ifqnt={ifqnt},
  nmropt=0
 /
-""".format(ifqnt=ifqnt_val)
+""".format(ifqnt=ifqnt_val, step=step)
     elif step == 'prod':
-        def_params = """&cntrl
+        def_params = """{step}
+&cntrl
  imin = 0, 
  irest = 1, 
  ntx = 5,
@@ -223,7 +227,7 @@ def default_parameters(step):
  ifqnt={ifqnt},
  nmropt=0
 /
-""".format(ifqnt=ifqnt_val)
+""".format(ifqnt=ifqnt_val, step=step)
     return def_params
 
 
@@ -400,11 +404,13 @@ def md_parameters():
         while True:
             try:
                 user_input_def_params = str(input(USER_CHOICE_DEF_PARAMS).lower())
-                if user_input_def_params == 'y':
+                # if prod is the only content of a list, ntx and irest values must be changed, therefore they are handled
+                # in else clause
+                if user_input_def_params == 'y' and steps_list != 'prod':
                     # default parameters for this step will be saved to the file
                     file_step = def_params
                     break
-                elif user_input_def_params == 'n':
+                elif user_input_def_params == 'n' or steps_list == 'prod':
                     # user wants to change parameters and here he will have the chance to do so
                     # list containing parameters for this step
                     parameters_list = []
@@ -419,9 +425,13 @@ def md_parameters():
                         line = re.sub(r'\,', '', line)
                         # getting list of two elements for a single line (parameter and its default value
                         parameter_value = line.split('=')
-                        # if cntrl line or the last line is considered, this is skipped
-                        if parameter_value[0] == '&cntrl' or parameter_value[0] == '/':
+                        # if cntrl line, title line or the last line is considered, this is skipped
+                        not_parameters_list = ['&cntrl', '/', 'min', 'heat', 'equi', 'prod']
+                        if parameter_value[0] in not_parameters_list:
                             continue
+                        #if parameter_value[0] == '&cntrl' or parameter_value[0] == '/' or parameter_value[0] == 'min' or \
+                        #    parameter_value[0] == 'heat' or parameter_value[0] == 'equi' or parameter_value[0] == 'prod':
+                        #    continue
                         # storing parameters in a list
                         parameters_list.append(parameter_value[0])
                         # storing parameters and their values in a dictionary
@@ -442,6 +452,10 @@ def md_parameters():
                         f"- type 'a' in order to add additional parameter\n" \
                         f"- type 'q' if you want to stop modifying parameters for {steps_dict.get(step)} step.\n" \
                         f"Please, provide your choice:\n"
+                    if steps_list == 'prod':
+                        # changing irest and ntx value if list has only prod value
+                        parameters_values_dict.update({irest: 0})
+                        parameters_values_dict.update({ntx: 1})
                     while True:
                         try:
                             user_input_params = str(input(USER_CHOICE_PARAMS).lower())
@@ -511,8 +525,6 @@ def md_parameters():
                                             break
                                     except ValueError:
                                         print('Please, provide correct (numerical) value for this parameter')
-                            # escaping user_input_params loop, should not really exist
-                            #break
                         except:
                             pass
                     break
@@ -526,13 +538,10 @@ def md_parameters():
             file.write(file_step)
         # saving info into control file
         save_to_file(f"{step} = {step}.in\n", filename)
-        pass
 
-    pass
 
 
 def qm_md_merging():
-    print("qm_md_merging")
     # if there is qm, merge md and qm files
     # reading control file
     control = read_file(filename)
