@@ -406,11 +406,11 @@ def md_parameters():
                 user_input_def_params = str(input(USER_CHOICE_DEF_PARAMS).lower())
                 # if prod is the only content of a list, ntx and irest values must be changed, therefore they are handled
                 # in else clause
-                if user_input_def_params == 'y' and steps_list != 'prod':
+                if user_input_def_params == 'y' and steps_list != ['prod']:
                     # default parameters for this step will be saved to the file
                     file_step = def_params
                     break
-                elif user_input_def_params == 'n' or steps_list == 'prod':
+                elif user_input_def_params == 'n' or steps_list == ['prod']:
                     # user wants to change parameters and here he will have the chance to do so
                     # list containing parameters for this step
                     parameters_list = []
@@ -452,10 +452,23 @@ def md_parameters():
                         f"- type 'a' in order to add additional parameter\n" \
                         f"- type 'q' if you want to stop modifying parameters for {steps_dict.get(step)} step.\n" \
                         f"Please, provide your choice:\n"
-                    if steps_list == 'prod':
+                    if steps_list == ['prod']:
                         # changing irest and ntx value if list has only prod value
-                        parameters_values_dict.update({irest: 0})
-                        parameters_values_dict.update({ntx: 1})
+                        parameters_values_dict.update({'irest': '0'})
+                        parameters_values_dict.update({'ntx': '1'})
+                        # quitting changing parameters - saving all of the current values
+                        # converting dictionary with parameters to string
+                        parameters_values_string = str(parameters_values_dict)
+                        # formatting outputs so it will be perfect
+                        parameters_values_string = re.sub(r'\'', '', parameters_values_string)
+                        parameters_values_string = re.sub(r'\s', '', parameters_values_string)
+                        parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
+                        parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
+                        parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
+                        parameters_values_string = re.sub(r'\}', '\n/', parameters_values_string)
+                        file_step = (f"{step}\n" + parameters_values_string)
+                        #file_step = parameters_values_string
+                        break
                     while True:
                         try:
                             user_input_params = str(input(USER_CHOICE_PARAMS).lower())
@@ -500,7 +513,9 @@ def md_parameters():
                                 parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
                                 parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
                                 parameters_values_string = re.sub(r'\}', '\n/', parameters_values_string)
-                                file_step = parameters_values_string
+                                # adding title to the input file
+                                file_step = (f"{step}\n" + parameters_values_string)
+                                #file_step = parameters_values_string
                                 break
                             elif user_input_params in parameters_list:
                                 print(parameters_values_dict)
