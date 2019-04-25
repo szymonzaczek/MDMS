@@ -406,13 +406,59 @@ def md_parameters():
                 user_input_def_params = str(input(USER_CHOICE_DEF_PARAMS).lower())
                 # if prod is the only content of a list, ntx and irest values must be changed, therefore they are handled
                 # in else clause
-                print('here1')
                 if user_input_def_params == 'y' and steps_list != ['prod']:
                     # default parameters for this step will be saved to the file
                     file_step = def_params
                     break
-                elif user_input_def_params == 'n' or steps_list == ['prod']:
-                    print('here2')
+                elif user_input_def_params == 'y' and steps_list == ['prod']:
+                    # prod file must be changed automatically (irest and ntx)
+                    # list containing parameters for this step
+                    parameters_list = []
+                    # dictionary containing parameters and its values
+                    parameters_values_dict = {}
+                    # printing parameters that are in the default file for the current step
+                    for line in def_params.splitlines():
+                        # changing string to the desired format
+                        # removing whitespaces
+                        line = re.sub(r'\s', '', line)
+                        # removing commas in string
+                        line = re.sub(r'\,', '', line)
+                        # getting list of two elements for a single line (parameter and its default value
+                        parameter_value = line.split('=')
+                        # if cntrl line, title line or the last line is considered, this is skipped
+                        not_parameters_list = ['&cntrl', '/', 'min', 'heat', 'equi', 'prod']
+                        if parameter_value[0] in not_parameters_list:
+                            continue
+                        # storing parameters in a list
+                        parameters_list.append(parameter_value[0])
+                        # storing parameters and their values in a dictionary
+                        parameters_values_dict.update({parameter_value[0]: parameter_value[1]})
+                    # changing irest and ntx value if list has only prod value
+                    parameters_values_dict.update({'irest': '0'})
+                    parameters_values_dict.update({'ntx': '1'})
+                    # quitting changing parameters - saving all of the current values
+                    # converting dictionary with parameters to string
+                    parameters_values_string = str(parameters_values_dict)
+                    # formatting outputs so it will be perfect
+                    parameters_values_string = re.sub(r'\'', '', parameters_values_string)
+                    parameters_values_string = re.sub(r'\s', '', parameters_values_string)
+                    parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
+                    parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
+                    parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
+                    parameters_values_string = re.sub(r'\}', '\n/', parameters_values_string)
+                    # in order to add spaces to the beginning of a string, at first a list will be created, which
+                    # later on will be joined to create properly formatted string
+                    parameters_values_list = []
+                    for line in parameters_values_string.splitlines():
+                        if line in not_parameters_list:
+                            parameters_values_list.append(line)
+                        else:
+                            line = ' ' + line
+                            parameters_values_list.append(line)
+                    parameters_values_string = '\n'.join(parameters_values_list)
+                    file_step = (f"{step}\n" + parameters_values_string)
+                    break
+                elif user_input_def_params == 'n':
                     # user wants to change parameters and here he will have the chance to do so
                     # list containing parameters for this step
                     parameters_list = []
@@ -476,6 +522,7 @@ def md_parameters():
                                 parameters_values_list.append(line)
                         parameters_values_string = '\n'.join(parameters_values_list)
                         file_step = (f"{step}\n" + parameters_values_string)
+                        #break
                         #file_step = parameters_values_string
                         #break
                     while True:
