@@ -109,11 +109,16 @@ def queue_or_terminal():
                         print('Please, provide valid input.')
                 # command for executing script
                 USER_CHOICE_COMMAND = f"Please, provide the command that is used to submit a job to be executed in " \
-                    f"the queueing system on your machine (it can be qsub, sbatch, etc.):\n"
+                    f"the queueing system on your machine (it can be qsub, sbatch, etc.)\n" \
+                    f"Note that MDMS has no capability of checking its validity, therefore if a wrong command is provided" \
+                    f", your simulations will not be run.\n" \
+                    f"Please, provide the command:\n"
                 while True:
                     try:
                         user_input_command = str(input(USER_CHOICE_COMMAND))
-                        save_to_file(f"command = {user_input_command}\n", filename)
+                        # MDMS can only check if an input is different than an empty string
+                        if user_input_command != '':
+                            save_to_file(f"command = {user_input_command}\n", filename)
                         break
                     except:
                         print('Please, provide valid input')
@@ -258,6 +263,32 @@ def running_simulations():
         subprocess.run([f"{job_script}"], shell=True)
         pass
     elif run_type_match == 'terminal':
+        # executed lines are saved to a file; script iterates over each line and execute them
+        if parallelism_match == 'parallel':
+            with open(job_name, 'w') as file:
+                for x in range(0, len(steps_list)):
+                    # first execution of script requires inpcrd, further ones requires coordinates from previous step
+                    if x == 0:
+                        file.write(f"mpirun -np {nr_processors_match} {engine_match}.MPI -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {top_name_match}.inpcrd "
+                                   f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo\n")
+                    else:
+                        file.write(f"mpirun -np {nr_processors_match} {engine_match}.MPI -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {steps_list[x - 1]}.ncrst "
+                                   f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo\n")
+        elif parallelism_match == 'serial':
+            with open(job_name, 'w') as file:
+                for x in range(0, len(steps_list)):
+                # first execution of script requires inpcrd, further ones requires coordinates from previous step
+                    if x == 0:
+                        file.write(f"{engine_match} -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {top_name_match}.inpcrd "
+                                   f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo\n")
+                    else:
+                        file.write(f"{engine_match} -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {steps_list[x-1]}.ncrst "
+                                   f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo\n")
+        # files are saved, now onto executing them
+        execution = read_file(job_name)
+        for line in execution.splitlines():
+            print(line)
+            subprocess.run([f"{line}"], shell=True)
         pass
     pass
 
