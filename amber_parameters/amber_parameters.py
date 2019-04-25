@@ -253,7 +253,7 @@ Please, provide your choice:\n """
                 user_input_qmcontrol = str(input(USER_CHOICE_QMCONTROL).lower())
                 if user_input_qmcontrol == 'y':
                     # define path to qmcontrol file
-                    USER_CHOICE_QMPATH = f"Please, provide path to the file that contains parameters for the QM part" \
+                    USER_CHOICE_QMPATH = f"\nPlease, provide path to the file that contains parameters for the QM part" \
                         f" for your simulations (it should only contain &qmmm namelist):\n"
                     while True:
                         try:
@@ -271,7 +271,7 @@ Please, provide your choice:\n """
                     break
                 elif user_input_qmcontrol == 'n':
                     # defining qmatoms
-                    USER_CHOICE_QMATOMS = f"Which atoms from your system should be treated with QM methods? Any valid " \
+                    USER_CHOICE_QMATOMS = f"\nWhich atoms from your system should be treated with QM methods? Any valid " \
                         f"Amber mask will work (for more info about masks refer to Amber manual).\n" \
                         f"Please, provide your choice (Amber mask formatting is required):\n"
                     while True:
@@ -281,7 +281,7 @@ Please, provide your choice:\n """
                         except:
                             print('Please, provide valid input')
                     # defining spin
-                    USER_CHOICE_QMSPIN = f"What is the spin of the QM part of your system?\n" \
+                    USER_CHOICE_QMSPIN = f"\nWhat is the spin of the QM part of your system?\n" \
                         f"Please, provide spin value for the QM part of your system (positive integer value):\n"
                     while True:
                         try:
@@ -291,7 +291,7 @@ Please, provide your choice:\n """
                         except:
                             print('Please, provide valid input')
                     # defining charge
-                    USER_CHOICE_QMCHARGE = f"What is the charge of the QM part of your system?\n" \
+                    USER_CHOICE_QMCHARGE = f"\nWhat is the charge of the QM part of your system?\n" \
                         f"Please, provide charge value for the QM part of your system (integer value):\n"
                     while True:
                         try:
@@ -300,7 +300,7 @@ Please, provide your choice:\n """
                         except:
                             print('Please, provide valid input')
                     # define qmmethod
-                    USER_CHOICE_QMMETHOD = f"Which QM method would you like to use? The following options are available:\n" \
+                    USER_CHOICE_QMMETHOD = f"\nWhich QM method would you like to use? The following options are available:\n" \
                         f"- 'AM1'\n" \
                         f"- 'PM3'\n" \
                         f"- 'RM1'\n" \
@@ -391,7 +391,7 @@ def md_parameters():
               f"{def_params}")
         # choice if user wants to change default parameters (more info on individual parameters will be provided when
         # user will consider changing them)
-        USER_CHOICE_DEF_PARAMS = f"You might either stick to the default parameters, or change their individual values.\n" \
+        USER_CHOICE_DEF_PARAMS = f"\nYou might either stick to the default parameters, or change their individual values.\n" \
             f"Please keep in mind that not only each protein is different but also computational resources that are " \
             f"available to you may significantly differ from a standard HPC resource, for which this program was designed," \
             f" therefore you SHOULD consider every parameter carefully. Default values are rather a proposition, which" \
@@ -405,7 +405,7 @@ def md_parameters():
             try:
                 user_input_def_params = str(input(USER_CHOICE_DEF_PARAMS).lower())
                 # if prod is the only content of a list, ntx and irest values must be changed, therefore they are handled
-                # in else clause
+                # in else clausewysłanie pit do urzedu skarbowego poczta
                 if user_input_def_params == 'y' and steps_list != ['prod']:
                     # default parameters for this step will be saved to the file
                     file_step = def_params
@@ -482,7 +482,7 @@ def md_parameters():
                         # storing parameters and their values in a dictionary
                         parameters_values_dict.update({parameter_value[0]: parameter_value[1]})
                     if step == 'equi':
-                        print(f"!!WARNING!!\n"
+                        print(f"\n!!WARNING!!\n"
                               f"If you want to choose the rate at which system is heated (what is controlled with "
                               f"&wt type='TEMP0' statement) you need to perform it manually in the file controlling"
                               f" {steps_dict.get(step)} step, prior to running your simulations.\n"
@@ -522,16 +522,13 @@ def md_parameters():
                                 parameters_values_list.append(line)
                         parameters_values_string = '\n'.join(parameters_values_list)
                         file_step = (f"{step}\n" + parameters_values_string)
-                        #break
-                        #file_step = parameters_values_string
-                        #break
                     while True:
                         try:
                             user_input_params = str(input(USER_CHOICE_PARAMS).lower())
                             # if input is in parameters list, print this parameter value with info what it is doing
                             if user_input_params == 'a':
                                 # adding additional parameters to the current step
-                                USER_CHOICE_ADD_PARAM = (f"!!WARNING!!\n" \
+                                USER_CHOICE_ADD_PARAM = (f"\n!!WARNING!!\n" \
                                     f"You chose to provide additional parameters for {steps_dict.get(step)} step.\n" \
                                     f"Keep in mind, that those parameters MUST be valid Amber parameters (see Manual " \
                                     f"for detailed information).\n" \
@@ -584,7 +581,7 @@ def md_parameters():
                                 break
                             elif user_input_params in parameters_list:
                                 print(parameters_values_dict)
-                                USER_CHOICE_PARAM_VALUE = f"You chose to change value of the '{user_input_params}' parameter.\n" \
+                                USER_CHOICE_PARAM_VALUE = f"\nYou chose to change value of the '{user_input_params}' parameter.\n" \
                                     f"This parameter does the following job:\n" \
                                     f"{parameters_dict.get(user_input_params)}\n" \
                                     f"Its current value is set to:\n" \
@@ -638,7 +635,7 @@ def qm_md_merging():
         steps_string = steps_match.replace("'", "")
         # removing whitespaces and turning string into a list
         steps_list = re.sub(r'\s', '', steps_string).split(',')
-        prompt_qm = f"NOTE\n" \
+        prompt_qm = f"\nNOTE\n" \
             f"Right now, qm_qontrol file will be appended to all of the files that contain parameters for your " \
             f"simulations.\n"
         print(prompt_qm)

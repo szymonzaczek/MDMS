@@ -42,6 +42,8 @@ def menu():
                 print(
                     'You will be obtaining input files for Amber, which will control your simulations. Buckle up!\n')
                 amber_parameters.amber_parameters.queue_methods()
+                print(
+                    'You have managed to obtain input Amber input parameters. Get ready for starting your calculations!\n')
             elif user_input_menu == 'r':
                 print('You will be guided on how to run your simulations. Buckle up!\n')
                 running_simulations.run_simulations.queue_methods()

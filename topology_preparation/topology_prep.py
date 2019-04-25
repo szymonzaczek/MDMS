@@ -144,19 +144,18 @@ def ligands_parameters():
         # removing whitespaces and turning string into a list
         ligands_list = re.sub(r'\s', '', ligands_string).split(',')
         # getting necessary infor for antechamber input
-        USER_CHOICE_CHARGE_MODEL = f"Please specify the charge model that you would like to apply to your ligands. If you want" \
+        USER_CHOICE_CHARGE_MODEL = f"\nPlease specify the charge model that you would like to apply to your ligands. If you want" \
             f"to employ RESP charges, you will need to manually modify antechamber input files.\n" \
             f"Please note that AM1-BCC charge model is a recommended choice.\n" \
             f"Following options are available:\n" \
             f"- 'bcc' - AM1-BCC charge model\n" \
             f"- 'mul' - Mulliken charge model\n" \
             f"Please, provide one of the options from available answers (single-quoted words specified above):\n"
-        USER_CHOICE_ATOM_TYPES = f"Please, specify which atom types you would like to assign to your ligands.\n" \
+        USER_CHOICE_ATOM_TYPES = f"\nPlease, specify which atom types you would like to assign to your ligands.\n" \
             f"Please note that GAFF2 is a recommended choice.\n" \
             f"Following options are available:\n" \
             f"- 'gaff2' - General Amber Force Field, version 2\n" \
             f"- 'gaff' - General Amber Force Field, older version of GAFF2\n" \
-            f"- 'bcc' - for AM1-BCC atom types\n"
         # the whole function will only do something, if ligands_list have
         # anything in it
         if ligands_list:
@@ -166,20 +165,8 @@ def ligands_parameters():
                 try:
                     user_input_charge_model = str(
                         input(USER_CHOICE_CHARGE_MODEL).lower())
-                    if user_input_charge_model == 'cm1':
-                        charge_model = 'cm1'
-                        break
-                    elif user_input_charge_model == 'esp':
-                        charge_model = 'esp'
-                        break
-                    elif user_input_charge_model == 'gas':
-                        charge_model = 'gas'
-                        break
-                    elif user_input_charge_model == 'bcc':
+                    if user_input_charge_model == 'bcc':
                         charge_model = 'bcc'
-                        break
-                    elif user_input_charge_model == 'cm2':
-                        charge_model = 'cm2'
                         break
                     elif user_input_charge_model == 'mul':
                         charge_model = 'mul'
@@ -192,10 +179,7 @@ def ligands_parameters():
                 try:
                     user_input_atom_types = str(
                         input(USER_CHOICE_ATOM_TYPES).lower())
-                    if user_input_atom_types == 'bcc':
-                        atoms_type = 'bcc'
-                        break
-                    elif user_input_atom_types == 'gaff':
+                    if user_input_atom_types == 'gaff':
                         atoms_type = 'gaff'
                         break
                     elif user_input_atom_types == 'gaff2':
@@ -208,8 +192,7 @@ def ligands_parameters():
             lig_charges = []
             lig_multiplicities = []
             for x in ligands_list:
-                # those must be looped on, since each ligand might have
-                # different charge and multiplicity
+                # those must be looped on, since each ligand might have different charge and multiplicity
                 USER_CHOICE_CHARGE = f"Please, provide the net charge of {x} ligand (integer value):\n"
                 while True:
                     # this loop gets info about ligands charges
@@ -224,7 +207,7 @@ def ligands_parameters():
             save_to_file(f"ligands_charges = {lig_charges}\n", filename)
             for x in ligands_list:
                 # this loop gets info about ligands multipicities
-                USER_CHOICE_MULTIPLICITY = f"Please, provide multiplicity of {x} ligand (positive integer value):\n"
+                USER_CHOICE_MULTIPLICITY = f"\nPlease, provide multiplicity of {x} ligand (positive integer value):\n"
                 while True:
                     try:
                         # multiplicity must be integer but also must be
@@ -239,7 +222,6 @@ def ligands_parameters():
                         print("The input that you have provided is not valid")
             # once multiplicity is good, its saved into control file
             save_to_file(f"ligands_multiplicities = {lig_multiplicities}\n", filename)
-        pass
 
 
 def antechamber_parmchk_input():
@@ -435,7 +417,7 @@ def tleap_input():
     # options for tleap
     # protein force field
     USER_CHOICE_PROTEIN_FF = (
-        f"Please, choose force field which will be used for the protein during your simulations.\n"
+        f"\nPlease, choose force field which will be used for the protein during your simulations.\n"
         f"Please, note that the recommended choice is ff14SB.\n"
         f"The following options are available:\n"
         f"- 'ff14sb'\n"
@@ -483,7 +465,7 @@ def tleap_input():
         'spce': 'frcmod.ionsjc_spce'
     }
     USER_CHOICE_WATER_FF = (
-        f"Please, choose force field which will be used for water during your simulations.\n"
+        f"\nPlease, choose force field which will be used for water during your simulations.\n"
         f"Please, note that the most common choice is tip3p.\n"
         f"The following options are available:\n"
         f"- 'tip3p'\n"
@@ -536,7 +518,7 @@ def tleap_input():
         # checking complex pdb for validity
         f.write(f"check mol\n")
     # provide filaneme for topology and coordinates
-    USER_CHOICE_NAME = "Please, provide name for the prefix for the topology and coordinates files.\n" \
+    USER_CHOICE_NAME = "\nPlease, provide name for the prefix for the topology and coordinates files.\n" \
                        "Ideally, it should be just a few letters-long.\n" \
                        "For instance, if you type 'my_complex' your topology will be named my_complex.prmtop" \
                        " and coordinates will be named my_complex.inpcrd.\n" \
@@ -554,7 +536,7 @@ def tleap_input():
         f.write(f"savepdb mol {user_input_name}_no_water.pdb\n")
     # determining solvation box size
     USER_CHOICE_WATERBOX_SIZE = (
-        f"Please, provide the size of a periodic solvent box around the complex (in Angstroms).\n"
+        f"\nPlease, provide the size of a periodic solvent box around the complex (in Angstroms).\n"
         f"Most commonly used values are between 8 - 14.\n"
         f"Please, provide your choice:\n"
     )
@@ -565,12 +547,12 @@ def tleap_input():
             if user_input_waterbox_size > 0:
                 # solvatebox should be between 8 and 14 - if it is not, user is informed that it may be troublesome
                 if user_input_waterbox_size < 8:
-                    print(f"You've chosen that solvent will create box of {user_input_waterbox_size} Angstroms around"
+                    print(f"\nYou've chosen that solvent will create box of {user_input_waterbox_size} Angstroms around"
                           f"complex. This is smaller than the recommended size. Such a box might not be enough"
                           f"to properly solvate your complex.\n Please, proceed with caution")
                     break
                 elif user_input_waterbox_size > 14:
-                    print(f"You've chosen that solvent will create box of {user_input_waterbox_size} Angstroms around"
+                    print(f"\nYou've chosen that solvent will create box of {user_input_waterbox_size} Angstroms around"
                           f"complex. This is larger than the recommended size. A vast amount of water molecules might"
                           f"introduce very high computational cost.\n Please, proceed with caution."
                           f"might Please, proceed with caution")

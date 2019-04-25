@@ -99,7 +99,7 @@ def read_het_atoms_pdb():
 def init_pdb():
     # getting pdb structure
     USER_CHOICE_STRUC = (
-        "Please, provide information whether you have already downloaded the PDB file wthat will be investigated, \n"
+        "\nPlease, provide information whether you have already downloaded the PDB file wthat will be investigated, \n"
         "or would you like to retrieve it from RSCB website by providing its PDB ID?\n"
         "- press 'y' if you have already downloaded your PDB file\n"
         "- press 'n' if you haven't downloaded your PDB file yet\n")
@@ -204,7 +204,6 @@ def init_pdb():
 
 def missing_atoms_pdb():
     # getting lines starting with remark from a pdb file
-    print('missing_atoms_pdb')
     pdb_remark = read_remark_pdb()
     # if there are no pdb_remark, skip this function
     if pdb_remark:
@@ -254,7 +253,6 @@ def missing_atoms_pdb():
 
 def missing_res_pdb():
     # getting lines starting with remark from a pdb file
-    print('missing_res_pdb')
     pdb_remark = read_remark_pdb()
     # if there are no pdb_remark, skip this function
     if pdb_remark:
@@ -290,7 +288,6 @@ def missing_res_pdb():
 
 def ligands_pdb():
     # getting het_atms from pdb file
-    print('ligands_pdb')
     het_atoms = read_het_atoms_pdb()
     # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
@@ -352,11 +349,11 @@ def ligands_pdb():
         unique_ligands_str = '\n'.join(unique_ligands)
         nr_unique_ligands = len(unique_ligands)
         USER_CHOICE_LIGANDS = (f"There are {nr_unique_ligands} unique residues in your PDB file which are not amino acids and waters.\n"
-                               f"Each ligand that will be retained for simulations, will require parametrization.\n"
+                               f"Each ligand that will be retained for simulations will require parametrization.\n"
                                f"Which residues you would like to keep for simulations? "
                                f"Unique residues are:\n"
                                f"{unique_ligands_str}\n"
-                               f"Please specify, which residues will be treated as ligands in your simulation (provide their exact name, "
+                               f"\nPlease specify, which residues will be treated as ligands in your simulation (provide their exact name, "
                                f"separating each entry by a comma - if you decide to not include ligands, just press enter):\n")
         # table for storing ligands kept for simulations, which are present in
         # pdb
@@ -378,7 +375,7 @@ def ligands_pdb():
                 # this loop ensures that user picked all the ligands that he
                 # wanted
                 while True:
-                    USER_CHOICE_LIG_CONT = (f"So far, you've chosen following residues to be included as ligands in your simulations: {ligands}.\n"
+                    USER_CHOICE_LIG_CONT = (f"\nSo far, you've chosen following residues to be included as ligands in your simulations: {ligands}.\n"
                                             f"Would you like to add more ligands, or would you like to continue?\n"
                                             f"- press 'a' in order to add more ligands\n"
                                             f"- press 'c' in order to continue to next step\n")
@@ -417,7 +414,7 @@ def ligands_pdb():
             except BaseException:
                 print("You've provided wrong residues")
                 pass
-        print(f"Ligands that will be included in your system are: {ligands}")
+        print(f"\nLigands that will be included in your system are: {ligands}")
         pass
 
 
