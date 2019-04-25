@@ -406,11 +406,13 @@ def md_parameters():
                 user_input_def_params = str(input(USER_CHOICE_DEF_PARAMS).lower())
                 # if prod is the only content of a list, ntx and irest values must be changed, therefore they are handled
                 # in else clause
+                print('here1')
                 if user_input_def_params == 'y' and steps_list != ['prod']:
                     # default parameters for this step will be saved to the file
                     file_step = def_params
                     break
                 elif user_input_def_params == 'n' or steps_list == ['prod']:
+                    print('here2')
                     # user wants to change parameters and here he will have the chance to do so
                     # list containing parameters for this step
                     parameters_list = []
@@ -429,9 +431,6 @@ def md_parameters():
                         not_parameters_list = ['&cntrl', '/', 'min', 'heat', 'equi', 'prod']
                         if parameter_value[0] in not_parameters_list:
                             continue
-                        #if parameter_value[0] == '&cntrl' or parameter_value[0] == '/' or parameter_value[0] == 'min' or \
-                        #    parameter_value[0] == 'heat' or parameter_value[0] == 'equi' or parameter_value[0] == 'prod':
-                        #    continue
                         # storing parameters in a list
                         parameters_list.append(parameter_value[0])
                         # storing parameters and their values in a dictionary
@@ -466,9 +465,19 @@ def md_parameters():
                         parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
                         parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
                         parameters_values_string = re.sub(r'\}', '\n/', parameters_values_string)
+                        # in order to add spaces to the beginning of a string, at first a list will be created, which
+                        # later on will be joined to create properly formatted string
+                        parameters_values_list = []
+                        for line in parameters_values_string.splitlines():
+                            if line in not_parameters_list:
+                                parameters_values_list.append(line)
+                            else:
+                                line = ' ' + line
+                                parameters_values_list.append(line)
+                        parameters_values_string = '\n'.join(parameters_values_list)
                         file_step = (f"{step}\n" + parameters_values_string)
                         #file_step = parameters_values_string
-                        break
+                        #break
                     while True:
                         try:
                             user_input_params = str(input(USER_CHOICE_PARAMS).lower())
@@ -516,6 +525,15 @@ def md_parameters():
                                 # adding title to the input file
                                 file_step = (f"{step}\n" + parameters_values_string)
                                 #file_step = parameters_values_string
+                                parameters_values_list = []
+                                for line in parameters_values_string.splitlines():
+                                    if line in not_parameters_list:
+                                        parameters_values_list.append(line)
+                                    else:
+                                        line = ' ' + line
+                                        parameters_values_list.append(line)
+                                parameters_values_string = '\n'.join(parameters_values_list)
+                                file_step = (f"{step}\n" + parameters_values_string)
                                 break
                             elif user_input_params in parameters_list:
                                 print(parameters_values_dict)
