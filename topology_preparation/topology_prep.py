@@ -67,7 +67,7 @@ def clearing_control():
 def hydrogen_check():
     # Checking if hydrogens are added to ligands file
     control = read_file(filename)
-    ligands = r'ligands.*=.*\[(.*)\]'
+    ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
     # if there are ligands, following clause will be executed
     if ligands_match:
@@ -134,7 +134,7 @@ def ligands_parameters():
     # reading control file
     control = read_file(filename)
     # finding ligands residues in prep file
-    ligands = r'ligands.*=.*\[(.*)\]'
+    ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
     if ligands_match:
         # taking only ligands entries
@@ -227,7 +227,7 @@ def ligands_parameters():
 def antechamber_parmchk_input():
     # finding ligands residues in control file
     control = read_file(filename)
-    ligands = r'ligands.*=.*\[(.*)\]'
+    ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
     if ligands_match:
         # taking only ligands entries

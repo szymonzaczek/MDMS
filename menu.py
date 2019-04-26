@@ -31,7 +31,7 @@ def menu():
                 initial_structure.initial_struc.queue_methods()
                 print(
                     'You have completed the first step required for running MD simulations. Congratulations')
-            if user_input_menu == 't':
+            elif user_input_menu == 't':
                 print(
                     'You will obtain topology and coordinate files for Amber. Buckle up!\n')
                 topology_preparation.topology_prep.queue_methods()
@@ -48,10 +48,11 @@ def menu():
                 print('You will be guided on how to run your simulations. Buckle up!\n')
                 running_simulations.run_simulations.queue_methods()
             elif user_input_menu == 'q':
+                print('Good luck with your endeavors and have a great day!')
                 break
-            #else:
-            #    # this clause gets executed whereas it should not - FIX THIS
-            #    print('this should not be executed')
+            else:
+                print(f"\n{user_input_menu}")
+                print('Please, provide one of the available options.')
         except BaseException:
             print('Please, provide a valid input.')
 

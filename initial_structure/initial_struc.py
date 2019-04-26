@@ -10,7 +10,7 @@ def file_naming():
     # getting name for a control file, which will containg all info
     global filename
     filename_inp: str = Path(input('Please, provide name for the file that will contain every piece of information for running SAmber. '
-                                   '\nPlease, keep in mind that if a file with that exact name exists, it will be overwritten.\n'
+                                   '\nKeep in mind that if a file with that exact name exists, it will be overwritten.\n'
                                    'Please, provide name of the file:\n'))
     filename = filename_inp
     if filename.exists():
@@ -353,7 +353,7 @@ def ligands_pdb():
                                f"Which residues you would like to keep for simulations? "
                                f"Unique residues are:\n"
                                f"{unique_ligands_str}\n"
-                               f"\nPlease specify, which residues will be treated as ligands in your simulation (provide their exact name, "
+                               f"Please specify, which residues will be treated as ligands in your simulation (provide their exact name, "
                                f"separating each entry by a comma - if you decide to not include ligands, just press enter):\n")
         # table for storing ligands kept for simulations, which are present in
         # pdb
@@ -378,7 +378,7 @@ def ligands_pdb():
                     USER_CHOICE_LIG_CONT = (f"\nSo far, you've chosen following residues to be included as ligands in your simulations: {ligands}.\n"
                                             f"Would you like to add more ligands, or would you like to continue?\n"
                                             f"- press 'a' in order to add more ligands\n"
-                                            f"- press 'c' in order to continue to next step\n")
+                                            f"- press 'c' in order to continue to the next step\n")
                     try:
                         # if user decides to keep adding, procedure is repeated
                         user_input_lig_cont = str(
@@ -561,7 +561,7 @@ def hydrogens_prompt():
     # Reminding that user must add hydrogens to ligands
     # reading control file
     control = read_file(filename)
-    ligands = r'ligands.*=.*\[(.*)\]'
+    ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
     # function will only be executed if there were ligands chosen
     if ligands_match:
@@ -611,7 +611,7 @@ def sym_operations_prompt():
         f"Symmetry operations on PDB files might be performed within various software, such as PyMOL or Swiss-PdbViewer.\n" \
         f"For more info on what oligomeric structure you should proceed with, please, consult the paper " \
         f"that reported obtaining {pdb_filename} crystal structure.\n" \
-        f"Are you sure, that {pdb_filename} has an appropriate oligomeric structure?\n" \
+        f"Are you sure that {pdb_filename} has an appropriate oligomeric structure?\n" \
         f"- press 'y' to continue\n" \
         f"- press 'n' to stop MDMS \n"
     while True:
