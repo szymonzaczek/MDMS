@@ -51,7 +51,6 @@ def menu():
                 print('Good luck with your endeavors and have a great day!')
                 break
             else:
-                print(f"\n{user_input_menu}")
                 print('Please, provide one of the available options.')
         except BaseException:
             print('Please, provide a valid input.')
