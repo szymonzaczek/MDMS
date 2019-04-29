@@ -2,7 +2,6 @@ import os
 import fnmatch
 import pandas as pd
 import re
-import subprocess
 from Bio.PDB import *
 from pathlib import Path
 
@@ -11,7 +10,7 @@ def file_naming():
     # getting name for a control file, which will containg all info
     global filename
     filename_inp: str = Path(input('Please, provide name for the file that will contain every piece of information for running SAmber. '
-                                   '\nPlease, keep in mind that if a file with that exact name exists, it will be overwritten.\n'
+                                   '\nKeep in mind that if a file with that exact name exists, it will be overwritten.\n'
                                    'Please, provide name of the file:\n'))
     filename = filename_inp
     if filename.exists():
@@ -55,7 +54,7 @@ def stop_interface():
 def read_remark_pdb():
     # retrieving pdb file name from control file
     control = read_file(filename)
-    pdb = 'pdb.=.(.*)'
+    pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
     # creating list into which all of the remark lines will be appended
@@ -76,7 +75,7 @@ def read_remark_pdb():
 def read_het_atoms_pdb():
     # retrieving pdb file name from control file
     control = read_file(filename)
-    pdb = 'pdb.=.(.*)'
+    pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
     # cCreating list into which all of the hetatm lines will be appended
@@ -100,7 +99,7 @@ def read_het_atoms_pdb():
 def init_pdb():
     # getting pdb structure
     USER_CHOICE_STRUC = (
-        "Please, provide information whether you have already downloaded the PDB file wthat will be investigated, \n"
+        "\nPlease, provide information whether you have already downloaded the PDB file wthat will be investigated, \n"
         "or would you like to retrieve it from RSCB website by providing its PDB ID?\n"
         "- press 'y' if you have already downloaded your PDB file\n"
         "- press 'n' if you haven't downloaded your PDB file yet\n")
@@ -205,7 +204,6 @@ def init_pdb():
 
 def missing_atoms_pdb():
     # getting lines starting with remark from a pdb file
-    print('missing_atoms_pdb')
     pdb_remark = read_remark_pdb()
     # if there are no pdb_remark, skip this function
     if pdb_remark:
@@ -255,7 +253,6 @@ def missing_atoms_pdb():
 
 def missing_res_pdb():
     # getting lines starting with remark from a pdb file
-    print('missing_res_pdb')
     pdb_remark = read_remark_pdb()
     # if there are no pdb_remark, skip this function
     if pdb_remark:
@@ -291,7 +288,6 @@ def missing_res_pdb():
 
 def ligands_pdb():
     # getting het_atms from pdb file
-    print('ligands_pdb')
     het_atoms = read_het_atoms_pdb()
     # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
@@ -353,7 +349,7 @@ def ligands_pdb():
         unique_ligands_str = '\n'.join(unique_ligands)
         nr_unique_ligands = len(unique_ligands)
         USER_CHOICE_LIGANDS = (f"There are {nr_unique_ligands} unique residues in your PDB file which are not amino acids and waters.\n"
-                               f"Each ligand that will be retained for simulations, will require parametrization.\n"
+                               f"Each ligand that will be retained for simulations will require parametrization.\n"
                                f"Which residues you would like to keep for simulations? "
                                f"Unique residues are:\n"
                                f"{unique_ligands_str}\n"
@@ -379,10 +375,10 @@ def ligands_pdb():
                 # this loop ensures that user picked all the ligands that he
                 # wanted
                 while True:
-                    USER_CHOICE_LIG_CONT = (f"So far, you've chosen following residues to be included as ligands in your simulations: {ligands}.\n"
+                    USER_CHOICE_LIG_CONT = (f"\nSo far, you've chosen following residues to be included as ligands in your simulations: {ligands}.\n"
                                             f"Would you like to add more ligands, or would you like to continue?\n"
                                             f"- press 'a' in order to add more ligands\n"
-                                            f"- press 'c' in order to continue to next step\n")
+                                            f"- press 'c' in order to continue to the next step\n")
                     try:
                         # if user decides to keep adding, procedure is repeated
                         user_input_lig_cont = str(
@@ -418,7 +414,7 @@ def ligands_pdb():
             except BaseException:
                 print("You've provided wrong residues")
                 pass
-        print(f"Ligands that will be included in your system are: {ligands}")
+        print(f"\nLigands that will be included in your system are: {ligands}")
         pass
 
 
@@ -565,7 +561,7 @@ def hydrogens_prompt():
     # Reminding that user must add hydrogens to ligands
     # reading control file
     control = read_file(filename)
-    ligands = r'ligands.*=.*\[(.*)\]'
+    ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
     # function will only be executed if there were ligands chosen
     if ligands_match:
@@ -601,6 +597,35 @@ def hydrogens_prompt():
                 except BaseException:
                     print('Please, provide valid input')
 
+def sym_operations_prompt():
+    # Reminding user that he must perform crystallographic operations prior to next steps
+    # reading pdb file
+    control = read_file(filename)
+    pdb = 'pdb\s*=\s*(.*)'
+    pdb_match = re.search(pdb, control).group(1)
+    pdb_filename = pdb_match
+    # prompt that will be displayed to the user
+    USER_CHOICE_OL = f"\n!!WARNING!!\nPrior to proceeding to preparing topology and input coordinates, you need to make" \
+        f" sure that your structure has a fully functional oligomeric structure.\nFor instance, active site might be " \
+        f"fully formed only if there are 2 (or even more) mnonomeric units of the protein within the studied oligomer. " \
+        f"Symmetry operations on PDB files might be performed within various software, such as PyMOL or Swiss-PdbViewer.\n" \
+        f"For more info on what oligomeric structure you should proceed with, please, consult the paper " \
+        f"that reported obtaining {pdb_filename} crystal structure.\n" \
+        f"Are you sure that {pdb_filename} has an appropriate oligomeric structure?\n" \
+        f"- press 'y' to continue\n" \
+        f"- press 'n' to stop MDMS \n"
+    while True:
+        try:
+            user_input_ol = str(
+                input(USER_CHOICE_OL).lower())
+            if user_input_ol == 'y':
+                break
+            elif user_input_ol == 'n':
+                stop_interface()
+                break
+            pass
+        except BaseException:
+            print('Please, provide valid input')
 
 prep_functions = [
     file_naming,
@@ -610,7 +635,8 @@ prep_functions = [
     ligands_pdb,
     metals_pdb,
     waters_pdb,
-    hydrogens_prompt]
+    hydrogens_prompt,
+    sym_operations_prompt,]
 
 methods_generator = (y for y in prep_functions)
 

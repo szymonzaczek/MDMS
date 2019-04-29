@@ -1,9 +1,7 @@
 import os
-import fnmatch
 import pandas as pd
 import re
 import subprocess
-from Bio.PDB import *
 from pathlib import Path
 
 
@@ -40,68 +38,14 @@ def file_check(file):
     return test
 
 
-def download_pdb(user_input_id):
-    # downloading pdb
-    pdbl = PDBList()
-    pdbl.retrieve_pdb_file(
-        user_input_id,
-        pdir='.',
-        file_format='pdb',
-        overwrite=True)
-
-
 def stop_interface():
     # enforce stopping the entire interface
     global stop_generator
     stop_generator = True
 
 
-def read_remark_pdb():
-    # retrieving pdb file name from control file
-    control = read_file(filename)
-    pdb = 'pdb.=.(.*)'
-    pdb_match = re.search(pdb, control).group(1)
-    pdb_filename = pdb_match
-    # creating list into which all of the remark lines will be appended
-    pdb_remark = []
-    # reading which lines starts with remark and saving it to a list
-    with open(f"{pdb_filename}", 'r') as file:
-        for line in file:
-            # looking for lines starting with remark and appending them to a
-            # list
-            if line.startswith('REMARK'):
-                pdb_remark.append(line.strip())
-    if pdb_remark:
-        return pdb_remark
-    else:
-        return None
-
-
-def read_het_atoms_pdb():
-    # retrieving pdb file name from control file
-    control = read_file(filename)
-    pdb = 'pdb.=.(.*)'
-    pdb_match = re.search(pdb, control).group(1)
-    pdb_filename = pdb_match
-    # cCreating list into which all of the hetatm lines will be appended
-    pdb_hetatoms = []
-    with open(f"{pdb_filename}", 'r') as file:
-        for line in file:
-            # looking for lines starting with hetatm and appending them to a
-            # list
-            if line.startswith('HETATM'):
-                pdb_hetatoms.append(line.strip())
-    # het atoms will only be saved if there are any het_atoms
-    if pdb_hetatoms:
-        # saving het_atoms to a csv file - it will be easier to read it then
-        with open('het_atoms.csv', 'w') as f:
-            f.write('\n'.join(pdb_hetatoms))
-        return pdb_hetatoms
-    else:
-        return None
-
-
 def clearing_control():
+    # this function clears control file from what will be inputted with topology_prep run
     # name of temporary file that will store what is important
     filetemp = 'temp.txt'
     # list of parameters that will be stripped out of control file
@@ -123,7 +67,7 @@ def clearing_control():
 def hydrogen_check():
     # Checking if hydrogens are added to ligands file
     control = read_file(filename)
-    ligands = r'ligands.*=.*\[(.*)\]'
+    ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
     # if there are ligands, following clause will be executed
     if ligands_match:
@@ -190,7 +134,7 @@ def ligands_parameters():
     # reading control file
     control = read_file(filename)
     # finding ligands residues in prep file
-    ligands = r'ligands.*=.*\[(.*)\]'
+    ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
     if ligands_match:
         # taking only ligands entries
@@ -200,19 +144,18 @@ def ligands_parameters():
         # removing whitespaces and turning string into a list
         ligands_list = re.sub(r'\s', '', ligands_string).split(',')
         # getting necessary infor for antechamber input
-        USER_CHOICE_CHARGE_MODEL = f"Please specify the charge model that you would like to apply to your ligands. If you want" \
+        USER_CHOICE_CHARGE_MODEL = f"\nPlease specify the charge model that you would like to apply to your ligands. If you want" \
             f"to employ RESP charges, you will need to manually modify antechamber input files.\n" \
             f"Please note that AM1-BCC charge model is a recommended choice.\n" \
             f"Following options are available:\n" \
             f"- 'bcc' - AM1-BCC charge model\n" \
             f"- 'mul' - Mulliken charge model\n" \
             f"Please, provide one of the options from available answers (single-quoted words specified above):\n"
-        USER_CHOICE_ATOM_TYPES = f"Please, specify which atom types you would like to assign to your ligands.\n" \
+        USER_CHOICE_ATOM_TYPES = f"\nPlease, specify which atom types you would like to assign to your ligands.\n" \
             f"Please note that GAFF2 is a recommended choice.\n" \
             f"Following options are available:\n" \
             f"- 'gaff2' - General Amber Force Field, version 2\n" \
             f"- 'gaff' - General Amber Force Field, older version of GAFF2\n" \
-            f"- 'bcc' - for AM1-BCC atom types\n"
         # the whole function will only do something, if ligands_list have
         # anything in it
         if ligands_list:
@@ -222,20 +165,8 @@ def ligands_parameters():
                 try:
                     user_input_charge_model = str(
                         input(USER_CHOICE_CHARGE_MODEL).lower())
-                    if user_input_charge_model == 'cm1':
-                        charge_model = 'cm1'
-                        break
-                    elif user_input_charge_model == 'esp':
-                        charge_model = 'esp'
-                        break
-                    elif user_input_charge_model == 'gas':
-                        charge_model = 'gas'
-                        break
-                    elif user_input_charge_model == 'bcc':
+                    if user_input_charge_model == 'bcc':
                         charge_model = 'bcc'
-                        break
-                    elif user_input_charge_model == 'cm2':
-                        charge_model = 'cm2'
                         break
                     elif user_input_charge_model == 'mul':
                         charge_model = 'mul'
@@ -248,10 +179,7 @@ def ligands_parameters():
                 try:
                     user_input_atom_types = str(
                         input(USER_CHOICE_ATOM_TYPES).lower())
-                    if user_input_atom_types == 'bcc':
-                        atoms_type = 'bcc'
-                        break
-                    elif user_input_atom_types == 'gaff':
+                    if user_input_atom_types == 'gaff':
                         atoms_type = 'gaff'
                         break
                     elif user_input_atom_types == 'gaff2':
@@ -264,8 +192,7 @@ def ligands_parameters():
             lig_charges = []
             lig_multiplicities = []
             for x in ligands_list:
-                # those must be looped on, since each ligand might have
-                # different charge and multiplicity
+                # those must be looped on, since each ligand might have different charge and multiplicity
                 USER_CHOICE_CHARGE = f"Please, provide the net charge of {x} ligand (integer value):\n"
                 while True:
                     # this loop gets info about ligands charges
@@ -280,7 +207,7 @@ def ligands_parameters():
             save_to_file(f"ligands_charges = {lig_charges}\n", filename)
             for x in ligands_list:
                 # this loop gets info about ligands multipicities
-                USER_CHOICE_MULTIPLICITY = f"Please, provide multiplicity of {x} ligand (positive integer value):\n"
+                USER_CHOICE_MULTIPLICITY = f"\nPlease, provide multiplicity of {x} ligand (positive integer value):\n"
                 while True:
                     try:
                         # multiplicity must be integer but also must be
@@ -295,13 +222,12 @@ def ligands_parameters():
                         print("The input that you have provided is not valid")
             # once multiplicity is good, its saved into control file
             save_to_file(f"ligands_multiplicities = {lig_multiplicities}\n", filename)
-        pass
 
 
 def antechamber_parmchk_input():
     # finding ligands residues in control file
     control = read_file(filename)
-    ligands = r'ligands.*=.*\[(.*)\]'
+    ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
     if ligands_match:
         # taking only ligands entries
@@ -491,7 +417,7 @@ def tleap_input():
     # options for tleap
     # protein force field
     USER_CHOICE_PROTEIN_FF = (
-        f"Please, choose force field which will be used for the protein during your simulations.\n"
+        f"\nPlease, choose force field which will be used for the protein during your simulations.\n"
         f"Please, note that the recommended choice is ff14SB.\n"
         f"The following options are available:\n"
         f"- 'ff14sb'\n"
@@ -539,7 +465,7 @@ def tleap_input():
         'spce': 'frcmod.ionsjc_spce'
     }
     USER_CHOICE_WATER_FF = (
-        f"Please, choose force field which will be used for water during your simulations.\n"
+        f"\nPlease, choose force field which will be used for water during your simulations.\n"
         f"Please, note that the most common choice is tip3p.\n"
         f"The following options are available:\n"
         f"- 'tip3p'\n"
@@ -592,7 +518,7 @@ def tleap_input():
         # checking complex pdb for validity
         f.write(f"check mol\n")
     # provide filaneme for topology and coordinates
-    USER_CHOICE_NAME = "Please, provide name for the prefix for the topology and coordinates files.\n" \
+    USER_CHOICE_NAME = "\nPlease, provide name for the prefix for the topology and coordinates files.\n" \
                        "Ideally, it should be just a few letters-long.\n" \
                        "For instance, if you type 'my_complex' your topology will be named my_complex.prmtop" \
                        " and coordinates will be named my_complex.inpcrd.\n" \
@@ -610,7 +536,7 @@ def tleap_input():
         f.write(f"savepdb mol {user_input_name}_no_water.pdb\n")
     # determining solvation box size
     USER_CHOICE_WATERBOX_SIZE = (
-        f"Please, provide the size of a periodic solvent box around the complex (in Angstroms).\n"
+        f"\nPlease, provide the size of a periodic solvent box around the complex (in Angstroms).\n"
         f"Most commonly used values are between 8 - 14.\n"
         f"Please, provide your choice:\n"
     )
@@ -621,12 +547,12 @@ def tleap_input():
             if user_input_waterbox_size > 0:
                 # solvatebox should be between 8 and 14 - if it is not, user is informed that it may be troublesome
                 if user_input_waterbox_size < 8:
-                    print(f"You've chosen that solvent will create box of {user_input_waterbox_size} Angstroms around"
+                    print(f"\nYou've chosen that solvent will create box of {user_input_waterbox_size} Angstroms around"
                           f"complex. This is smaller than the recommended size. Such a box might not be enough"
                           f"to properly solvate your complex.\n Please, proceed with caution")
                     break
                 elif user_input_waterbox_size > 14:
-                    print(f"You've chosen that solvent will create box of {user_input_waterbox_size} Angstroms around"
+                    print(f"\nYou've chosen that solvent will create box of {user_input_waterbox_size} Angstroms around"
                           f"complex. This is larger than the recommended size. A vast amount of water molecules might"
                           f"introduce very high computational cost.\n Please, proceed with caution."
                           f"might Please, proceed with caution")
@@ -674,5 +600,6 @@ def queue_methods():
         # if a condition is met, generator is stopped
         if stop_generator:
             # I do not know if this prompt is necessary
-            print('\nProgram has not finished normally - it appears that something was wrong with your structure. \nApply changes and try again!\n')
+            print('\nProgram has not finished normally - it appears that something was wrong with your structure. \n'
+                  'Apply changes and try again!\n')
             break

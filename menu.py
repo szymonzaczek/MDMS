@@ -1,5 +1,7 @@
 import initial_structure.initial_struc
 import topology_preparation.topology_prep
+import amber_parameters.amber_parameters
+import running_simulations.run_simulations
 
 print(
     "Hello and welcome to Molecular Dynamics Made Simple (MDMS) created by Szymon Zaczek!\n"
@@ -27,11 +29,9 @@ def menu():
                 print(
                     'You will be getting an initial structure for your system. Buckle up!\n')
                 initial_structure.initial_struc.queue_methods()
-                # this will also get printed if completion was not succesfull -
-                # it should be ported to the given file
                 print(
                     'You have completed the first step required for running MD simulations. Congratulations')
-            if user_input_menu == 't':
+            elif user_input_menu == 't':
                 print(
                     'You will obtain topology and coordinate files for Amber. Buckle up!\n')
                 topology_preparation.topology_prep.queue_methods()
@@ -40,14 +40,18 @@ def menu():
                     'You have completed the next step required for running MD simulations. Congratulations')
             elif user_input_menu == 'i':
                 print(
-                    'You will be obtaining input files for Amber, which control your simulations. Buckle up!\n')
+                    'You will be obtaining input files for Amber, which will control your simulations. Buckle up!\n')
+                amber_parameters.amber_parameters.queue_methods()
+                print(
+                    'You have managed to obtain input Amber input parameters. Get ready for starting your calculations!\n')
             elif user_input_menu == 'r':
                 print('You will be guided on how to run your simulations. Buckle up!\n')
+                running_simulations.run_simulations.queue_methods()
             elif user_input_menu == 'q':
+                print('Good luck with your endeavors and have a great day!')
                 break
-            #else:
-            #    # this clause gets executed whereas it should not - FIX THIS
-            #    print('this should not be executed')
+            else:
+                print('Please, provide one of the available options.')
         except BaseException:
             print('Please, provide a valid input.')
 
