@@ -1,7 +1,8 @@
-import initial_structure.initial_struc
-import topology_preparation.topology_prep
-import amber_parameters.amber_parameters
-import running_simulations.run_simulations
+#!/usr/bin/env python3
+import mdms.initial_struc
+import mdms.topology_prep
+import mdms.run_simulations
+import mdms.amber_parameters
 
 print(
     "Hello and welcome to Molecular Dynamics Made Simple (MDMS) created by Szymon Zaczek!\n"
@@ -28,26 +29,25 @@ def menu():
             if user_input_menu == 'p':
                 print(
                     'You will be getting an initial structure for your system. Buckle up!\n')
-                initial_structure.initial_struc.queue_methods()
+                mdms.initial_struc.queue_methods()
                 print(
-                    'You have completed the first step required for running MD simulations. Congratulations')
+                    'You have completed the first step required for running MD simulations. Congratulations!')
             elif user_input_menu == 't':
                 print(
                     'You will obtain topology and coordinate files for Amber. Buckle up!\n')
-                topology_preparation.topology_prep.queue_methods()
-                # put this at the end of the above module
+                mdms.topology_prep.queue_methods()
                 print(
                     'You have completed the next step required for running MD simulations. Congratulations')
             elif user_input_menu == 'i':
                 print(
                     'You will be obtaining input files for Amber, which will control your simulations. Buckle up!\n')
-                amber_parameters.amber_parameters.queue_methods()
+                mdms.amber_parameters.queue_methods()
                 print(
                     'You have managed to obtain input Amber input parameters. Get ready for starting your calculations!\n')
             elif user_input_menu == 'r':
                 print('You will be guided on how to run your simulations. Buckle up!\n')
-                running_simulations.run_simulations.queue_methods()
-            elif user_input_menu == 'q':
+                mdms.run_simulations.queue_methods()
+            elif user_input_menu == 'q' or user_input_menu == 'quit':
                 print('Good luck with your endeavors and have a great day!')
                 break
             else:

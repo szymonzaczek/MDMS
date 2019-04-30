@@ -522,15 +522,15 @@ def waters_pdb():
             waters_number = len(waters_pdb.split('\n'))
             USER_CHOICE_WATERS = f"\nThere are {waters_number} water molecules in your structure.\n" \
                 f"Water molecules that are present in PDB structures are leftovers from experiments carried out in order to obtain" \
-                f"protein's structure. There is no straightforward answer if they should be kept for MD simulations or not - " \
+                f" protein's structure. There is no straightforward answer if they should be kept for MD simulations or not - " \
                 f"basically water around proteins should equilibrate rather fast and their origin (either from experiment or" \
                 f"added with some software) should not matter that much. Noteworthy, even if you want to keep crystal waters " \
-                f"for MD, A LOT more waters will need to be added in order to ensure a proper solvation of the protein." \
-                f"Retaining water molecules that were discovered within experiment is strongly advised important if water molecules " \
-                f"play a role in enzymatic catalysis or they somehow stabilize the protein's structure. Nonetheless, the choice is yours. \n" \
+                f"for MD, A LOT more waters will need to be added in order to ensure a proper solvation of the protein. " \
+                f"Retaining water molecules that were discovered within experiment is strongly advised if water molecules " \
+                f"play a role in enzymatic catalysis or they strongly stabilize the protein's structure. Nonetheless, the choice is yours. \n" \
                 f"WARNING!\n" \
-                f"If you decide to include crystallographic waters for MD simulations, you will need to add hydrogens " \
-                f"to the PDB with those waters (you could use Avogadro, Pymol etc.).\n" \
+                f"If you decide to include crystallographic waters for MD simulations, you will need to manually add hydrogens " \
+                f"to the PDB with those waters (for this purpose you could use Avogadro, Pymol, GaussView etc.).\n" \
                 f"Would you like to retain water molecules located within experiment for your MD simulations?\n" \
                 f"- press 'y' if you want to retain them\n" \
                 f"- press 'n' if you want to delete water molecules originally present in your structure\n" \

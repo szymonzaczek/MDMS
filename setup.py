@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="MDMS-szymonzaczek",
-    version="0.1",
+    name="mdms-szymonzaczek",
+    version="0.983",
     author="Szymon Zaczek",
     author_email="szymon.zaczek@edu.p.lodz.pl",
     description=long_description,
@@ -14,6 +14,13 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/szymonzaczek/MDMS",
     packages=setuptools.find_packages(),
+    scripts=['mdms/mdms_menu.py'],
+    install_requires=['numpy', 'pandas', 'biopython'],
+    #entry_points={
+    #    'setuptools.installation': [
+    #        'eggsecutable = mdms.mdms_menu:menu',
+    #    ]
+    #},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

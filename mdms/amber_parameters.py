@@ -136,15 +136,15 @@ def default_parameters(step):
     if step == 'min':
         def_params = """{step}
 &cntrl
- imin=1, 
+ imin=1,
  ntx=1,
  irest=0,
- maxcyc=4000, 
+ maxcyc=4000,
  ncyc=2000,
- cut=8.0, 
- ntb=1,  
+ cut=8.0,
+ ntb=1,
  ntpr=100,
- nmropt=0, 
+ nmropt=0,
  ntr=0,
  ifqnt={ifqnt}
 /
@@ -152,25 +152,25 @@ def default_parameters(step):
     elif step == 'heat':
         def_params = """{step}
 &cntrl
- imin = 0, 
- irest = 0, 
- ntx = 1, 
- ntb = 1, 
- ntp = 0, 
- cut = 8.0, 
- ntc = 2, 
- ntf = 2, 
- tempi = 0.0, 
- temp0 = 300.0, 
- ntt = 3, 
- gamma_ln = 2.0, 
- nstlim = 25000, 
- dt = 0.002, 
- ntpr = 100, 
- ntwx = 500, 
- ntwr = 5000, 
- ig=-1, 
- ifqnt={ifqnt}, 
+ imin = 0,
+ irest = 0,
+ ntx = 1,
+ ntb = 1,
+ ntp = 0,
+ cut = 8.0,
+ ntc = 2,
+ ntf = 2,
+ tempi = 0.0,
+ temp0 = 300.0,
+ ntt = 3,
+ gamma_ln = 2.0,
+ nstlim = 25000,
+ dt = 0.002,
+ ntpr = 100,
+ ntwx = 500,
+ ntwr = 5000,
+ ig=-1,
+ ifqnt={ifqnt},
  nmropt=1,
 /
 &wt type='TEMP0', istep1=0, istep2=25000, value1=0.0, value2=300.0 /
@@ -179,25 +179,25 @@ def default_parameters(step):
     elif step == 'equi':
         def_params = """{step}
 &cntrl
- imin = 0, 
- irest = 1, 
+ imin = 0,
+ irest = 1,
  ntx = 5,
- ntb = 2, #constant pressure
+ ntb = 2,
  ntp = 1,
- taup = 2.0, #pressure relaxation time, should be between 1 to 5
- cut = 8.0, 
- ntc = 2, 
+ taup = 2.0,
+ cut = 8.0,
+ ntc = 2,
  ntf = 2,
- tempi = 300.0, 
+ tempi = 300.0,
  temp0 = 300.0,
- ntt = 3, 
+ ntt = 3,
  gamma_ln = 2.0,
- nstlim = 75000, 
+ nstlim = 75000,
  dt = 0.002,
- ntpr = 500, 
- ntwx = 500, 
+ ntpr = 500,
+ ntwx = 500,
  ntwr = 5000,
- ig=-1, 
+ ig=-1,
  ifqnt={ifqnt},
  nmropt=0
 /
@@ -205,25 +205,25 @@ def default_parameters(step):
     elif step == 'prod':
         def_params = """{step}
 &cntrl
- imin = 0, 
- irest = 1, 
+ imin = 0,
+ irest = 1,
  ntx = 5,
- ntb = 2,  
+ ntb = 2,
  ntp = 1,
  taup = 2.0,
- cut = 8.0, 
- ntc = 2, 
+ cut = 8.0,
+ ntc = 2,
  ntf = 2,
- tempi = 300.0, 
+ tempi = 300.0,
  temp0 = 300.0,
- ntt = 3, 
+ ntt = 3,
  gamma_ln = 2.0,
- nstlim = 10000000, 
+ nstlim = 10000000,
  dt = 0.002,
- ntpr = 500, 
- ntwx = 2500, 
+ ntpr = 500,
+ ntwx = 2500,
  ntwr = 20000,
- ig=-1, 
+ ig=-1,
  ifqnt={ifqnt},
  nmropt=0
 /
@@ -426,7 +426,7 @@ def md_parameters():
                         # getting list of two elements for a single line (parameter and its default value
                         parameter_value = line.split('=')
                         # if cntrl line, title line or the last line is considered, this is skipped
-                        not_parameters_list = ['&cntrl', '/', 'min', 'heat', 'equi', 'prod']
+                        not_parameters_list = ['&cntrl', '/', 'min', 'heat', 'equi', 'prod', '\n']
                         if parameter_value[0] in not_parameters_list:
                             continue
                         # storing parameters in a list
@@ -445,7 +445,7 @@ def md_parameters():
                     parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
                     parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
                     parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
-                    parameters_values_string = re.sub(r'\}', '\n/', parameters_values_string)
+                    parameters_values_string = re.sub(r'\}', '\n/\n', parameters_values_string)
                     # in order to add spaces to the beginning of a string, at first a list will be created, which
                     # later on will be joined to create properly formatted string
                     parameters_values_list = []
@@ -474,7 +474,7 @@ def md_parameters():
                         # getting list of two elements for a single line (parameter and its default value
                         parameter_value = line.split('=')
                         # if cntrl line, title line or the last line is considered, this is skipped
-                        not_parameters_list = ['&cntrl', '/', 'min', 'heat', 'equi', 'prod']
+                        not_parameters_list = ['&cntrl', '/', 'min', 'heat', 'equi', 'prod', '\n']
                         if parameter_value[0] in not_parameters_list:
                             continue
                         # storing parameters in a list
@@ -510,7 +510,7 @@ def md_parameters():
                         parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
                         parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
                         parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
-                        parameters_values_string = re.sub(r'\}', '\n/', parameters_values_string)
+                        parameters_values_string = re.sub(r'\}', '\n/\n', parameters_values_string)
                         # in order to add spaces to the beginning of a string, at first a list will be created, which
                         # later on will be joined to create properly formatted string
                         parameters_values_list = []
@@ -565,7 +565,7 @@ def md_parameters():
                                 parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
                                 parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
                                 parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
-                                parameters_values_string = re.sub(r'\}', '\n/', parameters_values_string)
+                                parameters_values_string = re.sub(r'\}', '\n/\n', parameters_values_string)
                                 # adding title to the input file
                                 file_step = (f"{step}\n" + parameters_values_string)
                                 #file_step = parameters_values_string
