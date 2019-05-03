@@ -14,7 +14,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/szymonzaczek/MDMS",
     packages=setuptools.find_packages(),
-    scripts=['mdms/mdms_menu.py'],
+    scripts=['mdms/mdms.py'],
     install_requires=['numpy', 'pandas', 'biopython'],
     #entry_points={
     #    'setuptools.installation': [

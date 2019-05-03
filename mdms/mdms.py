@@ -1,8 +1,35 @@
 #!/usr/bin/env python3
+import subprocess
+import os
+import sys
 import mdms.initial_struc
 import mdms.topology_prep
 import mdms.run_simulations
 import mdms.amber_parameters
+from pathlib import Path
+
+# testing if AmberTools is installed silently
+try:
+    # pdb4amber test - running it and checking output if it contains string is enough
+    subprocess.run(['pdb4amber > out_1.txt > 2>&1'], shell=True)
+    if 'usage: pdb4amber' not in open('out_1.txt').read():
+        raise Exception
+    # check if output from running tleap has 'Welcome to LEaP!' string
+    with open('tleap_test.in', 'w') as file:
+        file.write('quit')
+    subprocess.run(['tleap -f tleap_test.in > out_2.txt > 2>&1'], shell=True)
+    if 'Welcome to LEaP!' not in open('out_2.txt').read():
+        raise Exception
+    # removing files that were required for tests
+    os.remove(Path('tleap_test.in'))
+    os.remove(Path('out_1.txt'))
+    os.remove(Path('out_2.txt'))
+except:
+    print('It seems as AmberTools with its components (pdb4amber and tleap in particular) is not properly installed.\n'
+          'Please, prior to using MDMS make sure that AmberTools is running properly.')
+    # if there is no pdb4amber of tleap, exit program
+    sys.exit()
+
 
 print(
     "Hello and welcome to Molecular Dynamics Made Simple (MDMS) created by Szymon Zaczek!\n"
