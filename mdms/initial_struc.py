@@ -9,7 +9,7 @@ from pathlib import Path
 def file_naming():
     # getting name for a control file, which will containg all info
     global filename
-    filename_inp: str = Path(input('Please, provide name for the file that will contain every piece of information for running SAmber. '
+    filename_inp: str = Path(input('Please, provide name for the file that will contain every piece of information for running MDMS. '
                                    '\nKeep in mind that if a file with that exact name exists, it will be overwritten.\n'
                                    'Please, provide name of the file:\n'))
     filename = filename_inp
@@ -227,7 +227,7 @@ def missing_atoms_pdb():
                     "Please, proceed with caution.\n"
                     "Information about missing atom from PDB file: ")
                 print(missing_atom_prompt)
-                USER_CHOICE_CONT = "Would you like to continue with SAmber execution, or rather right now you would like to " \
+                USER_CHOICE_CONT = "Would you like to continue with MDMS execution, or rather right now you would like to " \
                                    "add missing atoms? Please, provide your choice:\n" \
                                    "- press 'y' to continue\n" \
                                    "- press 'n' to quit\n"
@@ -277,7 +277,7 @@ def missing_res_pdb():
                     "  (A. Fiser, R.K. Do, A. Sali., Modeling of loops in protein structures, Protein Science 9. 1753-1773, 2000, "
                     "https://salilab.org/modeller/).\n"
                     "Prior to proceeding, make sure that there are no missing residues in your structure. \nApply changes to the "
-                    "PDB file that will be provided into the SAmber and run SAmber again with altered initial structure.\n"
+                    "PDB file that will be provided into the MDMS and run MDMS again with altered initial structure.\n"
                     "Information about missing residues from PDB file: ")
                 print(missing_res_prompt)
                 stop_interface()

@@ -6,6 +6,8 @@ from pathlib import Path
 def file_naming():
     # getting name for a control file, which will containg all info
     global filename
+
+
     while True:
         try:
             filename_inp: str = Path(input('Please, provide a path to the file that contains every piece of information for running MDMS (it should be already generated):\n'))
