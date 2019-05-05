@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mdms-szymonzaczek",
-    version="0.983",
+    version="0.996",
     author="Szymon Zaczek",
     author_email="szymon.zaczek@edu.p.lodz.pl",
     description=long_description,
@@ -14,7 +14,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/szymonzaczek/MDMS",
     packages=setuptools.find_packages(),
-    scripts=['mdms/mdms.py'],
+    scripts=['mdms/mdms_menu.py'],
     install_requires=['numpy', 'pandas', 'biopython'],
     #entry_points={
     #    'setuptools.installation': [
