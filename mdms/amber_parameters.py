@@ -1,13 +1,14 @@
 import os
 import re
+import readline
 from pathlib import Path
 
+# allowing tab completion of files' paths
+readline.parse_and_bind("tab: complete")
 
 def file_naming():
-    # getting name for a control file, which will containg all info
+    # getting name for a control file, which will contain all info
     global filename
-
-
     while True:
         try:
             filename_inp: str = Path(input('Please, provide a path to the file that contains every piece of information for running MDMS (it should be already generated):\n'))

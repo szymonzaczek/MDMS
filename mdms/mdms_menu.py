@@ -9,8 +9,6 @@ import mdms.run_simulations
 import mdms.amber_parameters
 from pathlib import Path
 
-#VERSION = mdms.__version__
-
 # testing Python version
 if sys.version_info < (3, 5):
     raise RuntimeError("MDMS works best Python 3.5 or later. The current"

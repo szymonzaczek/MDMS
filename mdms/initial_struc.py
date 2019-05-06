@@ -2,9 +2,12 @@ import os
 import fnmatch
 import pandas as pd
 import re
+import readline
 from Bio.PDB import *
 from pathlib import Path
 
+# allowing tab completion of files' paths
+readline.parse_and_bind("tab: complete")
 
 def file_naming():
     # getting name for a control file, which will containg all info

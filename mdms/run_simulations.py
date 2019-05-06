@@ -1,8 +1,11 @@
 import subprocess
 import os
 import re
+import readline
 from pathlib import Path
 
+# allowing tab completion of files' paths
+readline.parse_and_bind("tab: complete")
 
 def file_naming():
     # getting name for a control file, which will containg all info
