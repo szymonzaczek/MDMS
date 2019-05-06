@@ -178,7 +178,6 @@ def init_pdb():
                             # with
                             try:
                                 user_input_pdb = int(input(USER_CHOICE_PDB))
-                                print(pdbs_ind)
                                 if user_input_pdb in pdbs_ind:
                                     pdbs = pdbs[user_input_pdb]
                                     # # making sure that the structure ends with pdb
@@ -374,13 +373,18 @@ def ligands_pdb():
                         ligands.append(x)
                 # this loop ensures that user picked all the ligands that he
                 # wanted
+
+                USER_CHOICE_LIG_CONT = (
+                    f"Would you like to add more ligands, or would you like to continue to next steps?\n"
+                    f"- press 'a' in order to add more ligands\n"
+                    f"- press 'c' in order to continue to the next step\n")
                 while True:
-                    USER_CHOICE_LIG_CONT = (f"\nSo far, you've chosen following residues to be included as ligands in your simulations: {ligands}.\n"
-                                            f"Would you like to add more ligands, or would you like to continue?\n"
-                                            f"- press 'a' in order to add more ligands\n"
-                                            f"- press 'c' in order to continue to the next step\n")
                     try:
                         # if user decides to keep adding, procedure is repeated
+                        if len(ligands) == 0:
+                            print('You have not chosen any ligands yet for your simulations.\n')
+                        else:
+                            print(f"\nSo far, you've chosen following residues to be included as ligands in your simulations: {ligands}.\n")
                         user_input_lig_cont = str(
                             input(USER_CHOICE_LIG_CONT).lower())
                         if user_input_lig_cont == 'a':

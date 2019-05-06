@@ -73,7 +73,7 @@ def queue_or_terminal():
         f"Please note that if you are using HPC clusters, you should most likely submit your jobs to the queue." \
         f" This is due to the fact that HPC clusters tend to have login nodes and computing nodes separated, " \
         f"which maximizes performance.\n" \
-        f"If you are using your own computer, you should most likely just run your jobs in the terminal\n" \
+        f"If you are using your own computer, you should most likely just run your jobs in the terminal.\n" \
         f"How would you like to run your simulations?\n" \
         f"- press 'q' if you want to submit your simulations to the queue\n" \
         f"- press 't' if you want to run your simulations directly in the terminal\n" \
@@ -136,7 +136,7 @@ def sander_or_pmemd():
     USER_CHOICE_PROGRAM = f"Within Amber, there are 2 programs for running MD simulations: Sander and PMEMD.\n" \
         f"Sander is distributed along with Ambertools and is free to use.\n" \
         f"PMEMD offers improved performance over Sander, though its functionality is slightly limited. Nonetheless," \
-        f" if you want to perform regular MD simulations, PMEMD will most likely be the better choice, though" \
+        f" if you want to perform regular MD simulations, PMEMD will most likely be the better choice, though " \
         f"it must obviously be available to you at your current machine.\n" \
         f"- press 's' for using Sander\n" \
         f"- press 'p' for using PMEMD\n" \
