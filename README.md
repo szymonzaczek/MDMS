@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/szymonzaczek/MDMS/mdms_logo.png"><br>
+  <img src="https://github.com/szymonzaczek/MDMS/blob/linux_development/mdms_logo.png"><br>
 </div>
 
 # MDMS: Molecular Dynamics Made Simple
