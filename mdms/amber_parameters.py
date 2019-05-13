@@ -326,26 +326,98 @@ Please, provide your choice:\n """
                                 break
                         except:
                             print('Please, provide valid input')
+                    # content of a qmmm namelist
+                    qm_content = (f"&qmmm\n"
+                                   f" qmmask = '{user_input_qmatoms}',\n"
+                                   f" spin = {user_input_qmspin},\n"
+                                   f" qmcharge = {user_input_qmcharge},\n"
+                                   f" qmshake = 0,\n"
+                                   f" qm_ewald = 1,\n"
+                                   f" qm_pme = 1,\n"
+                                   f" qm_theory = '{user_input_qmmethod}',\n"
+                                   f" printcharges = 1,\n"
+                                   f" writepdb = 1,\n"
+                                   f"/"
+                                   f"")
+                    # turning qm_content this into a list and into a dictionary
+                    parameters_list = []
+                    parameters_dict = {}
+                    for line in qm_content.splitlines():
+                        # removing white spaces
+                        line = re.sub(r'\s', '', line)
+                        # removing commas
+                        line = re.sub(r'\,', '', line)
+                        # getting list of two elements for a single line (parameter and its value)
+                        parameter_value = line.split('=')
+                        # if qmmmm line or the last line is considered this is skipped
+                        not_parameters_list = ['&qmmm', '/', '']
+                        if parameter_value[0] in not_parameters_list:
+                            continue
+                        # storing parameters in a list
+                        parameters_list.append(parameter_value[0])
+                        # storing parameters in a dict
+                        parameters_dict.update({parameter_value[0]: parameter_value[1]})
+                        # THIS MIGHT NOT BE USEFUL - NICELY FORMATTED STRING IS ALREADY AVAILABLE IN qm_content
+                        """
+                        parameters_values_string = str(parameters_dict)
+                        # formatting outputs so it will be perfect
+                        parameters_values_string = re.sub(r'\'', '', parameters_values_string)
+                        parameters_values_string = re.sub(r'\s', '', parameters_values_string)
+                        parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
+                        parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
+                        parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
+                        parameters_values_string = re.sub(r'\}', '\n/\n', parameters_values_string)
+                        """
+                    print(f"\nCurrently, QM/MM parameters look as follows:\n"
+                          f"{qm_content}\n")
+                    USER_CHOICE_CHANGE_PARAMS = f"You might either change QM/MM parameters or stick to their current" \
+                        f"values. Please note, that you will also be able to add additional parameters that were not" \
+                        f" considered before, if you find them useful.\n" \
+                        f"Would you like to retain current QM/MM parameters?\n" \
+                        f"- press 'y' if you want to use current QM/MM parameters values\n" \
+                        f"- press 'n' if you want to change (or add) current QM/MM parameters\n" \
+                        f"Please, provide your choice:\n"
+                    try:
+                        user_input_change_params = str(input(USER_CHOICE_CHANGE_PARAMS).lower())
+                        if user_input_change_params == 'y':
+                            # user do not want to change qmmm, so loop breaks
+                            break
+                        elif user_input_change_params == 'n':
+                            # changing qmmm parameters
+                            USER_CHOICE_PARAMS = f"\nThere are following parameters defined for the QM/MM part of" \
+                                f"your system:\n" \
+                                f"{parameters_list}\n" \
+                                f"Would you like to change of the parameters or add another one?\n" \
+                                f"- type 'parameter_code' (for instance 'printcharges' in order to change its value\n" \
+                                f"- type 'a' in order to add additional parameter\n" \
+                                f"- type 'q' if you want to stop modifying QM/MM parameters\n" \
+                                f"Please, provide your choice:\n"
+                            while True:
+                                try:
+                                    user_input_params = str(input(USER_CHOICE_PARAMS).lower())
+                                    if user_input_params == 'a':
+                                        # adding new parameter to QM/MM
+                                    elif user_input_params in parameters_list:
+                                        # if its true, just update parameter value
+                                    elif user_input_params == 'q':
+                                        # quitting changing parameters and saving current values
+                                    pass
+                                except:
+                                    pass
+                            pass
+                    except:
+                        pass
+
                     qm_input = 'qm_control.in'
+
                     # if qm_input already exist, remove it
                     if file_check(Path(qm_input)):
                         os.remove(Path(qm_input))
                     # save qm info to qm_input
                     with open(qm_input, 'w') as file:
-                        file.write(f"&qmmm,\n"
-                                   f"qmmask = {user_input_qmatoms},\n"
-                                   f"spin = {user_input_qmspin},\n"
-                                   f"qmcharge = {user_input_qmcharge},\n"
-                                   f"qmshake = 0,\n"
-                                   f"qm_ewald = 1,\n"
-                                   f"qm_pme = 1,\n"
-                                   f"qm_theory = {user_input_qmmethod},\n"
-                                   f"printcharges = 1,\n"
-                                   f"writepdb = 1,\n"
-                                   f"/")
+                        file.write(qm_content)
                     save_to_file(f"qm_control = {qm_input}\n", filename)
                     break
-                #break
             except:
                 print('Please, provide valid input')
 
@@ -377,7 +449,7 @@ def md_parameters():
     }
     # reading info from control file
     control = read_file(filename)
-    steps = r'procedure.*=.*\[(.*)\]'
+    steps = r'procedure\s*=\s*\[(.*)\]'
     steps_match = re.search(steps, control).group(1)
     # removing quotes from string
     steps_string = steps_match.replace("'", "")
