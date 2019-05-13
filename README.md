@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="https://github.com/szymonzaczek/MDMS/mdms_logo.png"><br>
+</div>
+
 # MDMS: Molecular Dynamics Made Simple
 
 Perform Molecular Dynamics (MD) Simulations from scratch within minutes. This program is an interface to one of the most popular MD codes - [Amber](http://ambermd.org/) - aiding users in preparing and running their own simulations.
