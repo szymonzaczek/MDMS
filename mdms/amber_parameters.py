@@ -379,7 +379,7 @@ Please, provide your choice:\n"""
                         f" considered before, if you find them useful.\n" \
                         f"Would you like to retain current QM/MM parameters?\n" \
                         f"- press 'y' if you want to use current QM/MM parameters values\n" \
-                        f"- press 'n' if you want to change (or add) current QM/MM parameters\n" \
+                        f"- press 'n' if you want to change  current QM/MM parameters or add another one\n" \
                         f"Please, provide your choice:\n"
                     try:
                         user_input_change_params = str(input(USER_CHOICE_CHANGE_PARAMS).lower())
@@ -387,18 +387,20 @@ Please, provide your choice:\n"""
                             # user do not want to change qmmm, so loop breaks
                             break
                         elif user_input_change_params == 'n':
-                            # changing qmmm parameters
-                            USER_CHOICE_PARAMS = f"\nThere are following parameters defined for the QM/MM part of" \
-                                f"your system:\n" \
-                                f"{param_dict_keys}\n" \
-                                f"Would you like to change of the parameters or add another one?\n" \
-                                f"- type 'parameter_code' (for instance 'printcharges' in order to change its value)\n" \
-                                f"- type 'a' in order to add additional parameter\n" \
-                                f"- type 'q' if you want to stop modifying QM/MM parameters\n" \
-                                f"Please, provide your choice:\n"
+                            # changing qmmm parameters - it must be normal string, since it is dynamically formatted
+                            # using format function, where into parameters parameters_list is inserted - this way
+                            # everytime this prompt is printed it provides current value of parameters_list
+                            USER_CHOICE_PARAMS = """\nThere are following parameters defined for the QM/MM part of your
+system:
+{parameters}
+Would you like to change value of one of the parameters or add anoth one?
+- type 'parameter_code' (for instance 'printcharges' in order to change its value)
+- type 'a' in order to add additional parameter
+- type 'q' if you want to stop modifying QM/MM parameters
+Please, provide your choice:\n"""
                             while True:
                                 try:
-                                    user_input_params = str(input(USER_CHOICE_PARAMS).lower())
+                                    user_input_params = str(input(USER_CHOICE_PARAMS.format(parameters=parameters_list)).lower())
                                     if user_input_params == 'a':
                                         # adding a new parameter to QM/MM
                                         USER_CHOICE_ADD_PARAMS = (f"\n!!WARNING!!\n"
@@ -417,18 +419,17 @@ Please, provide your choice:\n"""
                                             try:
                                                 user_input_add_param = str(input(USER_CHOICE_ADD_PARAMS).lower())
                                                 USER_CHOICE_ADD_PARAM_VALUE = (f"Please, provide value for the "
-                                                                               f"{user_input_add_param} parameter:\n")
+                                                                               f"'{user_input_add_param}' parameter:\n")
                                                 user_input_add_param_val = str(input(USER_CHOICE_ADD_PARAM_VALUE))
                                                 parameters_dict.update({user_input_add_param: user_input_add_param_val})
-                                                # after adding a parameters, keys to be displayed must be renewed
-                                                param_dict_keys = str(parameters_dict.keys())
-                                                param_dict_keys = re.sub(r'dict_keys', '', param_dict_keys)
-                                                param_dict_keys = re.sub(r'\[', '', param_dict_keys)
-                                                param_dict_keys = re.sub(r'\]', '', param_dict_keys)
+                                                # after adding a parameters, parameters list must be renewed
+                                                for key, value in parameters_dict.items():
+                                                    if key not in parameters_list:
+                                                        parameters_list.append(key)
                                                 break
                                             except:
                                                 print('Please, provide valid input.')
-                                    elif user_input_params in param_dict_keys:
+                                    elif user_input_params in parameters_list:
                                         # if its true, just update parameter value
                                         USER_CHOICE_PARAM_VALUE = f"You chose to change value of the {user_input_params}" \
                                             f" parameter.\nIts current value is set to:\n" \
@@ -439,44 +440,35 @@ Please, provide your choice:\n"""
                                             try:
                                                 user_input_param_value = input(USER_CHOICE_PARAM_VALUE)
                                                 parameters_dict.update({user_input_params: user_input_param_value})
-                                                # after adding a parameters, keys to be displayed must be renewed
-                                                # param_dict_keys must be read as a list - only then everything will
-                                                # work properly, since later on program is trying to find content of
-                                                # param_dict_keys and only if it is a list matches will only be accepted
-                                                # if they are exact
-                                                param_dict_keys = str(parameters_dict.keys())
-                                                param_dict_keys = re.sub(r'dict_keys', '', param_dict_keys)
-                                                param_dict_keys = re.sub(r'\[', '', param_dict_keys)
-                                                param_dict_keys = re.sub(r'\]', '', param_dict_keys)
                                                 break
                                             except:
                                                 print('Please, provide valid input.')
                                     elif user_input_params == 'q':
                                         # quitting changing parameters and saving current values in a neat format
                                         # convert dict to string
-                                        parameters_values_string = str(parameters_dict)
+                                        raw_parameters = str(parameters_dict)
                                         # formatting output
-                                        parameters_values_string = re.sub(r'\'', '', parameters_values_string)
-                                        parameters_values_string = re.sub(r'\s', '', parameters_values_string)
-                                        parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
-                                        parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
-                                        parameters_values_string = re.sub(r'\{', '&qmmm\n', parameters_values_string)
-                                        parameters_values_string = re.sub(r'\}', '\n/\n', parameters_values_string)
+                                        raw_parameters = re.sub(r'\'', '', raw_parameters)
+                                        raw_parameters = re.sub(r'\s', '', raw_parameters)
+                                        raw_parameters = re.sub(r'\:', ' = ', raw_parameters)
+                                        raw_parameters = re.sub(r'\,', ',\n', raw_parameters)
+                                        raw_parameters = re.sub(r'\{', '&qmmm\n', raw_parameters)
+                                        raw_parameters = re.sub(r'\}', '\n/\n', raw_parameters)
                                         # adding spaces to each parameter line
-                                        parameters_values_list = []
-                                        for line in parameters_values_string.splitlines():
+                                        raw_parameters_list = []
+                                        for line in raw_parameters.splitlines():
                                             if line in not_parameters_list:
-                                                parameters_values_list.append(line)
+                                                raw_parameters_list.append(line)
                                             elif 'mask' in line:
                                                 line = re.sub(r'" = ', '":', line)
                                                 line = ' ' + line
-                                                parameters_values_list.append(line)
+                                                raw_parameters_list.append(line)
                                             else:
                                                 line = ' ' + line
-                                                parameters_values_list.append(line)
-                                        parameters_values_string = '\n'.join(parameters_values_list)
-                                        parameters_values_string = parameters_values_string + '\n'
-                                        qm_content = parameters_values_string + '\n'
+                                                raw_parameters_list.append(line)
+                                        raw_parameters = '\n'.join(raw_parameters_list)
+                                        raw_parameters = raw_parameters + '\n'
+                                        qm_content = raw_parameters + '\n'
                                         break
                                     pass
                                 except:
@@ -643,6 +635,7 @@ def md_parameters():
                               f"Ideally, you will heat your system for as long as heating steps is happening and then"
                               f" proceed with equilibration.\n")
                     # prompt which parameters user would like to change
+                    """
                     USER_CHOICE_PARAMS = f"\nThere are following parameters defined for {steps_dict.get(step)}:\n" \
                         f"{parameters_list}\n" \
                         f"Would you like to change one of them, add another parameter to this list or perhaps" \
@@ -651,6 +644,14 @@ def md_parameters():
                         f"- type 'a' in order to add additional parameter\n" \
                         f"- type 'q' if you want to stop modifying parameters for {steps_dict.get(step)} step.\n" \
                         f"Please, provide your choice:\n"
+                    """
+                    USER_CHOICE_PARAMS = """There are following parameters defined for {step}:
+{parameters}.
+Would you like to change one of them or add another parameter to this list?
+- type 'parameter_code' (for instance 'cut') in order to change its value
+- type 'a' in order to add additional parameter
+- type 'q' if you want to stop modifying parameters for {step} step.
+Please, provide your choice:\n"""
                     if steps_list == ['prod']:
                         # changing irest and ntx value if list has only prod value
                         parameters_values_dict.update({'irest': '0'})
@@ -680,7 +681,7 @@ def md_parameters():
                         # until here it might not be useful
                     while True:
                         try:
-                            user_input_params = str(input(USER_CHOICE_PARAMS).lower())
+                            user_input_params = str(input(USER_CHOICE_PARAMS.format(step=steps_dict.get(step), parameters=parameters_list)).lower())
                             # if input is in parameters list, print this parameter value with info what it is doing
                             if user_input_params == 'a':
                                 # adding additional parameters to the current step
