@@ -106,7 +106,8 @@ def hydrogen_check():
             stop = False
             for x in range(0, len(ligands_list)):
                 if hydrogens_amount[x] == 0:
-                    USER_CHOICE_HYDROGENS = (f"Even though there are {atoms_amount[x]} atoms in {ligands_list[x]} ligand, there are no "
+                    USER_CHOICE_HYDROGENS = (f"\n!!WARNING!!\n"
+                                             f"Even though there are {atoms_amount[x]} atoms in {ligands_list[x]} ligand, there are no "
                                              f"hydrogen atoms. Please keep in mind that all of the ligands MUST have all the "
                                              f"necessary hydrogen atoms in their structures. If you do not add chemically-"
                                              f"relevant hydrogen atoms to your ligands, your MD simulations will provide "
@@ -147,14 +148,16 @@ def ligands_parameters():
         # removing whitespaces and turning string into a list
         ligands_list = re.sub(r'\s', '', ligands_string).split(',')
         # getting necessary infor for antechamber input
-        USER_CHOICE_CHARGE_MODEL = f"\nPlease specify the charge model that you would like to apply to your ligands. If you want" \
+        USER_CHOICE_CHARGE_MODEL = f"\nLigands' charges\n" \
+            f"Please specify the charge model that you would like to apply to your ligands. If you want" \
             f"to employ RESP charges, you will need to manually modify antechamber input files.\n" \
             f"Please note that AM1-BCC charge model is a recommended choice.\n" \
             f"Following options are available:\n" \
             f"- 'bcc' - AM1-BCC charge model\n" \
             f"- 'mul' - Mulliken charge model\n" \
             f"Please, provide one of the options from available answers (single-quoted words specified above):\n"
-        USER_CHOICE_ATOM_TYPES = f"\nPlease, specify which atom types you would like to assign to your ligands.\n" \
+        USER_CHOICE_ATOM_TYPES = f"\nLigands' force field\n" \
+            f"Please, specify which atom types you would like to assign to your ligands.\n" \
             f"Please note that GAFF2 is a recommended choice.\n" \
             f"Following options are available:\n" \
             f"- 'gaff2' - General Amber Force Field, version 2\n" \
@@ -420,7 +423,8 @@ def tleap_input():
     # options for tleap
     # protein force field
     USER_CHOICE_PROTEIN_FF = (
-        f"\nPlease, choose force field which will be used for the protein during your simulations.\n"
+        f"\nProtein force field\n"
+        f"Please, choose force field which will be used for the protein during your simulations.\n"
         f"Please, note that the recommended choice is ff14SB.\n"
         f"The following options are available:\n"
         f"- 'ff14sb'\n"
@@ -468,7 +472,8 @@ def tleap_input():
         'spce': 'frcmod.ionsjc_spce'
     }
     USER_CHOICE_WATER_FF = (
-        f"\nPlease, choose force field which will be used for water during your simulations.\n"
+        f"\nWater force field\n"
+        f"Please, choose force field which will be used for water during your simulations.\n"
         f"Please, note that the most common choice is tip3p.\n"
         f"The following options are available:\n"
         f"- 'tip3p'\n"
@@ -521,7 +526,8 @@ def tleap_input():
         # checking complex pdb for validity
         f.write(f"check mol\n")
     # provide filaneme for topology and coordinates
-    USER_CHOICE_NAME = "\nPlease, provide name for the prefix for the topology and coordinates files.\n" \
+    USER_CHOICE_NAME = "\nPrefix\n" \
+                       "Please, provide name for the prefix for the topology and coordinates files.\n" \
                        "Ideally, it should be just a few letters-long.\n" \
                        "For instance, if you type 'my_complex' your topology will be named my_complex.prmtop" \
                        " and coordinates will be named my_complex.inpcrd.\n" \
@@ -539,7 +545,8 @@ def tleap_input():
         f.write(f"savepdb mol {user_input_name}_no_water.pdb\n")
     # determining solvation box size
     USER_CHOICE_WATERBOX_SIZE = (
-        f"\nPlease, provide the size of a periodic solvent box around the complex (in Angstroms).\n"
+        f"\nSolvation shell size\n"
+        f"Please, provide the size of a periodic solvent box around the complex (in Angstroms).\n"
         f"Most commonly used values are between 8 - 14.\n"
         f"Please, provide your choice:\n"
     )

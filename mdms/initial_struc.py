@@ -224,7 +224,7 @@ def missing_atoms_pdb():
             # along with warning
             if remark_match is not None:
                 print(
-                    "\nWARNING!!!\nIt appears that your PDB file contains missing atoms. They might be added in following steps by"
+                    "\n!!WARNING!!\nIt appears that your PDB file contains missing atoms. They might be added in following steps by"
                     " LEaP, however the better choice would be to use a homology modelling software to do so.\n"
                     "Please, proceed with caution.\n"
                     "Information about missing atom from PDB file: ")
@@ -270,8 +270,8 @@ def missing_res_pdb():
                 ([s for s in pdb_remark if remark_match in s]))
             # making string easier to read
             missing_res_prompt = re.sub(remark, "", remark_with_missing_res)
-            # if there is a missing atom, print what was found inside pdb file
-            # along with warning
+            # if there is a missing residue, halt the program - there is no tool in Ambertools that can handle modelling
+            # of missing residues
             if remark_match is not None:
                 print(
                     "\nERROR!!!\nIt appears that your PDB file contains missing residues. LEaP is not capable of automatically adding "
@@ -283,9 +283,6 @@ def missing_res_pdb():
                     "Information about missing residues from PDB file: ")
                 print(missing_res_prompt)
                 stop_interface()
-        else:
-            # If there are no missing residues, everything is fine
-            pass
 
 
 def ligands_pdb():
@@ -350,7 +347,8 @@ def ligands_pdb():
                 unique_ligands.remove(x)
         unique_ligands_str = '\n'.join(unique_ligands)
         nr_unique_ligands = len(unique_ligands)
-        USER_CHOICE_LIGANDS = (f"There are {nr_unique_ligands} unique residues in your PDB file which are not amino acids and waters.\n"
+        USER_CHOICE_LIGANDS = (f"\nChoosing ligands\n"
+                               f"There are {nr_unique_ligands} unique residues in your PDB file which are not amino acids and waters.\n"
                                f"Each ligand that will be retained for simulations will require parametrization.\n"
                                f"Which residues you would like to keep for simulations? "
                                f"Unique residues are:\n"
@@ -421,7 +419,7 @@ def ligands_pdb():
             except BaseException:
                 print("You've provided wrong residues")
                 pass
-        print(f"\nLigands that will be included in your system are: {ligands}")
+        print(f"\nLigands that will be included in your system are: \n{ligands}")
         pass
 
 
@@ -458,7 +456,8 @@ def metals_pdb():
             if x in unique_res:
                 unique_metals.append(x)
         unique_metals_string = ', '.join(unique_metals)
-        USER_CHOICE_METALS = f"\nThere are following metal ions in your PDB structure: {unique_metals_string}. " \
+        USER_CHOICE_METALS = f"\nMetal ions handling\n" \
+            f"\nThere are following metal ions in your PDB structure: \n{unique_metals_string}.\n " \
             f"Obtaining force field parameters for metal ions " \
             f"is outside of scope of this program but you might follow tutorials written by Pengfei Li and Kenneth M. Merz Jr., " \
             f"which are available on Amber Website (http://ambermd.org/tutorials/advanced/tutorial20/index.htm).\n" \
@@ -527,7 +526,8 @@ def waters_pdb():
                 single_water_pdb = '\n'.join([s for s in het_atoms if x in s])
                 waters_pdb = ''.join(single_water_pdb)
             waters_number = len(waters_pdb.split('\n'))
-            USER_CHOICE_WATERS = f"\nThere are {waters_number} water molecules in your structure.\n" \
+            USER_CHOICE_WATERS = f"\nCrystal water handling\n" \
+                f"\nThere are {waters_number} water molecules in your structure.\n" \
                 f"Water molecules that are present in PDB structures are leftovers from experiments carried out in order to obtain" \
                 f" protein's structure. There is no straightforward answer if they should be kept for MD simulations or not - " \
                 f"basically water around proteins should equilibrate rather fast and their origin (either from experiment or" \
@@ -535,7 +535,7 @@ def waters_pdb():
                 f"for MD, A LOT more waters will need to be added in order to ensure a proper solvation of the protein. " \
                 f"Retaining water molecules that were discovered within experiment is strongly advised if water molecules " \
                 f"play a role in enzymatic catalysis or they strongly stabilize the protein's structure. Nonetheless, the choice is yours. \n" \
-                f"WARNING!\n" \
+                f"!WARNING!\n" \
                 f"If you decide to include crystallographic waters for MD simulations, you will need to manually add hydrogens " \
                 f"to the PDB with those waters (for this purpose you could use Avogadro, Pymol, GaussView etc.).\n" \
                 f"Would you like to retain water molecules located within experiment for your MD simulations?\n" \
@@ -579,6 +579,7 @@ def hydrogens_prompt():
         # removing whitespaces and turning string into a list
         ligands_list = re.sub(r'\s', '', ligands_string).split(',')
         USER_CHOICE_HYDROGENS = (f"\n!!WARNING!!\n"
+                                 f"Hydrogen addition to ligands\n"
                                  f"You have chosen to include ligands molecules in your system. In order to correctly proceed to MD simulations,"
                                  f" hydrogen atoms must be added to your ligands molecules, whenever necessary. Adding hydrogens is outside of "
                                  f"scope of MDMS, therefore you must use other software to do so, such as OpenBabel, PyMOL, Chimera, LigPrep,"
@@ -612,7 +613,9 @@ def sym_operations_prompt():
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
     # prompt that will be displayed to the user
-    USER_CHOICE_OL = f"\n!!WARNING!!\nPrior to proceeding to preparing topology and input coordinates, you need to make" \
+    USER_CHOICE_OL = f"\n!!WARNING!!\n" \
+        f"Oligeomeric structure of functional protein\n" \
+        f"Prior to proceeding to preparing topology and input coordinates, you need to make" \
         f" sure that your structure has a fully functional oligomeric structure.\nFor instance, active site might be " \
         f"fully formed only if there are 2 (or even more) mnonomeric units of the protein within the studied oligomer. " \
         f"Symmetry operations on PDB files might be performed within various software, such as PyMOL or Swiss-PdbViewer.\n" \

@@ -71,7 +71,8 @@ def clearing_control():
 
 def qm_or_not():
     # asking user if he wants to perform QM/MM calculations
-    USER_CHOICE_QM = f"\nDo you want to perform QM/MM calculations?\nPlease, keep in mind that such simulations" \
+    USER_CHOICE_QM = f"\nQM/MM calculations\n" \
+        f"\nDo you want to perform QM/MM calculations?\nPlease, keep in mind that such simulations" \
         f"are MUCH more computationally expensive than regular MD. However, this is THE ONLY way to capture " \
         f"chemical structures' alterations within AMBER. For observing physical properties though, it is " \
         f"rather advised to use regular MD, which will allow covering bigger timescales.\n" \
@@ -95,7 +96,8 @@ def qm_or_not():
 
 def steps_to_perform():
     # getting info what simulations to perform
-    USER_CHOICE_PROCEDURE = "\nIn most cases, the investigated protein/protein-ligand complex should be at first minimized" \
+    USER_CHOICE_PROCEDURE = "\nRoutine\n" \
+                            "In most cases, the investigated protein/protein-ligand complex should be at first minimized" \
                             ", then heated to the target temperature, equilibrated, and only then a regular production runs " \
                             "should be performed. Nonetheless, for some reasons, you might want to skip minimization, " \
                             "heating  and equilibration (i. e. you might have performed it in another software) and " \
@@ -249,7 +251,7 @@ def qm_parameters():
     if qm_match:
         qm_match = qm_match.group(1)
         # defining if user have got qmcontrol file
-        USER_CHOICE_QMCONTROL = """\nDo you have a file containig &qmmm namelist with all the necessary information required
+        USER_CHOICE_QMCONTROL = """\nQM/MM namelist\nDo you have a file containig &qmmm namelist with all the necessary information required
 for QM/MM simulations? You might have it from the previous MDMS run or by creating your own file following Amber
 guidelines. If you do not have it, do not worry - we will create one in a moment!
 - press 'y' if you do
@@ -278,7 +280,8 @@ Please, provide your choice:\n"""
                     break
                 elif user_input_qmcontrol == 'n':
                     # defining qmatoms
-                    USER_CHOICE_QMATOMS = f"\nWhich atoms from your system should be treated with QM methods? Any valid " \
+                    USER_CHOICE_QMATOMS = f"\nQM atoms\n" \
+                        f"Which atoms from your system should be treated with QM methods? Any valid " \
                         f"Amber mask will work (for more info about masks refer to Amber manual).\n" \
                         f"Please, provide your choice (Amber mask formatting is required):\n"
                     while True:
@@ -288,7 +291,8 @@ Please, provide your choice:\n"""
                         except:
                             print('Please, provide valid input')
                     # defining spin
-                    USER_CHOICE_QMSPIN = f"\nWhat is the spin of the QM part of your system?\n" \
+                    USER_CHOICE_QMSPIN = f"\nQM spin\n" \
+                        f"What is the spin of the QM part of your system?\n" \
                         f"Please, provide spin value for the QM part of your system (positive integer value):\n"
                     while True:
                         try:
@@ -298,7 +302,8 @@ Please, provide your choice:\n"""
                         except:
                             print('Please, provide valid input')
                     # defining charge
-                    USER_CHOICE_QMCHARGE = f"\nWhat is the charge of the QM part of your system?\n" \
+                    USER_CHOICE_QMCHARGE = f"\nQM charge\n" \
+                        f"What is the charge of the QM part of your system?\n" \
                         f"Please, provide charge value for the QM part of your system (integer value):\n"
                     while True:
                         try:
@@ -307,7 +312,8 @@ Please, provide your choice:\n"""
                         except:
                             print('Please, provide valid input')
                     # define qmmethod
-                    USER_CHOICE_QMMETHOD = f"\nWhich QM method would you like to use? The following options are available:\n" \
+                    USER_CHOICE_QMMETHOD = f"\nQM method\n" \
+                        f"\nWhich QM method would you like to use? The following options are available:\n" \
                         f"- 'AM1'\n" \
                         f"- 'PM3'\n" \
                         f"- 'RM1'\n" \
@@ -357,22 +363,8 @@ Please, provide your choice:\n"""
                         parameters_list.append(parameter_value[0])
                         # storing parameters in a dict
                         parameters_dict.update({parameter_value[0]: parameter_value[1]})
-                        # THIS MIGHT NOT BE USEFUL - NICELY FORMATTED STRING IS ALREADY AVAILABLE IN qm_content
-                        """
-                        parameters_values_string = str(parameters_dict)
-                        # formatting outputs so it will be perfect
-                        parameters_values_string = re.sub(r'\'', '', parameters_values_string)
-                        parameters_values_string = re.sub(r'\s', '', parameters_values_string)
-                        parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
-                        parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
-                        parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
-                        parameters_values_string = re.sub(r'\}', '\n/\n', parameters_values_string)
-                        """
-                        param_dict_keys = str(parameters_dict.keys())
-                        param_dict_keys = re.sub(r'dict_keys', '', param_dict_keys)
-                        param_dict_keys = re.sub(r'\[', '', param_dict_keys)
-                        param_dict_keys = re.sub(r'\]', '', param_dict_keys)
-                    print(f"\nCurrently, QM/MM parameters look as follows:\n"
+                    print(f"\nQM/MM parameters\n"
+                          f"Currently, QM/MM parameters look as follows:\n"
                           f"{qm_content}\n")
                     USER_CHOICE_CHANGE_PARAMS = f"You might either change QM/MM parameters or stick to their current" \
                         f" values. Please note, that you will also be able to add additional parameters that were not" \
@@ -390,8 +382,8 @@ Please, provide your choice:\n"""
                             # changing qmmm parameters - it must be normal string, since it is dynamically formatted
                             # using format function, where into parameters parameters_list is inserted - this way
                             # everytime this prompt is printed it provides current value of parameters_list
-                            USER_CHOICE_PARAMS = """\nThere are following parameters defined for the QM/MM part of your
-system:
+                            USER_CHOICE_PARAMS = """\nChanging QM/MM parameters
+There are following parameters defined for the QM/MM part of your system:
 {parameters}
 Would you like to change value of one of the parameters or add anoth one?
 - type 'parameter_code' (for instance 'printcharges' in order to change its value)
@@ -581,7 +573,8 @@ def md_parameters():
                     parameters_values_list.append(line)
             parameters_values_string = '\n'.join(parameters_values_list)
             def_params = (f"{step}\n" + parameters_values_string + "\n")
-        print(f"For {steps_dict.get(step)}, default input file looks as follows:\n"
+        print(f"\nMD parameters\n"
+              f"For {steps_dict.get(step)}, default input file looks as follows:\n"
               f"{def_params}")
         # choice if user wants to change default parameters (more info on individual parameters will be provided when
         # user will consider changing them)
@@ -635,17 +628,8 @@ def md_parameters():
                               f"Ideally, you will heat your system for as long as heating steps is happening and then"
                               f" proceed with equilibration.\n")
                     # prompt which parameters user would like to change
-                    """
-                    USER_CHOICE_PARAMS = f"\nThere are following parameters defined for {steps_dict.get(step)}:\n" \
-                        f"{parameters_list}\n" \
-                        f"Would you like to change one of them, add another parameter to this list or perhaps" \
-                        f" you would like to carry out QM/MM calculations?\n" \
-                        f"- type 'parameter_code' (for instance 'cut') in order to change its value\n" \
-                        f"- type 'a' in order to add additional parameter\n" \
-                        f"- type 'q' if you want to stop modifying parameters for {steps_dict.get(step)} step.\n" \
-                        f"Please, provide your choice:\n"
-                    """
-                    USER_CHOICE_PARAMS = """There are following parameters defined for {step}:
+                    USER_CHOICE_PARAMS = """Changing MD parameters
+There are following parameters defined for {step}:
 {parameters}.
 Would you like to change one of them or add another parameter to this list?
 - type 'parameter_code' (for instance 'cut') in order to change its value
@@ -656,29 +640,6 @@ Please, provide your choice:\n"""
                         # changing irest and ntx value if list has only prod value
                         parameters_values_dict.update({'irest': '0'})
                         parameters_values_dict.update({'ntx': '1'})
-                        # from here on it might not be useful
-                        """# quitting changing parameters - saving all of the current values
-                        # converting dictionary with parameters to string
-                        parameters_values_string = str(parameters_values_dict)
-                        # formatting outputs so it will be perfect
-                        parameters_values_string = re.sub(r'\'', '', parameters_values_string)
-                        parameters_values_string = re.sub(r'\s', '', parameters_values_string)
-                        parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
-                        parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
-                        parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
-                        parameters_values_string = re.sub(r'\}', '\n/\n', parameters_values_string)
-                        # in order to add spaces to the beginning of a string, at first a list will be created, which
-                        # later on will be joined to create properly formatted string
-                        parameters_values_list = []
-                        for line in parameters_values_string.splitlines():
-                            if line in not_parameters_list:
-                                parameters_values_list.append(line)
-                            else:
-                                line = ' ' + line
-                                parameters_values_list.append(line)
-                        parameters_values_string = '\n'.join(parameters_values_list)
-                        file_step = (f"{step}\n" + parameters_values_string)"""
-                        # until here it might not be useful
                     while True:
                         try:
                             user_input_params = str(input(USER_CHOICE_PARAMS.format(step=steps_dict.get(step), parameters=parameters_list)).lower())
