@@ -10,8 +10,8 @@ import mdms.amber_parameters
 from pathlib import Path
 
 # testing Python version
-if sys.version_info < (3, 5):
-    raise RuntimeError("MDMS works best Python 3.5 or later. The current"
+if sys.version_info < (3, 6):
+    raise RuntimeError("MDMS works best Python 3.6 or later. The current"
                        " Python version is %s installed in %s. Consider "
                        " upgrading Python prior to MDMS usage."
                        % (platform.python_version(), sys.executable))

@@ -8,6 +8,20 @@ from pathlib import Path
 # allowing tab completion of files' paths
 readline.parse_and_bind("tab: complete")
 
+# test if pdb4amber works
+try:
+    # global is declared - it will be checked upon when pdb4amber is supposed to start
+    global pdb4amber_test
+    # pdb4amber test - running it and checking output if it contains string is enough
+    subprocess.run(['pdb4amber > out_1.txt 2>&1'], shell=True)
+    if 'usage: pdb4amber' not in open('out_1.txt').read():
+        raise Exception
+    pdb4amber_test = True
+    # removing files that were required for tests
+    os.remove(Path('out_1.txt'))
+except:
+    pdb4amber_test = False
+
 def file_naming():
     # getting name for a control file, which will containg all info
     global filename
@@ -270,16 +284,46 @@ def antechamber_parmchk_input():
                 ligands_multiplicities_list[x])
         # prior to to antechamber and parmchk execution, check ligands pdb with
         # pdb4amber
-        for x in range(0, len(ligands_list)):
-            # copying original ligand PDB file - output from pdb4amber will be
-            # supplied to antechamber and parmchk
-            ligand_copy = f"cp {ligands_list[x]}.pdb {ligands_list[x]}_original.pdb"
-            subprocess.run([f"{ligand_copy}"], shell=True)
-            # input for pdb4amber
-            pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_original.pdb -o {ligands_list[x]}.pdb "
-            # running pdb4amber (both original and remade files are retained
-            # but later on remade ligands will be operated on
-            subprocess.run([f"{pdb4amber_input}"], shell=True)
+        # if pdb4amber works from MDMS, it is run automatically from MDMS
+        if pdb4amber_test:
+            for x in range(0, len(ligands_list)):
+                # copying original ligand PDB file - output from pdb4amber will be
+                # supplied to antechamber and parmchk
+                ligand_copy = f"cp {ligands_list[x]}_raw.pdb {ligands_list[x]}_original.pdb"
+                subprocess.run([f"{ligand_copy}"], shell=True)
+                # input for pdb4amber
+                pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_original.pdb -o {ligands_list[x]}.pdb "
+                # running pdb4amber (both original and remade files are retained
+                # but later on remade ligands will be operated on
+                subprocess.run([f"{pdb4amber_input}"], shell=True)
+                # if it doesn't input is saved to a file
+        else:
+            # try to find ligands_processing entry in the control file
+            # try to find if there is a ligands_pdb4amber_inputs entry in the control file
+            ligands = r'ligands_pdb4amber_inputs\s*=\s*\[(.*)\]'
+            ligands_match = re.search(ligands, control)
+            if ligands_match:
+
+
+            print(f"\n!!WARNING!!\n"
+                  f"There were some problems with running pdb4amber from within MDMS.\n"
+                  f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                  f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                  f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                  f"your own installation of Python.\n"
+                  f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                  f"interpreter (i. e. by loading the appropriate module).\n"
+                  f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                  f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                  f"In such case, just execute the following "
+                  f"In such case, just copy the content of pdb4amber.in into "
+                  f"terminal and press enter).\n")
+            pdb_process_input = Path('pdb4amber.in')
+            pdb_process_input_path = Path(pdb_process_input)
+            if pdb_process_input_path.exists():
+                os.remove(pdb_process_input_path)
+            with open(pdb_process_input, 'w') as file:
+                file.write(pdb4amber_input)
         # creating antechamber and parmchk inputs
         for x in range(0, len(ligands_list)):
             # input for antechamber
@@ -328,7 +372,11 @@ def pdb_process():
     pdb4amber_input = f"pdb4amber -i {structure_match_splitted}_original.pdb --add-missing-atoms -p -o {structure_match_splitted}_no_lig.pdb"
     # running pdb4amber (both original and remade files are retained but later
     # on remade ligands will be operated on
-    subprocess.run([f"{pdb4amber_input}"], shell=True)
+    if pdb4amber_test:
+        # running pdb4amber (both original and remade files are retained
+        # but later on remade ligands will be operated on
+        subprocess.run([f"{pdb4amber_input}"], shell=True)
+    else:
     # finding ligands residues in control file
     ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)

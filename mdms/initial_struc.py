@@ -410,7 +410,7 @@ def ligands_pdb():
                             for x in ligands:
                                 ligands_pdb = '\n'.join(
                                     [s for s in het_atoms if x in s])
-                                with open(f"{x}.pdb", "w") as f:
+                                with open(f"{x}_raw.pdb", "w") as f:
                                     f.write(ligands_pdb)
                             break
                     except BaseException:
