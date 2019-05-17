@@ -310,7 +310,8 @@ def antechamber_parmchk_input():
                     if lig_path.exists():
                         continue
                     else:
-                        print(f"\nYou have not processed ligands' files with pdb4amber yet\n"
+                        print(f"\n!!WARNING!!\n"
+                              f"\nYou have not processed ligands' files with pdb4amber yet\n"
                               f"There were some problems with running pdb4amber from within MDMS.\n"
                               f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
                               f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
@@ -320,9 +321,9 @@ def antechamber_parmchk_input():
                               f"interpreter (i. e. by loading the appropriate module).\n"
                               f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
                               f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
-                              f"In such case, just execute the following "
-                              f"In such case, just copy the content of pdb4amber.in into "
-                              f"terminal and press enter).\n")
+                              f"In such case, just copy the content of each line of ligand_pdb4amber.in file into terminal and press"
+                              f"enter. As a result, you will obtain processed PDB ligands' file which will be ready for further"
+                              f"steps.")
                         # just single printing of the prompt should be enough, therefore it is halted here
                         break
             else:
@@ -336,10 +337,10 @@ def antechamber_parmchk_input():
                       f"interpreter (i. e. by loading the appropriate module).\n"
                       f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
                       f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
-                      f"In such case, just copy the content of each line of pdb4amber.in file into terminal and press"
+                      f"In such case, just copy the content of each line of ligand_pdb4amber.in file into terminal and press"
                       f"enter. As a result, you will obtain processed PDB ligands' file which will be ready for further"
                       f"steps.")
-                pdb_process_input = ('pdb4amber.in')
+                pdb_process_input = ('ligand_pdb4amber.in')
                 pdb_process_input_path = Path(pdb_process_input)
                 if pdb_process_input_path.exists():
                     os.remove(pdb_process_input_path)
@@ -404,19 +405,48 @@ def pdb_process():
     structure_match = re.search(structure, control).group(1)
     # stripping of extension from structure - this way it will be easier to
     # get proper names, i.e. 4zaf_old.pdb
-    structure_match_splitted = structure_match.split('.')[0]
+    structure_match_split = structure_match.split('.')[0]
     # copying original PDB file so it will be retained after files operations
-    struc_copy = f"cp {structure_match} {structure_match_splitted}_original.pdb"
+    struc_copy = f"cp {structure_match} {structure_match_split}_original.pdb"
     subprocess.run([f"{struc_copy}"], shell=True)
     # input for pdb4amber - ligands are removed
-    pdb4amber_input = f"pdb4amber -i {structure_match_splitted}_original.pdb --add-missing-atoms -p -o {structure_match_splitted}_no_lig.pdb"
+    pdb4amber_input = f"pdb4amber -i {structure_match_split}_original.pdb --add-missing-atoms -p -o {structure_match_split}_no_lig.pdb"
     # running pdb4amber (both original and remade files are retained but later
-    # on remade ligands will be operated on
+    # on remade ligands will be operated on)
+    # if pdb4amber works, it is run directly from MDMS
     if pdb4amber_test:
         # running pdb4amber (both original and remade files are retained
         # but later on remade ligands will be operated on
         subprocess.run([f"{pdb4amber_input}"], shell=True)
     else:
+        protein_inputs = r'protein_pdb4amber_inputs\s*=\s*\[(.*)\]'
+        protein_inputs_match = re.search(protein_inputs, control)
+        if protein_inputs_match:
+            # since protein_inputs_match is in the control file, MDMS has already got to this stage and user shoud've
+            # already process the files
+            prot_path = Path(f"{structure_match_split}_no_lig.pdb")
+            if prot_path.exists():
+                # protein was processed by the user, so everything is fine, program might proceed
+            else:
+                # even though pdb4amber inputs were created and user was asked to process them, he didn't do so -
+                # therefore, he receives a prompt reminding what to do
+                print(f"\n!!WARNING!!\n"
+                      f"\nYou have not processed {structure_match_split}_original.pdb file with pdb4amber yet.\n"
+                      f"Since there were some issues with running pdb4amber from within MDMS, you need to process "
+                      f"{structure_match_split}_original.pdb with pdb4amber manually.\n"
+                      f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                      f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                      f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                      f"your own installation of Python.\n"
+                      f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                      f"interpreter (i. e. by loading the appropriate module).\n"
+                      f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                      f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                      f"In such case, just copy the content of each line of protein_pdb4amber.in file into terminal and press"
+                      f"enter. As a result, you will obtain processed PDB ligands' file which will be ready for further"
+                      f"steps.")
+                pass
+        pass
     # finding ligands residues in control file
     ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
@@ -429,7 +459,7 @@ def pdb_process():
     # creating list storing filenames that will create the whole complex
     full_files = []
     # protein without any ligands
-    struc_no_lig = f"{structure_match_splitted}_no_lig.pdb"
+    struc_no_lig = f"{structure_match_split}_no_lig.pdb"
     # protein filename appended
     full_files.append(struc_no_lig)
     if waters_match:
@@ -477,7 +507,7 @@ def pdb_process():
         # appending ligands filenames
         for ligand in ligands_files:
             full_files.append(ligand)
-    complex_raw = f"{structure_match_splitted}_raw.pdb"
+    complex_raw = f"{structure_match_split}_raw.pdb"
     # using context manager to concatenate protein and ligands together
     print(full_files)
     with open(complex_raw, 'w') as outfile:
@@ -487,7 +517,7 @@ def pdb_process():
             with open(fname) as infile:
                 outfile.write(infile.read())
     # name of the pdb file that will be an input for tleap
-    complex = f"{structure_match_splitted}_full.pdb"
+    complex = f"{structure_match_split}_full.pdb"
     # processing protein-ligand complex pdb file with pdb4amber
     pdb4amber_input_complex = f"pdb4amber -i {complex_raw} -o {complex}"
     # running pdb4amber
@@ -505,9 +535,9 @@ def tleap_input():
     structure_match = re.search(structure, control).group(1)
     # stripping of extension from structure - this way it will be easier to
     # get proper names, i.e. 4zaf_old.pdb
-    structure_match_splitted = structure_match.split('.')[0]
+    structure_match_split = structure_match.split('.')[0]
     # name of the pdb file that will be an input for tleap
-    complex = f"{structure_match_splitted}_full.pdb"
+    complex = f"{structure_match_split}_full.pdb"
     # options for tleap
     # protein force field
     USER_CHOICE_PROTEIN_FF = (
