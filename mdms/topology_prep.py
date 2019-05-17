@@ -244,7 +244,7 @@ def ligands_parameters():
             save_to_file(f"ligands_multiplicities = {lig_multiplicities}\n", filename)
 
 
-def                antechamber_parmchk_input():
+def antechamber_parmchk_input():
     # finding ligands residues in control file
     control = read_file(filename)
     ligands = r'ligands\s*=\s*\[(.*)\]'
@@ -301,7 +301,7 @@ def                antechamber_parmchk_input():
             # try to find ligands_processing entry in the control file
             # try to find if there is a ligands_pdb4amber_inputs entry in the control file
             ligands_inputs = r'ligands_pdb4amber_inputs\s*=\s*\[(.*)\]'
-            ligands_inputs_match = re.search(ligands, control)
+            ligands_inputs_match = re.search(ligands_inputs, control)
             if ligands_inputs_match:
                 # search for outputs from pdb4amber - they must have been processed manually; if they exist, everthing
                 # is fine; if they don't print info on how to proceed again; every ligand in the list is checked
@@ -353,13 +353,24 @@ def                antechamber_parmchk_input():
                     # input for pdb4amber appended to the file
                     with open(pdb_process_input, 'a') as file:
                         file.write(pdb4amber_input)
+                print(f"\nYou will now be redirected to menu of MDMS. Please, quit MDMS and process ligands' PDB files"
+                      f"from within the terminal.")
+                # saving info to the control file that pdb4amber was not run from within MDMS
+                save_to_file(f"ligands_pdb4amber_inputs = True\n", filename)
+                stop_interface()
         # creating antechamber and parmchk inputs
         for x in range(0, len(ligands_list)):
+            # test if ligands' pdb files were processed
+            ligand_pdb_path = Path(f'{ligands_list[x]}.pdb')
+            if ligand_pdb_path.exists() == False:
+                print(f"\n!!WARNING!!\n"
+                      f"It seems as processing of ligands' PDB files failed. This might have happened due to problems"
+                      f" with running pdb4amber from within MDMS - in this case, please, ")
             # input for antechamber
             antechamber_input = f"antechamber -fi pdb -fo mol2 -i {ligands_list[x]}.pdb -o {ligands_list[x]}.mol2 -at {atoms_type_match} -c {charge_model_match} -pf y -nc {ligands_charges_list[x]} -m {ligands_multiplicities_list[x]}"
             # running antechamber
             subprocess.run([f"{antechamber_input}"], shell=True)
-            # checking if mol2 was succesfully created
+            # checking if mol2 was successfully created
             mol2_path = Path(f'{ligands_list[x]}.mol2')
             if file_check(mol2_path) == False:
                 # if mol2 was not created, loop stops and user is returned to
