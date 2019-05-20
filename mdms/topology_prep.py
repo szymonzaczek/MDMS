@@ -356,18 +356,20 @@ def antechamber_parmchk_input():
                     with open(pdb_process_input, 'a') as file:
                         file.write(pdb4amber_input)
                 print(f"\nYou will now be redirected to menu of MDMS. Please, quit MDMS and process ligands' PDB files"
-                      f"from within the terminal.")
+                      f"from within the terminal."
+                      f"Afer processing the file, proceed with topology preparation step within MDMS.\n")
                 # saving info to the control file that pdb4amber was not run from within MDMS
                 save_to_file(f"ligands_pdb4amber_inputs = True\n", filename)
                 stop_interface()
         # creating antechamber and parmchk inputs
         for x in range(0, len(ligands_list)):
+            # following lines should not be needed - it is checked upon earlier on
             # test if ligands' pdb files were processed
-            ligand_pdb_path = Path(f'{ligands_list[x]}.pdb')
-            if ligand_pdb_path.exists() == False:
-                print(f"\n!!WARNING!!\n"
-                      f"It seems as processing of ligands' PDB files failed. This might have happened due to problems"
-                      f" with running pdb4amber from within MDMS - in this case, please, ")
+            # ligand_pdb_path = Path(f'{ligands_list[x]}.pdb')
+            # if ligand_pdb_path.exists() == False:
+            #    print(f"\n!!WARNING!!\n"
+            #          f"It seems as processing of ligands' PDB files failed. This might have happened due to problems"
+            #          f" with running pdb4amber from within MDMS - in this case, please, ")
             # input for antechamber
             antechamber_input = f"antechamber -fi pdb -fo mol2 -i {ligands_list[x]}.pdb -o {ligands_list[x]}.mol2 -at {atoms_type_match} -c {charge_model_match} -pf y -nc {ligands_charges_list[x]} -m {ligands_multiplicities_list[x]}"
             # running antechamber
@@ -474,7 +476,8 @@ def pdb_process():
             with open(protein_process_input, 'w') as file:
                 file.write(pdb4amber_input)
             print(f"\nYou will now be redirected to menu of MDMS. Please, quit MDMS and process the protein PDB file"
-                  f"from within the terminal.")
+                  f"from within the terminal."
+                  f"Afer processing the file, proceed with topology preparation step within MDMS.\n")
             save_to_file(f"protein_pdb4amber_inputs = True\n", filename)
             stop_interface()
     # finding ligands residues in control file
@@ -551,8 +554,66 @@ def pdb_process():
     # processing protein-ligand complex pdb file with pdb4amber
     # another round of pdb4amber - it must be changed
     pdb4amber_input_complex = f"pdb4amber -i {complex_raw} -o {complex}"
-    # running pdb4amber
-    subprocess.run([f"{pdb4amber_input_complex}"], shell=True)
+    if pdb4amber_test:
+        # if test works, pdb4amber is run
+        # running pdb4amber
+        subprocess.run([f"{pdb4amber_input_complex}"], shell=True)
+    else:
+        # if test fails, user must process complex on his own
+        # try to find if there is a complex_pdb4amber_inputs entry in the control file
+        complex_inputs = r'complex_pdb4amber_inputs\s*=\s*\[(.*)\]'
+        complex_inputs_match = re.search(complex_inputs, control)
+        if complex_inputs_match:
+            # MDMS was already run and user should've processed complex by this point
+            complex_path = Path(complex)
+            if complex_path.exists():
+                # if this exist, user have processed the file and everything is fine - we might proceed
+                pass
+            else:
+                # if it does not exist, a prompt reminding on how to proceed is printed
+                print(f"\n!!WARNING!!\n"
+                      f"\nYou have not processed complex file with pdb4amber yet\n"
+                      f"There were some problems with running pdb4amber from within MDMS.\n"
+                      f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                      f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                      f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                      f"your own installation of Python.\n"
+                      f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                      f"interpreter (i. e. by loading the appropriate module).\n"
+                      f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                      f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                      f"In such case, just copy the content of each line of complex_pdb4amber.in file into terminal and press"
+                      f"enter. As a result, you will obtain processed PDB complex file which will be ready for further"
+                      f"steps.")
+            pass
+        else:
+            # MDMS is run for the first time; file must be written
+            print(f"\n!!WARNING!!\n"
+                  f"There were some problems with running pdb4amber from within MDMS.\n"
+                  f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                  f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                  f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                  f"your own installation of Python.\n"
+                  f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                  f"interpreter (i. e. by loading the appropriate module).\n"
+                  f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                  f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                  f"In such case, just copy the content of each line of complex_pdb4amber.in file into terminal and press"
+                  f"enter. As a result, you will obtain processed PDB complex file which will be ready for further"
+                  f"steps.")
+            complex_process_input = ('complex_pdb4amber.in')
+            complex_process_input_path = Path(complex_process_input)
+            if complex_process_input_path.exists():
+                os.remove(complex_process_input_path)
+            # input for pdb4amber written to the file
+            with open(complex_process_input, 'w') as file:
+                file.write(pdb4amber_input_complex)
+            print(f"\nYou will now be redirected to menu of MDMS. Please, quit MDMS and process complex PDB file"
+                  f"from within the terminal.\n"
+                  f"Afer processing the file, proceed with topology preparation step within MDMS.\n")
+            # saving info to the control file that pdb4amber was not run from within MDMS
+            save_to_file('complex_pdb4amber_inputs = True\n', filename)
+            stop_interface()
 
 
 def tleap_input():
