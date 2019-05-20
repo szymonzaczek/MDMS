@@ -469,9 +469,9 @@ Please, provide your choice:\n"""
                                 pass
                         except:
                             print('Please, provide valid input')
-                    # to be removed
-                    print(qm_content)
                     qm_input = 'qm_control.in'
+                    # adding new line to qm_content
+                    qm_content = qm_content + '\n\n'
                     # if qm_input already exist, remove it
                     if file_check(Path(qm_input)):
                         os.remove(Path(qm_input))
