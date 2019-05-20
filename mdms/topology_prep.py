@@ -308,6 +308,7 @@ def antechamber_parmchk_input():
                 for x in range(0, len(ligands_list)):
                     lig_path = Path(f'{ligands_list[x]}.pdb')
                     if lig_path.exists():
+                        # processed pdb exists, so we might continue
                         continue
                     else:
                         print(f"\n!!WARNING!!\n"
@@ -427,6 +428,7 @@ def pdb_process():
             prot_path = Path(f"{structure_match_split}_no_lig.pdb")
             if prot_path.exists():
                 # protein was processed by the user, so everything is fine, program might proceed
+                pass
             else:
                 # even though pdb4amber inputs were created and user was asked to process them, he didn't do so -
                 # therefore, he receives a prompt reminding what to do
@@ -443,10 +445,38 @@ def pdb_process():
                       f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
                       f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
                       f"In such case, just copy the content of each line of protein_pdb4amber.in file into terminal and press"
-                      f"enter. As a result, you will obtain processed PDB ligands' file which will be ready for further"
+                      f"enter. As a result, you will obtain processed PDB protein file which will be ready for further"
                       f"steps.")
+                # user did not process PDB but he received another prompt on how to do so - it should be enough; program
+                # is stopped so user can process PDB
+                stop_interface()
                 pass
-        pass
+        else:
+            # there were problems with running pdb4amber and MDMS is run here for the first time
+            print(f"\n!!WARNING!!\n"
+                  f"There were some problems with running pdb4amber from within MDMS.\n"
+                  f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                  f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                  f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                  f"your own installation of Python.\n"
+                  f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                  f"interpreter (i. e. by loading the appropriate module).\n"
+                  f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                  f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                  f"In such case, just copy the content of each line of protein_pdb4amber.in file into terminal and press"
+                  f"enter. As a result, you will obtain processed PDB protein file which will be ready for further"
+                  f"steps.")
+            protein_process_input = ('protein_pdb4amber.in')
+            protein_process_input_path = Path(protein_process_input)
+            if protein_process_input_path.exists():
+                os.remove(protein_process_input_path)
+            # writing pdb4amber input
+            with open(protein_process_input, 'w') as file:
+                file.write(pdb4amber_input)
+            print(f"\nYou will now be redirected to menu of MDMS. Please, quit MDMS and process the protein PDB file"
+                  f"from within the terminal.")
+            save_to_file(f"protein_pdb4amber_inputs = True\n", filename)
+            stop_interface()
     # finding ligands residues in control file
     ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
@@ -519,6 +549,7 @@ def pdb_process():
     # name of the pdb file that will be an input for tleap
     complex = f"{structure_match_split}_full.pdb"
     # processing protein-ligand complex pdb file with pdb4amber
+    # another round of pdb4amber - it must be changed
     pdb4amber_input_complex = f"pdb4amber -i {complex_raw} -o {complex}"
     # running pdb4amber
     subprocess.run([f"{pdb4amber_input_complex}"], shell=True)
