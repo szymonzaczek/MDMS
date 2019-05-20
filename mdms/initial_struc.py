@@ -457,8 +457,8 @@ def metals_pdb():
                 unique_metals.append(x)
         unique_metals_string = ', '.join(unique_metals)
         USER_CHOICE_METALS = f"\nMetal ions handling\n" \
-            f"\nThere are following metal ions in your PDB structure: \n{unique_metals_string}.\n " \
-            f"Obtaining force field parameters for metal ions " \
+            f"\nThere are following metal ions in your PDB structure: \n{unique_metals_string}.\n" \
+            f"\nObtaining force field parameters for metal ions " \
             f"is outside of scope of this program but you might follow tutorials written by Pengfei Li and Kenneth M. Merz Jr., " \
             f"which are available on Amber Website (http://ambermd.org/tutorials/advanced/tutorial20/index.htm).\n" \
             f"Please keep in mind that sometimes metal ions play an important role in proteins' functioning and ommitting them " \
@@ -614,7 +614,7 @@ def sym_operations_prompt():
     pdb_filename = pdb_match
     # prompt that will be displayed to the user
     USER_CHOICE_OL = f"\n!!WARNING!!\n" \
-        f"Oligeomeric structure of functional protein\n" \
+        f"Oligomeric structure of functional protein\n" \
         f"Prior to proceeding to preparing topology and input coordinates, you need to make" \
         f" sure that your structure has a fully functional oligomeric structure.\nFor instance, active site might be " \
         f"fully formed only if there are 2 (or even more) mnonomeric units of the protein within the studied oligomer. " \

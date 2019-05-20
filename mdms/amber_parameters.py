@@ -371,18 +371,19 @@ Please, provide your choice:\n"""
                         f" considered before, if you find them useful.\n" \
                         f"Would you like to retain current QM/MM parameters?\n" \
                         f"- press 'y' if you want to use current QM/MM parameters values\n" \
-                        f"- press 'n' if you want to change  current QM/MM parameters or add another one\n" \
+                        f"- press 'n' if you want to change current QM/MM parameters or add another one\n" \
                         f"Please, provide your choice:\n"
-                    try:
-                        user_input_change_params = str(input(USER_CHOICE_CHANGE_PARAMS).lower())
-                        if user_input_change_params == 'y':
-                            # user do not want to change qmmm, so loop breaks
-                            break
-                        elif user_input_change_params == 'n':
-                            # changing qmmm parameters - it must be normal string, since it is dynamically formatted
-                            # using format function, where into parameters parameters_list is inserted - this way
-                            # everytime this prompt is printed it provides current value of parameters_list
-                            USER_CHOICE_PARAMS = """\nChanging QM/MM parameters
+                    while True:
+                        try:
+                            user_input_change_params = str(input(USER_CHOICE_CHANGE_PARAMS).lower())
+                            if user_input_change_params == 'y':
+                                # user do not want to change qmmm, so loop breaks
+                                break
+                            elif user_input_change_params == 'n':
+                                # changing qmmm parameters - it must be normal string, since it is dynamically formatted
+                                # using format function, where into parameters parameters_list is inserted - this way
+                                # everytime this prompt is printed it provides current value of parameters_list
+                                USER_CHOICE_PARAMS = """\nChanging QM/MM parameters
 There are following parameters defined for the QM/MM part of your system:
 {parameters}
 Would you like to change value of one of the parameters or add anoth one?
@@ -390,84 +391,84 @@ Would you like to change value of one of the parameters or add anoth one?
 - type 'a' in order to add additional parameter
 - type 'q' if you want to stop modifying QM/MM parameters
 Please, provide your choice:\n"""
-                            while True:
-                                try:
-                                    user_input_params = str(input(USER_CHOICE_PARAMS.format(parameters=parameters_list)).lower())
-                                    if user_input_params == 'a':
-                                        # adding a new parameter to QM/MM
-                                        USER_CHOICE_ADD_PARAMS = (f"\n!!WARNING!!\n"
-                                                                  f"You chose to provide additional QM/MM parameters.\n"
-                                                                  f"Keep in mind, that those parameters MUST be valid"
-                                                                  f" Amber parameters (see Manual for detailed "
-                                                                  f"information).\nAlso, the parameters that you will"
-                                                                  f" introduce MUST be consistent with other parameters"
-                                                                  f".\nMDMS is not capable of checking validity of "
-                                                                  f"those parameters before running your simulations - "
-                                                                  f"only then they might halt due to Amber execution"
-                                                                  f" error.\n"
-                                                                  f"Please, provide name of the parameter that you would"
-                                                                  f" like to introduce:\n")
-                                        while True:
-                                            try:
-                                                user_input_add_param = str(input(USER_CHOICE_ADD_PARAMS).lower())
-                                                USER_CHOICE_ADD_PARAM_VALUE = (f"Please, provide value for the "
-                                                                               f"'{user_input_add_param}' parameter:\n")
-                                                user_input_add_param_val = str(input(USER_CHOICE_ADD_PARAM_VALUE))
-                                                parameters_dict.update({user_input_add_param: user_input_add_param_val})
-                                                # after adding a parameters, parameters list must be renewed
-                                                for key, value in parameters_dict.items():
-                                                    if key not in parameters_list:
-                                                        parameters_list.append(key)
-                                                break
-                                            except:
-                                                print('Please, provide valid input.')
-                                    elif user_input_params in parameters_list:
-                                        # if its true, just update parameter value
-                                        USER_CHOICE_PARAM_VALUE = f"You chose to change value of the {user_input_params}" \
-                                            f" parameter.\nIts current value is set to:\n" \
-                                            f"{parameters_dict.get(user_input_params)}\n" \
-                                            f"What value would you like to use for your simulations? Please, provide " \
-                                            f"your choice:\n"
-                                        while True:
-                                            try:
-                                                user_input_param_value = input(USER_CHOICE_PARAM_VALUE)
-                                                parameters_dict.update({user_input_params: user_input_param_value})
-                                                break
-                                            except:
-                                                print('Please, provide valid input.')
-                                    elif user_input_params == 'q':
-                                        # quitting changing parameters and saving current values in a neat format
-                                        # convert dict to string
-                                        raw_parameters = str(parameters_dict)
-                                        # formatting output
-                                        raw_parameters = re.sub(r'\'', '', raw_parameters)
-                                        raw_parameters = re.sub(r'\s', '', raw_parameters)
-                                        raw_parameters = re.sub(r'\:', ' = ', raw_parameters)
-                                        raw_parameters = re.sub(r'\,', ',\n', raw_parameters)
-                                        raw_parameters = re.sub(r'\{', '&qmmm\n', raw_parameters)
-                                        raw_parameters = re.sub(r'\}', '\n/\n', raw_parameters)
-                                        # adding spaces to each parameter line
-                                        raw_parameters_list = []
-                                        for line in raw_parameters.splitlines():
-                                            if line in not_parameters_list:
-                                                raw_parameters_list.append(line)
-                                            elif 'mask' in line:
-                                                line = re.sub(r'" = ', '":', line)
-                                                line = ' ' + line
-                                                raw_parameters_list.append(line)
-                                            else:
-                                                line = ' ' + line
-                                                raw_parameters_list.append(line)
-                                        raw_parameters = '\n'.join(raw_parameters_list)
-                                        raw_parameters = raw_parameters + '\n'
-                                        qm_content = raw_parameters + '\n'
-                                        break
-                                    pass
-                                except:
-                                    print('Please, provide valid input')
-                            pass
-                    except:
-                        print('Please, provide valid input')
+                                while True:
+                                    try:
+                                        user_input_params = str(input(USER_CHOICE_PARAMS.format(parameters=parameters_list)).lower())
+                                        if user_input_params == 'a':
+                                            # adding a new parameter to QM/MM
+                                            USER_CHOICE_ADD_PARAMS = (f"\n!!WARNING!!\n"
+                                                                      f"You chose to provide additional QM/MM parameters.\n"
+                                                                      f"Keep in mind, that those parameters MUST be valid"
+                                                                      f" Amber parameters (see Manual for detailed "
+                                                                      f"information).\nAlso, the parameters that you will"
+                                                                      f" introduce MUST be consistent with other parameters"
+                                                                      f".\nMDMS is not capable of checking validity of "
+                                                                      f"those parameters before running your simulations - "
+                                                                      f"only then they might halt due to Amber execution"
+                                                                      f" error.\n"
+                                                                      f"Please, provide name of the parameter that you would"
+                                                                      f" like to introduce:\n")
+                                            while True:
+                                                try:
+                                                    user_input_add_param = str(input(USER_CHOICE_ADD_PARAMS).lower())
+                                                    USER_CHOICE_ADD_PARAM_VALUE = (f"Please, provide value for the "
+                                                                                   f"'{user_input_add_param}' parameter:\n")
+                                                    user_input_add_param_val = str(input(USER_CHOICE_ADD_PARAM_VALUE))
+                                                    parameters_dict.update({user_input_add_param: user_input_add_param_val})
+                                                    # after adding a parameters, parameters list must be renewed
+                                                    for key, value in parameters_dict.items():
+                                                        if key not in parameters_list:
+                                                            parameters_list.append(key)
+                                                    break
+                                                except:
+                                                    print('Please, provide valid input.')
+                                        elif user_input_params in parameters_list:
+                                            # if its true, just update parameter value
+                                            USER_CHOICE_PARAM_VALUE = f"You chose to change value of the {user_input_params}" \
+                                                f" parameter.\nIts current value is set to:\n" \
+                                                f"{parameters_dict.get(user_input_params)}\n" \
+                                                f"What value would you like to use for your simulations? Please, provide " \
+                                                f"your choice:\n"
+                                            while True:
+                                                try:
+                                                    user_input_param_value = input(USER_CHOICE_PARAM_VALUE)
+                                                    parameters_dict.update({user_input_params: user_input_param_value})
+                                                    break
+                                                except:
+                                                    print('Please, provide valid input.')
+                                        elif user_input_params == 'q':
+                                            # quitting changing parameters and saving current values in a neat format
+                                            # convert dict to string
+                                            raw_parameters = str(parameters_dict)
+                                            # formatting output
+                                            raw_parameters = re.sub(r'\'', '', raw_parameters)
+                                            raw_parameters = re.sub(r'\s', '', raw_parameters)
+                                            raw_parameters = re.sub(r'\:', ' = ', raw_parameters)
+                                            raw_parameters = re.sub(r'\,', ',\n', raw_parameters)
+                                            raw_parameters = re.sub(r'\{', '&qmmm\n', raw_parameters)
+                                            raw_parameters = re.sub(r'\}', '\n/\n', raw_parameters)
+                                            # adding spaces to each parameter line
+                                            raw_parameters_list = []
+                                            for line in raw_parameters.splitlines():
+                                                if line in not_parameters_list:
+                                                    raw_parameters_list.append(line)
+                                                elif 'mask' in line:
+                                                    line = re.sub(r'" = ', '":', line)
+                                                    line = ' ' + line
+                                                    raw_parameters_list.append(line)
+                                                else:
+                                                    line = ' ' + line
+                                                    raw_parameters_list.append(line)
+                                            raw_parameters = '\n'.join(raw_parameters_list)
+                                            raw_parameters = raw_parameters + '\n'
+                                            qm_content = raw_parameters + '\n'
+                                            break
+                                        pass
+                                    except:
+                                        print('Please, provide valid input')
+                                pass
+                        except:
+                            print('Please, provide valid input')
                     # to be removed
                     print(qm_content)
                     qm_input = 'qm_control.in'
@@ -760,7 +761,7 @@ def qm_md_merging():
         # removing whitespaces and turning string into a list
         steps_list = re.sub(r'\s', '', steps_string).split(',')
         prompt_qm = f"\nNOTE\n" \
-            f"Right now, qm_qontrol file will be appended to all of the files that contain parameters for your " \
+            f"Right now, qm_control file will be appended to all of the files that contain parameters for your " \
             f"simulations.\n"
         print(prompt_qm)
         for step in steps_list:
