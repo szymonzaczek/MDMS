@@ -1,5 +1,6 @@
-![alt text](https://raw.githubusercontent.com/szymonzaczek/MDMS/linux_development/mdms_logo.png "MDMS: Molecular Dynamics Made Simple")
-
+<p align="center">
+    <img src="https://raw.githubusercontent.com/szymonzaczek/MDMS/linux_development/mdms_logo.png" alt="MDMS: Molecular Dynamics Made Simple">
+</p>
 
 # MDMS: Molecular Dynamics Made Simple
 
