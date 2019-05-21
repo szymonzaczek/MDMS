@@ -363,14 +363,6 @@ def antechamber_parmchk_input():
                 stop_interface()
         # creating antechamber and parmchk inputs
         for x in range(0, len(ligands_list)):
-            # following lines should not be needed - it is checked upon earlier on
-            # test if ligands' pdb files were processed
-            # ligand_pdb_path = Path(f'{ligands_list[x]}.pdb')
-            # if ligand_pdb_path.exists() == False:
-            #    print(f"\n!!WARNING!!\n"
-            #          f"It seems as processing of ligands' PDB files failed. This might have happened due to problems"
-            #          f" with running pdb4amber from within MDMS - in this case, please, ")
-            # input for antechamber
             antechamber_input = f"antechamber -fi pdb -fo mol2 -i {ligands_list[x]}.pdb -o {ligands_list[x]}.mol2 -at {atoms_type_match} -c {charge_model_match} -pf y -nc {ligands_charges_list[x]} -m {ligands_multiplicities_list[x]}"
             # running antechamber
             subprocess.run([f"{antechamber_input}"], shell=True)

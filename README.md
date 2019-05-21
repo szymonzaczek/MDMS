@@ -57,11 +57,17 @@ If typing `mdms_menu.py` has no effect, you should make `mdms_menu.py` script to
 - establishing initial protein (or protein-ligand complex) structure
  - downloading a protein structure directly from Protein Data Bank
  - using a protein structure that was earlier downloaded and/or somehow modified
- - choosing which ligands are to be included in the system which will be simulated
+ - checking if there are any missing atoms in amino acid residues (basing on the REMARK entries); this is also checked later on by pdb4amber
+ - checking if there are any missing residues in the protein (basing on the REMARK entries)
+ - automatic removal of residues, which are common leftovers after experiments
+ - choosing which ligands are to be included for MD simulations
  - choosing if metal ions are to be retained for MD (if they are present in the crystal structure - user will must provide parameters for them though)
  - choosing if crystal waters are to be retained for MD (if they are present in the crystal structure - user will must add hydrogen atoms though)
+ - reminding that user needs to add hydrogen atoms to ligands
  - reminding user that he should use functional oligomeric structure of the protein
 - preparing topology and coordinate files for Amber
+ - checking if there are hydrogen present in the ligand - if not, user is asked if this is on purpose
+ - determining charges and force field parameters for ligands
  - processing chosen ligands and protein with pdb4amber
  - choosing protein force field
  - choosing water force field
@@ -70,16 +76,16 @@ If typing `mdms_menu.py` has no effect, you should make `mdms_menu.py` script to
 - preparing input files for Amber
  - choosing routine for simulations (full simulations - minimization, heating, equilibration and production or only a single step-simulation)
  - choosing QM/MM parameters
-  - providing custom QM/MM namelist file
+  - option to provide premade QM/MM namelist file
   - choosing basic QM/MM parameters (QM atoms, spin, charge, QM Hamiltonian)
-  - changing current or adding custom parameters
+  - changing current and/or adding custom parameters
  - choosing MD parameters
-  - default MD parameters for each step are Provided
+  - default MD parameters for each step are provided
   - changing values of current MD parameters and the ability to add custom ones (though they must work with Amber codes)
 - running MD Simulations
- - where simulations should be run - queue or terminal
- - Amber code which will be run - Sander or PMEMD
- - running mode - serial or parallel codes
+ - choosing how simulations should be run - in queue or in terminal
+ - choosing Amber code which will be run - Sander or PMEMD
+ - choosing running mode - serial or parallel codes
 
 
 ### Contributing
