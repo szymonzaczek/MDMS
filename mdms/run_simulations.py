@@ -1,8 +1,11 @@
 import subprocess
 import os
 import re
+import readline
 from pathlib import Path
 
+# allowing tab completion of files' paths
+readline.parse_and_bind("tab: complete")
 
 def file_naming():
     # getting name for a control file, which will containg all info
@@ -68,12 +71,13 @@ def clearing_control():
 
 
 def queue_or_terminal():
-    USER_CHOICE_QUEUE_TERMINAL = f"Would you like to perform your simulations by submitting job to the queue, or " \
+    USER_CHOICE_QUEUE_TERMINAL = f"\nQueue or terminal job\n" \
+        f"Would you like to perform your simulations by submitting job to the queue, or " \
         f"rather you'd run it directly in your terminal?\n" \
         f"Please note that if you are using HPC clusters, you should most likely submit your jobs to the queue." \
         f" This is due to the fact that HPC clusters tend to have login nodes and computing nodes separated, " \
         f"which maximizes performance.\n" \
-        f"If you are using your own computer, you should most likely just run your jobs in the terminal\n" \
+        f"If you are using your own computer, you should most likely just run your jobs in the terminal.\n" \
         f"How would you like to run your simulations?\n" \
         f"- press 'q' if you want to submit your simulations to the queue\n" \
         f"- press 't' if you want to run your simulations directly in the terminal\n" \
@@ -85,7 +89,8 @@ def queue_or_terminal():
                 # saving info to the control file
                 save_to_file(f"run_type = queue\n", filename)
                 # prompt for providing script for running jobs
-                USER_CHOICE_SCRIPT_PATH = f"Please, provide path to the sample script which works correctly with" \
+                USER_CHOICE_SCRIPT_PATH = f"\nQueueing script\n" \
+                    f"Please, provide path to the sample script which works correctly with" \
                     f" queueing system on your machine.\n" \
                     f"It should contain all of the information required for running simulations, such as nodes " \
                     f"specification, number of processors/cores per node used, wall-time, grant name, memory " \
@@ -108,7 +113,8 @@ def queue_or_terminal():
                     except:
                         print('Please, provide valid input.')
                 # command for executing script
-                USER_CHOICE_COMMAND = f"Please, provide the command that is used to submit a job to be executed in " \
+                USER_CHOICE_COMMAND = f"\nScript submission command\n" \
+                    f"Please, provide the command that is used to submit a job to be executed in " \
                     f"the queueing system on your machine (it can be qsub, sbatch, etc.)\n" \
                     f"Note that MDMS has no capability of checking its validity, therefore if a wrong command is provided" \
                     f", your simulations will not be run.\n" \
@@ -133,10 +139,11 @@ def queue_or_terminal():
 
 def sander_or_pmemd():
     # sander or pmemd choice
-    USER_CHOICE_PROGRAM = f"Within Amber, there are 2 programs for running MD simulations: Sander and PMEMD.\n" \
+    USER_CHOICE_PROGRAM = f"\nSander or PMEMD\n" \
+        f"Within Amber, there are 2 programs for running MD simulations: Sander and PMEMD.\n" \
         f"Sander is distributed along with Ambertools and is free to use.\n" \
         f"PMEMD offers improved performance over Sander, though its functionality is slightly limited. Nonetheless," \
-        f" if you want to perform regular MD simulations, PMEMD will most likely be the better choice, though" \
+        f" if you want to perform regular MD simulations, PMEMD will most likely be the better choice, though " \
         f"it must obviously be available to you at your current machine.\n" \
         f"- press 's' for using Sander\n" \
         f"- press 'p' for using PMEMD\n" \
@@ -163,7 +170,8 @@ def serial_or_parallel():
     # finding what run do we proceed with
     run_type = r'run_type\s*=\s*(.*)'
     run_type_match = re.search(run_type, control).group(1)
-    USER_CHOICE_PARALLELISM = f"For your simulations you might either use serial or parallel {run_type_match} code.\n" \
+    USER_CHOICE_PARALLELISM = f"\nSerial or parallel\n" \
+        f"For your simulations you might either use serial or parallel {run_type_match} code.\n" \
         f"Parallel code allow using multiple processors for a single simulation thus finishing faster. It requires" \
         f" parallel version of {engine_match} though.\n" \
         f"If it is available, parallel version is preferable.\n" \
@@ -177,7 +185,8 @@ def serial_or_parallel():
                 save_to_file(f"parallelism = serial\n", filename)
                 break
             elif user_input_parallelism == 'p':
-                USER_CHOICE_PROCESSORS = f"Please choose number of processors that will be used for running your job.\n" \
+                USER_CHOICE_PROCESSORS = f"\nNumber of processors\n" \
+                    f"Please choose number of processors that will be used for running your job.\n" \
                     f"If you are using queueing system for submitting your job, please note, that the number provided" \
                     f" here must be consistent with what is specified in the queue script provided before.\n" \
                     f"Please, provide your choice:\n"

@@ -2,8 +2,25 @@ import os
 import pandas as pd
 import re
 import subprocess
+import readline
 from pathlib import Path
 
+# allowing tab completion of files' paths
+readline.parse_and_bind("tab: complete")
+
+# test if pdb4amber works
+try:
+    # global is declared - it will be checked upon when pdb4amber is supposed to start
+    global pdb4amber_test
+    # pdb4amber test - running it and checking output if it contains string is enough
+    subprocess.run(['pdb4amber > out_1.txt 2>&1'], shell=True)
+    if 'usage: pdb4amber' not in open('out_1.txt').read():
+        raise Exception
+    pdb4amber_test = True
+    # removing files that were required for tests
+    os.remove(Path('out_1.txt'))
+except:
+    pdb4amber_test = False
 
 def file_naming():
     # getting name for a control file, which will containg all info
@@ -103,7 +120,8 @@ def hydrogen_check():
             stop = False
             for x in range(0, len(ligands_list)):
                 if hydrogens_amount[x] == 0:
-                    USER_CHOICE_HYDROGENS = (f"Even though there are {atoms_amount[x]} atoms in {ligands_list[x]} ligand, there are no "
+                    USER_CHOICE_HYDROGENS = (f"\n!!WARNING!!\n"
+                                             f"Even though there are {atoms_amount[x]} atoms in {ligands_list[x]} ligand, there are no "
                                              f"hydrogen atoms. Please keep in mind that all of the ligands MUST have all the "
                                              f"necessary hydrogen atoms in their structures. If you do not add chemically-"
                                              f"relevant hydrogen atoms to your ligands, your MD simulations will provide "
@@ -144,14 +162,16 @@ def ligands_parameters():
         # removing whitespaces and turning string into a list
         ligands_list = re.sub(r'\s', '', ligands_string).split(',')
         # getting necessary infor for antechamber input
-        USER_CHOICE_CHARGE_MODEL = f"\nPlease specify the charge model that you would like to apply to your ligands. If you want" \
+        USER_CHOICE_CHARGE_MODEL = f"\nLigands' charges\n" \
+            f"Please specify the charge model that you would like to apply to your ligands. If you want" \
             f"to employ RESP charges, you will need to manually modify antechamber input files.\n" \
             f"Please note that AM1-BCC charge model is a recommended choice.\n" \
             f"Following options are available:\n" \
             f"- 'bcc' - AM1-BCC charge model\n" \
             f"- 'mul' - Mulliken charge model\n" \
             f"Please, provide one of the options from available answers (single-quoted words specified above):\n"
-        USER_CHOICE_ATOM_TYPES = f"\nPlease, specify which atom types you would like to assign to your ligands.\n" \
+        USER_CHOICE_ATOM_TYPES = f"\nLigands' force field\n" \
+            f"Please, specify which atom types you would like to assign to your ligands.\n" \
             f"Please note that GAFF2 is a recommended choice.\n" \
             f"Following options are available:\n" \
             f"- 'gaff2' - General Amber Force Field, version 2\n" \
@@ -264,23 +284,89 @@ def antechamber_parmchk_input():
                 ligands_multiplicities_list[x])
         # prior to to antechamber and parmchk execution, check ligands pdb with
         # pdb4amber
-        for x in range(0, len(ligands_list)):
-            # copying original ligand PDB file - output from pdb4amber will be
-            # supplied to antechamber and parmchk
-            ligand_copy = f"cp {ligands_list[x]}.pdb {ligands_list[x]}_original.pdb"
-            subprocess.run([f"{ligand_copy}"], shell=True)
-            # input for pdb4amber
-            pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_original.pdb -o {ligands_list[x]}.pdb "
-            # running pdb4amber (both original and remade files are retained
-            # but later on remade ligands will be operated on
-            subprocess.run([f"{pdb4amber_input}"], shell=True)
+        # if pdb4amber works from MDMS, it is run automatically from MDMS
+        if pdb4amber_test:
+            for x in range(0, len(ligands_list)):
+                # copying original ligand PDB file - output from pdb4amber will be
+                # supplied to antechamber and parmchk
+                ligand_copy = f"cp {ligands_list[x]}_raw.pdb {ligands_list[x]}_original.pdb"
+                subprocess.run([f"{ligand_copy}"], shell=True)
+                # input for pdb4amber
+                pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_original.pdb -o {ligands_list[x]}.pdb "
+                # running pdb4amber (both original and remade files are retained
+                # but later on remade ligands will be operated on
+                subprocess.run([f"{pdb4amber_input}"], shell=True)
+                # if it doesn't input is saved to a file
+        else:
+            # try to find ligands_processing entry in the control file
+            # try to find if there is a ligands_pdb4amber_inputs entry in the control file
+            ligands_inputs = r'ligands_pdb4amber_inputs\s*=\s*\[(.*)\]'
+            ligands_inputs_match = re.search(ligands_inputs, control)
+            if ligands_inputs_match:
+                # search for outputs from pdb4amber - they must have been processed manually; if they exist, everthing
+                # is fine; if they don't print info on how to proceed again; every ligand in the list is checked
+                for x in range(0, len(ligands_list)):
+                    lig_path = Path(f'{ligands_list[x]}.pdb')
+                    if lig_path.exists():
+                        # processed pdb exists, so we might continue
+                        continue
+                    else:
+                        print(f"\n!!WARNING!!\n"
+                              f"\nYou have not processed ligands' files with pdb4amber yet\n"
+                              f"There were some problems with running pdb4amber from within MDMS.\n"
+                              f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                              f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                              f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                              f"your own installation of Python.\n"
+                              f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                              f"interpreter (i. e. by loading the appropriate module).\n"
+                              f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                              f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                              f"In such case, just copy the content of each line of ligand_pdb4amber.in file into terminal and press"
+                              f"enter. As a result, you will obtain processed PDB ligands' file which will be ready for further"
+                              f"steps.")
+                        # just single printing of the prompt should be enough, therefore it is halted here
+                        break
+            else:
+                print(f"\n!!WARNING!!\n"
+                      f"There were some problems with running pdb4amber from within MDMS.\n"
+                      f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                      f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                      f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                      f"your own installation of Python.\n"
+                      f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                      f"interpreter (i. e. by loading the appropriate module).\n"
+                      f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                      f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                      f"In such case, just copy the content of each line of ligand_pdb4amber.in file into terminal and press"
+                      f"enter. As a result, you will obtain processed PDB ligands' file which will be ready for further"
+                      f"steps.")
+                pdb_process_input = ('ligand_pdb4amber.in')
+                pdb_process_input_path = Path(pdb_process_input)
+                if pdb_process_input_path.exists():
+                    os.remove(pdb_process_input_path)
+                for x in range(0, len(ligands_list)):
+                    # copying original ligand PDB file - output from pdb4amber will be
+                    # supplied to antechamber and parmchk
+                    ligand_copy = f"cp {ligands_list[x]}_raw.pdb {ligands_list[x]}_original.pdb"
+                    subprocess.run([f"{ligand_copy}"], shell=True)
+                    # input for pdb4amber
+                    pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_original.pdb -o {ligands_list[x]}.pdb "
+                    # input for pdb4amber appended to the file
+                    with open(pdb_process_input, 'a') as file:
+                        file.write(pdb4amber_input)
+                print(f"\nYou will now be redirected to menu of MDMS. Please, quit MDMS and process ligands' PDB files"
+                      f"from within the terminal."
+                      f"Afer processing the file, proceed with topology preparation step within MDMS.\n")
+                # saving info to the control file that pdb4amber was not run from within MDMS
+                save_to_file(f"ligands_pdb4amber_inputs = True\n", filename)
+                stop_interface()
         # creating antechamber and parmchk inputs
         for x in range(0, len(ligands_list)):
-            # input for antechamber
             antechamber_input = f"antechamber -fi pdb -fo mol2 -i {ligands_list[x]}.pdb -o {ligands_list[x]}.mol2 -at {atoms_type_match} -c {charge_model_match} -pf y -nc {ligands_charges_list[x]} -m {ligands_multiplicities_list[x]}"
             # running antechamber
             subprocess.run([f"{antechamber_input}"], shell=True)
-            # checking if mol2 was succesfully created
+            # checking if mol2 was successfully created
             mol2_path = Path(f'{ligands_list[x]}.mol2')
             if file_check(mol2_path) == False:
                 # if mol2 was not created, loop stops and user is returned to
@@ -314,15 +400,78 @@ def pdb_process():
     structure_match = re.search(structure, control).group(1)
     # stripping of extension from structure - this way it will be easier to
     # get proper names, i.e. 4zaf_old.pdb
-    structure_match_splitted = structure_match.split('.')[0]
+    structure_match_split = structure_match.split('.')[0]
     # copying original PDB file so it will be retained after files operations
-    struc_copy = f"cp {structure_match} {structure_match_splitted}_original.pdb"
+    struc_copy = f"cp {structure_match} {structure_match_split}_original.pdb"
     subprocess.run([f"{struc_copy}"], shell=True)
     # input for pdb4amber - ligands are removed
-    pdb4amber_input = f"pdb4amber -i {structure_match_splitted}_original.pdb --add-missing-atoms -p -o {structure_match_splitted}_no_lig.pdb"
+    pdb4amber_input = f"pdb4amber -i {structure_match_split}_original.pdb --add-missing-atoms -p -o {structure_match_split}_no_lig.pdb"
     # running pdb4amber (both original and remade files are retained but later
-    # on remade ligands will be operated on
-    subprocess.run([f"{pdb4amber_input}"], shell=True)
+    # on remade ligands will be operated on)
+    # if pdb4amber works, it is run directly from MDMS
+    if pdb4amber_test:
+        # running pdb4amber (both original and remade files are retained
+        # but later on remade ligands will be operated on
+        subprocess.run([f"{pdb4amber_input}"], shell=True)
+    else:
+        protein_inputs = r'protein_pdb4amber_inputs\s*=\s*\[(.*)\]'
+        protein_inputs_match = re.search(protein_inputs, control)
+        if protein_inputs_match:
+            # since protein_inputs_match is in the control file, MDMS has already got to this stage and user shoud've
+            # already process the files
+            prot_path = Path(f"{structure_match_split}_no_lig.pdb")
+            if prot_path.exists():
+                # protein was processed by the user, so everything is fine, program might proceed
+                pass
+            else:
+                # even though pdb4amber inputs were created and user was asked to process them, he didn't do so -
+                # therefore, he receives a prompt reminding what to do
+                print(f"\n!!WARNING!!\n"
+                      f"\nYou have not processed {structure_match_split}_original.pdb file with pdb4amber yet.\n"
+                      f"Since there were some issues with running pdb4amber from within MDMS, you need to process "
+                      f"{structure_match_split}_original.pdb with pdb4amber manually.\n"
+                      f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                      f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                      f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                      f"your own installation of Python.\n"
+                      f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                      f"interpreter (i. e. by loading the appropriate module).\n"
+                      f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                      f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                      f"In such case, just copy the content of each line of protein_pdb4amber.in file into terminal and press"
+                      f"enter. As a result, you will obtain processed PDB protein file which will be ready for further"
+                      f"steps.")
+                # user did not process PDB but he received another prompt on how to do so - it should be enough; program
+                # is stopped so user can process PDB
+                stop_interface()
+                pass
+        else:
+            # there were problems with running pdb4amber and MDMS is run here for the first time
+            print(f"\n!!WARNING!!\n"
+                  f"There were some problems with running pdb4amber from within MDMS.\n"
+                  f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                  f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                  f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                  f"your own installation of Python.\n"
+                  f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                  f"interpreter (i. e. by loading the appropriate module).\n"
+                  f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                  f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                  f"In such case, just copy the content of each line of protein_pdb4amber.in file into terminal and press"
+                  f"enter. As a result, you will obtain processed PDB protein file which will be ready for further"
+                  f"steps.")
+            protein_process_input = ('protein_pdb4amber.in')
+            protein_process_input_path = Path(protein_process_input)
+            if protein_process_input_path.exists():
+                os.remove(protein_process_input_path)
+            # writing pdb4amber input
+            with open(protein_process_input, 'w') as file:
+                file.write(pdb4amber_input)
+            print(f"\nYou will now be redirected to menu of MDMS. Please, quit MDMS and process the protein PDB file"
+                  f"from within the terminal."
+                  f"Afer processing the file, proceed with topology preparation step within MDMS.\n")
+            save_to_file(f"protein_pdb4amber_inputs = True\n", filename)
+            stop_interface()
     # finding ligands residues in control file
     ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
@@ -335,7 +484,7 @@ def pdb_process():
     # creating list storing filenames that will create the whole complex
     full_files = []
     # protein without any ligands
-    struc_no_lig = f"{structure_match_splitted}_no_lig.pdb"
+    struc_no_lig = f"{structure_match_split}_no_lig.pdb"
     # protein filename appended
     full_files.append(struc_no_lig)
     if waters_match:
@@ -383,7 +532,7 @@ def pdb_process():
         # appending ligands filenames
         for ligand in ligands_files:
             full_files.append(ligand)
-    complex_raw = f"{structure_match_splitted}_raw.pdb"
+    complex_raw = f"{structure_match_split}_raw.pdb"
     # using context manager to concatenate protein and ligands together
     print(full_files)
     with open(complex_raw, 'w') as outfile:
@@ -393,11 +542,70 @@ def pdb_process():
             with open(fname) as infile:
                 outfile.write(infile.read())
     # name of the pdb file that will be an input for tleap
-    complex = f"{structure_match_splitted}_full.pdb"
+    complex = f"{structure_match_split}_full.pdb"
     # processing protein-ligand complex pdb file with pdb4amber
+    # another round of pdb4amber - it must be changed
     pdb4amber_input_complex = f"pdb4amber -i {complex_raw} -o {complex}"
-    # running pdb4amber
-    subprocess.run([f"{pdb4amber_input_complex}"], shell=True)
+    if pdb4amber_test:
+        # if test works, pdb4amber is run
+        # running pdb4amber
+        subprocess.run([f"{pdb4amber_input_complex}"], shell=True)
+    else:
+        # if test fails, user must process complex on his own
+        # try to find if there is a complex_pdb4amber_inputs entry in the control file
+        complex_inputs = r'complex_pdb4amber_inputs\s*=\s*\[(.*)\]'
+        complex_inputs_match = re.search(complex_inputs, control)
+        if complex_inputs_match:
+            # MDMS was already run and user should've processed complex by this point
+            complex_path = Path(complex)
+            if complex_path.exists():
+                # if this exist, user have processed the file and everything is fine - we might proceed
+                pass
+            else:
+                # if it does not exist, a prompt reminding on how to proceed is printed
+                print(f"\n!!WARNING!!\n"
+                      f"\nYou have not processed complex file with pdb4amber yet\n"
+                      f"There were some problems with running pdb4amber from within MDMS.\n"
+                      f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                      f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                      f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                      f"your own installation of Python.\n"
+                      f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                      f"interpreter (i. e. by loading the appropriate module).\n"
+                      f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                      f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                      f"In such case, just copy the content of each line of complex_pdb4amber.in file into terminal and press"
+                      f"enter. As a result, you will obtain processed PDB complex file which will be ready for further"
+                      f"steps.")
+            pass
+        else:
+            # MDMS is run for the first time; file must be written
+            print(f"\n!!WARNING!!\n"
+                  f"There were some problems with running pdb4amber from within MDMS.\n"
+                  f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                  f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                  f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                  f"your own installation of Python.\n"
+                  f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                  f"interpreter (i. e. by loading the appropriate module).\n"
+                  f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                  f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                  f"In such case, just copy the content of each line of complex_pdb4amber.in file into terminal and press"
+                  f"enter. As a result, you will obtain processed PDB complex file which will be ready for further"
+                  f"steps.")
+            complex_process_input = ('complex_pdb4amber.in')
+            complex_process_input_path = Path(complex_process_input)
+            if complex_process_input_path.exists():
+                os.remove(complex_process_input_path)
+            # input for pdb4amber written to the file
+            with open(complex_process_input, 'w') as file:
+                file.write(pdb4amber_input_complex)
+            print(f"\nYou will now be redirected to menu of MDMS. Please, quit MDMS and process complex PDB file"
+                  f"from within the terminal.\n"
+                  f"Afer processing the file, proceed with topology preparation step within MDMS.\n")
+            # saving info to the control file that pdb4amber was not run from within MDMS
+            save_to_file('complex_pdb4amber_inputs = True\n', filename)
+            stop_interface()
 
 
 def tleap_input():
@@ -411,13 +619,14 @@ def tleap_input():
     structure_match = re.search(structure, control).group(1)
     # stripping of extension from structure - this way it will be easier to
     # get proper names, i.e. 4zaf_old.pdb
-    structure_match_splitted = structure_match.split('.')[0]
+    structure_match_split = structure_match.split('.')[0]
     # name of the pdb file that will be an input for tleap
-    complex = f"{structure_match_splitted}_full.pdb"
+    complex = f"{structure_match_split}_full.pdb"
     # options for tleap
     # protein force field
     USER_CHOICE_PROTEIN_FF = (
-        f"\nPlease, choose force field which will be used for the protein during your simulations.\n"
+        f"\nProtein force field\n"
+        f"Please, choose force field which will be used for the protein during your simulations.\n"
         f"Please, note that the recommended choice is ff14SB.\n"
         f"The following options are available:\n"
         f"- 'ff14sb'\n"
@@ -465,7 +674,8 @@ def tleap_input():
         'spce': 'frcmod.ionsjc_spce'
     }
     USER_CHOICE_WATER_FF = (
-        f"\nPlease, choose force field which will be used for water during your simulations.\n"
+        f"\nWater force field\n"
+        f"Please, choose force field which will be used for water during your simulations.\n"
         f"Please, note that the most common choice is tip3p.\n"
         f"The following options are available:\n"
         f"- 'tip3p'\n"
@@ -518,7 +728,8 @@ def tleap_input():
         # checking complex pdb for validity
         f.write(f"check mol\n")
     # provide filaneme for topology and coordinates
-    USER_CHOICE_NAME = "\nPlease, provide name for the prefix for the topology and coordinates files.\n" \
+    USER_CHOICE_NAME = "\nPrefix\n" \
+                       "Please, provide name for the prefix for the topology and coordinates files.\n" \
                        "Ideally, it should be just a few letters-long.\n" \
                        "For instance, if you type 'my_complex' your topology will be named my_complex.prmtop" \
                        " and coordinates will be named my_complex.inpcrd.\n" \
@@ -536,7 +747,8 @@ def tleap_input():
         f.write(f"savepdb mol {user_input_name}_no_water.pdb\n")
     # determining solvation box size
     USER_CHOICE_WATERBOX_SIZE = (
-        f"\nPlease, provide the size of a periodic solvent box around the complex (in Angstroms).\n"
+        f"\nSolvation shell size\n"
+        f"Please, provide the size of a periodic solvent box around the complex (in Angstroms).\n"
         f"Most commonly used values are between 8 - 14.\n"
         f"Please, provide your choice:\n"
     )

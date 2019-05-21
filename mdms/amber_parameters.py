@@ -1,10 +1,13 @@
 import os
 import re
+import readline
 from pathlib import Path
 
+# allowing tab completion of files' paths
+readline.parse_and_bind("tab: complete")
 
 def file_naming():
-    # getting name for a control file, which will containg all info
+    # getting name for a control file, which will contain all info
     global filename
     while True:
         try:
@@ -68,7 +71,8 @@ def clearing_control():
 
 def qm_or_not():
     # asking user if he wants to perform QM/MM calculations
-    USER_CHOICE_QM = f"\nDo you want to perform QM/MM calculations?\nPlease, keep in mind that such simulations" \
+    USER_CHOICE_QM = f"\nQM/MM calculations\n" \
+        f"\nDo you want to perform QM/MM calculations?\nPlease, keep in mind that such simulations" \
         f"are MUCH more computationally expensive than regular MD. However, this is THE ONLY way to capture " \
         f"chemical structures' alterations within AMBER. For observing physical properties though, it is " \
         f"rather advised to use regular MD, which will allow covering bigger timescales.\n" \
@@ -92,7 +96,8 @@ def qm_or_not():
 
 def steps_to_perform():
     # getting info what simulations to perform
-    USER_CHOICE_PROCEDURE = "\nIn most cases, the investigated protein/protein-ligand complex should be at first minimized" \
+    USER_CHOICE_PROCEDURE = "\nRoutine\n" \
+                            "In most cases, the investigated protein/protein-ligand complex should be at first minimized" \
                             ", then heated to the target temperature, equilibrated, and only then a regular production runs " \
                             "should be performed. Nonetheless, for some reasons, you might want to skip minimization, " \
                             "heating  and equilibration (i. e. you might have performed it in another software) and " \
@@ -136,97 +141,101 @@ def default_parameters(step):
     if step == 'min':
         def_params = """{step}
 &cntrl
- imin=1, 
+ imin=1,
  ntx=1,
  irest=0,
- maxcyc=4000, 
+ maxcyc=4000,
  ncyc=2000,
- cut=8.0, 
- ntb=1,  
+ cut=8.0,
+ ntb=1,
  ntpr=100,
- nmropt=0, 
+ nmropt=0,
  ntr=0,
  ifqnt={ifqnt}
 /
+
 """.format(ifqnt=ifqnt_val, step=step)
     elif step == 'heat':
         def_params = """{step}
 &cntrl
- imin = 0, 
- irest = 0, 
- ntx = 1, 
- ntb = 1, 
- ntp = 0, 
- cut = 8.0, 
- ntc = 2, 
- ntf = 2, 
- tempi = 0.0, 
- temp0 = 300.0, 
- ntt = 3, 
- gamma_ln = 2.0, 
- nstlim = 25000, 
- dt = 0.002, 
- ntpr = 100, 
- ntwx = 500, 
- ntwr = 5000, 
- ig=-1, 
- ifqnt={ifqnt}, 
+ imin = 0,
+ irest = 0,
+ ntx = 1,
+ ntb = 1,
+ ntp = 0,
+ cut = 8.0,
+ ntc = 2,
+ ntf = 2,
+ tempi = 0.0,
+ temp0 = 300.0,
+ ntt = 3,
+ gamma_ln = 2.0,
+ nstlim = 25000,
+ dt = 0.002,
+ ntpr = 100,
+ ntwx = 500,
+ ntwr = 5000,
+ ig=-1,
+ ifqnt={ifqnt},
  nmropt=1,
 /
 &wt type='TEMP0', istep1=0, istep2=25000, value1=0.0, value2=300.0 /
 &wt type='END' /
+
 """.format(ifqnt=ifqnt_val, step=step)
     elif step == 'equi':
         def_params = """{step}
 &cntrl
- imin = 0, 
- irest = 1, 
+ imin = 0,
+ irest = 1,
  ntx = 5,
- ntb = 2, #constant pressure
+ ntb = 2,
  ntp = 1,
- taup = 2.0, #pressure relaxation time, should be between 1 to 5
- cut = 8.0, 
- ntc = 2, 
+ taup = 2.0,
+ cut = 8.0,
+ ntc = 2,
  ntf = 2,
- tempi = 300.0, 
+ tempi = 300.0,
  temp0 = 300.0,
- ntt = 3, 
+ ntt = 3,
  gamma_ln = 2.0,
- nstlim = 75000, 
+ nstlim = 75000,
  dt = 0.002,
- ntpr = 500, 
- ntwx = 500, 
+ ntpr = 500,
+ ntwx = 500,
  ntwr = 5000,
- ig=-1, 
+ ig=-1,
  ifqnt={ifqnt},
  nmropt=0
 /
+
 """.format(ifqnt=ifqnt_val, step=step)
     elif step == 'prod':
         def_params = """{step}
 &cntrl
- imin = 0, 
- irest = 1, 
+ imin = 0,
+ irest = 1,
  ntx = 5,
- ntb = 2,  
+ ntb = 2,
  ntp = 1,
  taup = 2.0,
- cut = 8.0, 
- ntc = 2, 
+ cut = 8.0,
+ ntc = 2,
  ntf = 2,
- tempi = 300.0, 
+ tempi = 300.0,
  temp0 = 300.0,
- ntt = 3, 
+ ntt = 3,
  gamma_ln = 2.0,
- nstlim = 10000000, 
+ nstlim = 10000000,
  dt = 0.002,
- ntpr = 500, 
- ntwx = 2500, 
+ ntpr = 500,
+ ntwx = 2500,
  ntwr = 20000,
- ig=-1, 
+ ig=-1,
  ifqnt={ifqnt},
  nmropt=0
 /
+
 """.format(ifqnt=ifqnt_val, step=step)
     return def_params
 
@@ -242,12 +251,12 @@ def qm_parameters():
     if qm_match:
         qm_match = qm_match.group(1)
         # defining if user have got qmcontrol file
-        USER_CHOICE_QMCONTROL = """\nDo you have a file containig &qmmm namelist with all the necessary information required
+        USER_CHOICE_QMCONTROL = """\nQM/MM namelist\nDo you have a file containig &qmmm namelist with all the necessary information required
 for QM/MM simulations? You might have it from the previous MDMS run or by creating your own file following Amber
 guidelines. If you do not have it, do not worry - we will create one in a moment!
 - press 'y' if you do
-- press 'n' if you don't - a file with default parameters will be created in the current directory.
-Please, provide your choice:\n """
+- press 'n' if you don't - a file with default parameters will be created in the current directory
+Please, provide your choice:\n"""
         while True:
             try:
                 user_input_qmcontrol = str(input(USER_CHOICE_QMCONTROL).lower())
@@ -271,7 +280,8 @@ Please, provide your choice:\n """
                     break
                 elif user_input_qmcontrol == 'n':
                     # defining qmatoms
-                    USER_CHOICE_QMATOMS = f"\nWhich atoms from your system should be treated with QM methods? Any valid " \
+                    USER_CHOICE_QMATOMS = f"\nQM atoms\n" \
+                        f"Which atoms from your system should be treated with QM methods? Any valid " \
                         f"Amber mask will work (for more info about masks refer to Amber manual).\n" \
                         f"Please, provide your choice (Amber mask formatting is required):\n"
                     while True:
@@ -281,7 +291,8 @@ Please, provide your choice:\n """
                         except:
                             print('Please, provide valid input')
                     # defining spin
-                    USER_CHOICE_QMSPIN = f"\nWhat is the spin of the QM part of your system?\n" \
+                    USER_CHOICE_QMSPIN = f"\nQM spin\n" \
+                        f"What is the spin of the QM part of your system?\n" \
                         f"Please, provide spin value for the QM part of your system (positive integer value):\n"
                     while True:
                         try:
@@ -291,7 +302,8 @@ Please, provide your choice:\n """
                         except:
                             print('Please, provide valid input')
                     # defining charge
-                    USER_CHOICE_QMCHARGE = f"\nWhat is the charge of the QM part of your system?\n" \
+                    USER_CHOICE_QMCHARGE = f"\nQM charge\n" \
+                        f"What is the charge of the QM part of your system?\n" \
                         f"Please, provide charge value for the QM part of your system (integer value):\n"
                     while True:
                         try:
@@ -300,7 +312,8 @@ Please, provide your choice:\n """
                         except:
                             print('Please, provide valid input')
                     # define qmmethod
-                    USER_CHOICE_QMMETHOD = f"\nWhich QM method would you like to use? The following options are available:\n" \
+                    USER_CHOICE_QMMETHOD = f"\nQM method\n" \
+                        f"\nWhich QM method would you like to use? The following options are available:\n" \
                         f"- 'AM1'\n" \
                         f"- 'PM3'\n" \
                         f"- 'RM1'\n" \
@@ -319,26 +332,154 @@ Please, provide your choice:\n """
                                 break
                         except:
                             print('Please, provide valid input')
+                    # content of a qmmm namelist
+                    qm_content = (f"&qmmm\n"
+                                   f" qmmask = '{user_input_qmatoms}',\n"
+                                   f" spin = {user_input_qmspin},\n"
+                                   f" qmcharge = {user_input_qmcharge},\n"
+                                   f" qmshake = 0,\n"
+                                   f" qm_ewald = 1,\n"
+                                   f" qm_pme = 1,\n"
+                                   f" qm_theory = '{user_input_qmmethod}',\n"
+                                   f" printcharges = 1,\n"
+                                   f" writepdb = 1,\n"
+                                   f"/"
+                                   f"")
+                    # turning qm_content this into a list and into a dictionary
+                    parameters_list = []
+                    parameters_dict = {}
+                    for line in qm_content.splitlines():
+                        # removing white spaces
+                        line = re.sub(r'\s', '', line)
+                        # removing commas
+                        line = re.sub(r'\,', '', line)
+                        # getting list of two elements for a single line (parameter and its value)
+                        parameter_value = line.split('=')
+                        # if qmmmm line or the last line is considered this is skipped
+                        not_parameters_list = ['&qmmm', '/', '']
+                        if parameter_value[0] in not_parameters_list:
+                            continue
+                        # storing parameters in a list
+                        parameters_list.append(parameter_value[0])
+                        # storing parameters in a dict
+                        parameters_dict.update({parameter_value[0]: parameter_value[1]})
+                    print(f"\nQM/MM parameters\n"
+                          f"Currently, QM/MM parameters look as follows:\n"
+                          f"{qm_content}\n")
+                    USER_CHOICE_CHANGE_PARAMS = f"You might either change QM/MM parameters or stick to their current" \
+                        f" values. Please note, that you will also be able to add additional parameters that were not" \
+                        f" considered before, if you find them useful.\n" \
+                        f"Would you like to retain current QM/MM parameters?\n" \
+                        f"- press 'y' if you want to use current QM/MM parameters values\n" \
+                        f"- press 'n' if you want to change current QM/MM parameters or add another one\n" \
+                        f"Please, provide your choice:\n"
+                    while True:
+                        try:
+                            user_input_change_params = str(input(USER_CHOICE_CHANGE_PARAMS).lower())
+                            if user_input_change_params == 'y':
+                                # user do not want to change qmmm, so loop breaks
+                                break
+                            elif user_input_change_params == 'n':
+                                # changing qmmm parameters - it must be normal string, since it is dynamically formatted
+                                # using format function, where into parameters parameters_list is inserted - this way
+                                # everytime this prompt is printed it provides current value of parameters_list
+                                USER_CHOICE_PARAMS = """\nChanging QM/MM parameters
+There are following parameters defined for the QM/MM part of your system:
+{parameters}
+Would you like to change value of one of the parameters or add anoth one?
+- type 'parameter_code' (for instance 'printcharges' in order to change its value)
+- type 'a' in order to add additional parameter
+- type 'q' if you want to stop modifying QM/MM parameters
+Please, provide your choice:\n"""
+                                while True:
+                                    try:
+                                        user_input_params = str(input(USER_CHOICE_PARAMS.format(parameters=parameters_list)).lower())
+                                        if user_input_params == 'a':
+                                            # adding a new parameter to QM/MM
+                                            USER_CHOICE_ADD_PARAMS = (f"\n!!WARNING!!\n"
+                                                                      f"You chose to provide additional QM/MM parameters.\n"
+                                                                      f"Keep in mind, that those parameters MUST be valid"
+                                                                      f" Amber parameters (see Manual for detailed "
+                                                                      f"information).\nAlso, the parameters that you will"
+                                                                      f" introduce MUST be consistent with other parameters"
+                                                                      f".\nMDMS is not capable of checking validity of "
+                                                                      f"those parameters before running your simulations - "
+                                                                      f"only then they might halt due to Amber execution"
+                                                                      f" error.\n"
+                                                                      f"Please, provide name of the parameter that you would"
+                                                                      f" like to introduce:\n")
+                                            while True:
+                                                try:
+                                                    user_input_add_param = str(input(USER_CHOICE_ADD_PARAMS).lower())
+                                                    USER_CHOICE_ADD_PARAM_VALUE = (f"Please, provide value for the "
+                                                                                   f"'{user_input_add_param}' parameter:\n")
+                                                    user_input_add_param_val = str(input(USER_CHOICE_ADD_PARAM_VALUE))
+                                                    parameters_dict.update({user_input_add_param: user_input_add_param_val})
+                                                    # after adding a parameters, parameters list must be renewed
+                                                    for key, value in parameters_dict.items():
+                                                        if key not in parameters_list:
+                                                            parameters_list.append(key)
+                                                    break
+                                                except:
+                                                    print('Please, provide valid input.')
+                                        elif user_input_params in parameters_list:
+                                            # if its true, just update parameter value
+                                            USER_CHOICE_PARAM_VALUE = f"You chose to change value of the {user_input_params}" \
+                                                f" parameter.\nIts current value is set to:\n" \
+                                                f"{parameters_dict.get(user_input_params)}\n" \
+                                                f"What value would you like to use for your simulations? Please, provide " \
+                                                f"your choice:\n"
+                                            while True:
+                                                try:
+                                                    user_input_param_value = input(USER_CHOICE_PARAM_VALUE)
+                                                    parameters_dict.update({user_input_params: user_input_param_value})
+                                                    break
+                                                except:
+                                                    print('Please, provide valid input.')
+                                        elif user_input_params == 'q':
+                                            # quitting changing parameters and saving current values in a neat format
+                                            # convert dict to string
+                                            raw_parameters = str(parameters_dict)
+                                            # formatting output
+                                            raw_parameters = re.sub(r'\'', '', raw_parameters)
+                                            raw_parameters = re.sub(r'\s', '', raw_parameters)
+                                            raw_parameters = re.sub(r'\:', ' = ', raw_parameters)
+                                            raw_parameters = re.sub(r'\,', ',\n', raw_parameters)
+                                            raw_parameters = re.sub(r'\{', '&qmmm\n', raw_parameters)
+                                            raw_parameters = re.sub(r'\}', '\n/\n', raw_parameters)
+                                            # adding spaces to each parameter line
+                                            raw_parameters_list = []
+                                            for line in raw_parameters.splitlines():
+                                                if line in not_parameters_list:
+                                                    raw_parameters_list.append(line)
+                                                elif 'mask' in line:
+                                                    line = re.sub(r'" = ', '":', line)
+                                                    line = ' ' + line
+                                                    raw_parameters_list.append(line)
+                                                else:
+                                                    line = ' ' + line
+                                                    raw_parameters_list.append(line)
+                                            raw_parameters = '\n'.join(raw_parameters_list)
+                                            raw_parameters = raw_parameters + '\n'
+                                            qm_content = raw_parameters + '\n'
+                                            break
+                                        pass
+                                    except:
+                                        print('Please, provide valid input')
+                                pass
+                        except:
+                            print('Please, provide valid input')
                     qm_input = 'qm_control.in'
+                    # adding new line to qm_content
+                    qm_content = qm_content + '\n\n'
                     # if qm_input already exist, remove it
                     if file_check(Path(qm_input)):
                         os.remove(Path(qm_input))
                     # save qm info to qm_input
                     with open(qm_input, 'w') as file:
-                        file.write(f"&qmmm,\n"
-                                   f"qmmask = {user_input_qmatoms},\n"
-                                   f"spin = {user_input_qmspin},\n"
-                                   f"qmcharge = {user_input_qmcharge},\n"
-                                   f"qmshake = 0,\n"
-                                   f"qm_ewald = 1,\n"
-                                   f"qm_pme = 1,\n"
-                                   f"qm_theory = {user_input_qmmethod},\n"
-                                   f"printcharges = 1,\n"
-                                   f"writepdb = 1,\n"
-                                   f"/")
+                        file.write(qm_content)
                     save_to_file(f"qm_control = {qm_input}\n", filename)
                     break
-                #break
             except:
                 print('Please, provide valid input')
 
@@ -370,7 +511,7 @@ def md_parameters():
     }
     # reading info from control file
     control = read_file(filename)
-    steps = r'procedure.*=.*\[(.*)\]'
+    steps = r'procedure\s*=\s*\[(.*)\]'
     steps_match = re.search(steps, control).group(1)
     # removing quotes from string
     steps_string = steps_match.replace("'", "")
@@ -387,11 +528,58 @@ def md_parameters():
     for step in steps_list:
         # printing default parameters for the step
         def_params = default_parameters(step)
-        print(f"For {steps_dict.get(step)}, default input file looks as follows:\n"
+        # if the only step is production, default files require changes
+        if steps_list == ['prod']:
+            parameters_list = []
+            # dictionary containing parameters and its values
+            parameters_values_dict = {}
+            # printing parameters that are in the default file for the current step
+            for line in def_params.splitlines():
+                # changing string to the desired format
+                # removing whitespaces
+                line = re.sub(r'\s', '', line)
+                # removing commas in string
+                line = re.sub(r'\,', '', line)
+                # getting list of two elements for a single line (parameter and its default value
+                parameter_value = line.split('=')
+                # if cntrl line, title line or the last line is considered, this is skipped
+                not_parameters_list = ['&cntrl', '/', 'min', 'heat', 'equi', 'prod', '']
+                if parameter_value[0] in not_parameters_list:
+                    continue
+                # storing parameters in a list
+                parameters_list.append(parameter_value[0])
+                # storing parameters and their values in a dictionary
+                parameters_values_dict.update({parameter_value[0]: parameter_value[1]})
+            # changing irest and ntx value if list has only prod value
+            parameters_values_dict.update({'irest': '0'})
+            parameters_values_dict.update({'ntx': '1'})
+            # quitting changing parameters - saving all of the current values
+            # converting dictionary with parameters to string
+            parameters_values_string = str(parameters_values_dict)
+            # formatting outputs so it will be perfect
+            parameters_values_string = re.sub(r'\'', '', parameters_values_string)
+            parameters_values_string = re.sub(r'\s', '', parameters_values_string)
+            parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
+            parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
+            parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
+            parameters_values_string = re.sub(r'\}', '\n/\n', parameters_values_string)
+            # in order to add spaces to the beginning of a string, at first a list will be created, which
+            # later on will be joined to create properly formatted string
+            parameters_values_list = []
+            for line in parameters_values_string.splitlines():
+                if line in not_parameters_list:
+                    parameters_values_list.append(line)
+                else:
+                    line = ' ' + line
+                    parameters_values_list.append(line)
+            parameters_values_string = '\n'.join(parameters_values_list)
+            def_params = (f"{step}\n" + parameters_values_string + "\n")
+        print(f"\nMD parameters\n"
+              f"For {steps_dict.get(step)}, default input file looks as follows:\n"
               f"{def_params}")
         # choice if user wants to change default parameters (more info on individual parameters will be provided when
         # user will consider changing them)
-        USER_CHOICE_DEF_PARAMS = f"\nYou might either stick to the default parameters, or change their individual values.\n" \
+        USER_CHOICE_DEF_PARAMS = f"You might either stick to the default parameters, or change their individual values.\n" \
             f"Please keep in mind that not only each protein is different but also computational resources that are " \
             f"available to you may significantly differ from a standard HPC resource, for which this program was designed," \
             f" therefore you SHOULD consider every parameter carefully. Default values are rather a proposition, which" \
@@ -405,58 +593,10 @@ def md_parameters():
             try:
                 user_input_def_params = str(input(USER_CHOICE_DEF_PARAMS).lower())
                 # if prod is the only content of a list, ntx and irest values must be changed, therefore they are handled
-                # in else clausewysłanie pit do urzedu skarbowego poczta
-                if user_input_def_params == 'y' and steps_list != ['prod']:
+                # in else clause
+                if user_input_def_params == 'y':
                     # default parameters for this step will be saved to the file
                     file_step = def_params
-                    break
-                elif user_input_def_params == 'y' and steps_list == ['prod']:
-                    # prod file must be changed automatically (irest and ntx)
-                    # list containing parameters for this step
-                    parameters_list = []
-                    # dictionary containing parameters and its values
-                    parameters_values_dict = {}
-                    # printing parameters that are in the default file for the current step
-                    for line in def_params.splitlines():
-                        # changing string to the desired format
-                        # removing whitespaces
-                        line = re.sub(r'\s', '', line)
-                        # removing commas in string
-                        line = re.sub(r'\,', '', line)
-                        # getting list of two elements for a single line (parameter and its default value
-                        parameter_value = line.split('=')
-                        # if cntrl line, title line or the last line is considered, this is skipped
-                        not_parameters_list = ['&cntrl', '/', 'min', 'heat', 'equi', 'prod']
-                        if parameter_value[0] in not_parameters_list:
-                            continue
-                        # storing parameters in a list
-                        parameters_list.append(parameter_value[0])
-                        # storing parameters and their values in a dictionary
-                        parameters_values_dict.update({parameter_value[0]: parameter_value[1]})
-                    # changing irest and ntx value if list has only prod value
-                    parameters_values_dict.update({'irest': '0'})
-                    parameters_values_dict.update({'ntx': '1'})
-                    # quitting changing parameters - saving all of the current values
-                    # converting dictionary with parameters to string
-                    parameters_values_string = str(parameters_values_dict)
-                    # formatting outputs so it will be perfect
-                    parameters_values_string = re.sub(r'\'', '', parameters_values_string)
-                    parameters_values_string = re.sub(r'\s', '', parameters_values_string)
-                    parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
-                    parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
-                    parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
-                    parameters_values_string = re.sub(r'\}', '\n/', parameters_values_string)
-                    # in order to add spaces to the beginning of a string, at first a list will be created, which
-                    # later on will be joined to create properly formatted string
-                    parameters_values_list = []
-                    for line in parameters_values_string.splitlines():
-                        if line in not_parameters_list:
-                            parameters_values_list.append(line)
-                        else:
-                            line = ' ' + line
-                            parameters_values_list.append(line)
-                    parameters_values_string = '\n'.join(parameters_values_list)
-                    file_step = (f"{step}\n" + parameters_values_string)
                     break
                 elif user_input_def_params == 'n':
                     # user wants to change parameters and here he will have the chance to do so
@@ -474,7 +614,7 @@ def md_parameters():
                         # getting list of two elements for a single line (parameter and its default value
                         parameter_value = line.split('=')
                         # if cntrl line, title line or the last line is considered, this is skipped
-                        not_parameters_list = ['&cntrl', '/', 'min', 'heat', 'equi', 'prod']
+                        not_parameters_list = ['&cntrl', '/', 'min', 'heat', 'equi', 'prod', '']
                         if parameter_value[0] in not_parameters_list:
                             continue
                         # storing parameters in a list
@@ -489,42 +629,21 @@ def md_parameters():
                               f"Ideally, you will heat your system for as long as heating steps is happening and then"
                               f" proceed with equilibration.\n")
                     # prompt which parameters user would like to change
-                    USER_CHOICE_PARAMS = f"There are following parameters defined for {steps_dict.get(step)}:\n" \
-                        f"{parameters_list}\n" \
-                        f"Would you like to change one of them, add another parameter to this list or perhaps" \
-                        f" you would like to carry out QM/MM calculations?\n" \
-                        f"- type 'parameter_code' (for instance 'cut') in order to change its value\n" \
-                        f"- type 'a' in order to add additional parameter\n" \
-                        f"- type 'q' if you want to stop modifying parameters for {steps_dict.get(step)} step.\n" \
-                        f"Please, provide your choice:\n"
+                    USER_CHOICE_PARAMS = """Changing MD parameters
+There are following parameters defined for {step}:
+{parameters}.
+Would you like to change one of them or add another parameter to this list?
+- type 'parameter_code' (for instance 'cut') in order to change its value
+- type 'a' in order to add additional parameter
+- type 'q' if you want to stop modifying parameters for {step} step.
+Please, provide your choice:\n"""
                     if steps_list == ['prod']:
                         # changing irest and ntx value if list has only prod value
                         parameters_values_dict.update({'irest': '0'})
                         parameters_values_dict.update({'ntx': '1'})
-                        # quitting changing parameters - saving all of the current values
-                        # converting dictionary with parameters to string
-                        parameters_values_string = str(parameters_values_dict)
-                        # formatting outputs so it will be perfect
-                        parameters_values_string = re.sub(r'\'', '', parameters_values_string)
-                        parameters_values_string = re.sub(r'\s', '', parameters_values_string)
-                        parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
-                        parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
-                        parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
-                        parameters_values_string = re.sub(r'\}', '\n/', parameters_values_string)
-                        # in order to add spaces to the beginning of a string, at first a list will be created, which
-                        # later on will be joined to create properly formatted string
-                        parameters_values_list = []
-                        for line in parameters_values_string.splitlines():
-                            if line in not_parameters_list:
-                                parameters_values_list.append(line)
-                            else:
-                                line = ' ' + line
-                                parameters_values_list.append(line)
-                        parameters_values_string = '\n'.join(parameters_values_list)
-                        file_step = (f"{step}\n" + parameters_values_string)
                     while True:
                         try:
-                            user_input_params = str(input(USER_CHOICE_PARAMS).lower())
+                            user_input_params = str(input(USER_CHOICE_PARAMS.format(step=steps_dict.get(step), parameters=parameters_list)).lower())
                             # if input is in parameters list, print this parameter value with info what it is doing
                             if user_input_params == 'a':
                                 # adding additional parameters to the current step
@@ -547,9 +666,9 @@ def md_parameters():
                                         USER_CHOICE_ADD_PARAM_VALUE = (
                                             f"Please, provide value for the {user_input_add_param} parameter:\n")
                                         user_input_add_param_val = str(input(USER_CHOICE_ADD_PARAM_VALUE))
-                                        # check if it can be changed to float; if yes, it must
-                                        # be numerical value and can be put into dictionary, otherwise it is halted
-                                        user_input_add_param_val_float = float(user_input_add_param_val)
+                                        # checking if input is float is turned off, because user might provide a path
+                                        # or Amber mask as input
+                                        # user_input_add_param_val_float = float(user_input_add_param_val)
                                         # saving new params into a dictionary
                                         parameters_values_dict.update({user_input_add_param: user_input_add_param_val})
                                         break
@@ -560,12 +679,18 @@ def md_parameters():
                                 # converting dictionary with parameters to string
                                 parameters_values_string = str(parameters_values_dict)
                                 # formatting outputs so it will be perfect
+                                # removing quotes - they define string values inside dict
                                 parameters_values_string = re.sub(r'\'', '', parameters_values_string)
+                                # removing whitespaces
                                 parameters_values_string = re.sub(r'\s', '', parameters_values_string)
+                                # replacing colons with equal (colons are here since it is taken from dict)
                                 parameters_values_string = re.sub(r'\:', ' = ', parameters_values_string)
+                                # whenever entries are separated by a comma, retain comma and put them into a new line
                                 parameters_values_string = re.sub(r'\,', ',\n', parameters_values_string)
+                                # the beginning of a dictionary is replaced with a begining of a qmmm namelist
                                 parameters_values_string = re.sub(r'\{', '&cntrl\n', parameters_values_string)
-                                parameters_values_string = re.sub(r'\}', '\n/', parameters_values_string)
+                                # end of a dictionary is finished with a slash and a new line
+                                parameters_values_string = re.sub(r'\}', '\n/\n', parameters_values_string)
                                 # adding title to the input file
                                 file_step = (f"{step}\n" + parameters_values_string)
                                 #file_step = parameters_values_string
@@ -577,7 +702,7 @@ def md_parameters():
                                         line = ' ' + line
                                         parameters_values_list.append(line)
                                 parameters_values_string = '\n'.join(parameters_values_list)
-                                file_step = (f"{step}\n" + parameters_values_string)
+                                file_step = (f"{step}\n" + parameters_values_string + '\n')
                                 break
                             elif user_input_params in parameters_list:
                                 print(parameters_values_dict)
@@ -586,7 +711,7 @@ def md_parameters():
                                     f"{parameters_dict.get(user_input_params)}\n" \
                                     f"Its current value is set to:\n" \
                                     f"{parameters_values_dict.get(user_input_params)}\n" \
-                                    f"What value would you like to use for your simulations?. Please, provide your choice:\n"
+                                    f"What value would you like to use for your simulations? Please, provide your choice:\n"
                                 while True:
                                     try:
                                         user_input_param_value = (input(USER_CHOICE_PARAM_VALUE))
@@ -636,7 +761,7 @@ def qm_md_merging():
         # removing whitespaces and turning string into a list
         steps_list = re.sub(r'\s', '', steps_string).split(',')
         prompt_qm = f"\nNOTE\n" \
-            f"Right now, qm_qontrol file will be appended to all of the files that contain parameters for your " \
+            f"Right now, qm_control file will be appended to all of the files that contain parameters for your " \
             f"simulations.\n"
         print(prompt_qm)
         for step in steps_list:
