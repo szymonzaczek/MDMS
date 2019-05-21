@@ -4,7 +4,8 @@
 
 # MDMS: Molecular Dynamics Made Simple
 
-Perform Molecular Dynamics (MD) Simulations from scratch within minutes. This program is an interface to one of the most popular MD codes ([Amber](http://ambermd.org/)) aiding users in preparing and running their own simulations.
+Perform Molecular Dynamics (MD) Simulations from scratch within minutes. This program is an interface to one of the most popular MD codes ([Amber](http://ambermd.org/)), aiding users in preparing and running their own simulations.
+
 The idea behind MDMS design is that the beginnings should be easy - not exhausting. That is why this program accommodates everything that is required for getting realistic insights about protein/protein-ligand complexes through MD simulations.
 
 Program's execution has four distinct steps:
@@ -13,13 +14,14 @@ Program's execution has four distinct steps:
 - preparing input files for Amber
 - running MD simulations
 
-MDMS is aimed both to newcomers to the field as well as mature scientists. Newcomers will mostly benefit from the ease of starting MD simulations and the guarantee that the systems are constructed correctly (if user will carefully follow on-screen prompts), whereas mature scientists should mostly enjoy time-savings required for setting everything up - with MDMS, MD simulations of the protein (without any ligands) might be initiated as quickly as in 2 minutes from the start of the program.
+MDMS is aimed both to newcomers to the field as well as mature scientists. Newcomers will mostly benefit from the ease of starting MD simulations and the guarantee that the systems are constructed correctly (if user will carefully follow on-screen prompts). Mature scientists should mostly appreciate time savings - with MDMS, MD simulations of the proteins might be initiated as quickly as in 2 minutes from the start of the program.
 
 
 ### Prerequisites
 
 - Linux distribution with Bash shell
-- Ambertools, biopython, numpy, pandas packages
+- Ambertools or Amber distribution
+- biopython, numpy, pandas packages
 
 
 ### Installation
@@ -54,7 +56,8 @@ Use conda or pip to download required dependencies for running MDMS:
 
 ### Getting Started
 
-Change to the directory in which you will want to store all of your files. Then simply type:
+Change to the desired directory. All of the files will be stored there. Then simply type:
+
 `mdms_menu.py`
 
 Follow on-screen prompts to run your MD simulations!
