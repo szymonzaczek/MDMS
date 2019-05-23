@@ -232,7 +232,7 @@ def missing_atoms_pdb():
                 USER_CHOICE_CONT = "Would you like to continue with MDMS execution, or rather right now you would like to " \
                                    "add missing atoms? Please, provide your choice:\n" \
                                    "- press 'y' to continue\n" \
-                                   "- press 'n' to quit\n"
+                                   "- press 'n' to quit and go back to the menu\n"
                 while True:
                     try:
                         user_input_cont = str(input(USER_CHOICE_CONT)).lower()
@@ -280,9 +280,78 @@ def missing_res_pdb():
                     "https://salilab.org/modeller/).\n"
                     "Prior to proceeding, make sure that there are no missing residues in your structure. \nApply changes to the "
                     "PDB file that will be provided into the MDMS and run MDMS again with altered initial structure.\n"
-                    "Information about missing residues from PDB file: ")
+                    "Information about missing residues from PDB file:\n")
                 print(missing_res_prompt)
                 stop_interface()
+
+
+def sym_operations_prompt():
+    # Reminding user that he must perform crystallographic operations prior to next steps
+    # reading pdb file
+    control = read_file(filename)
+    pdb = 'pdb\s*=\s*(.*)'
+    pdb_match = re.search(pdb, control).group(1)
+    pdb_filename = pdb_match
+    # prompt that will be displayed to the user
+    USER_CHOICE_OL = f"\n!!WARNING!!\n" \
+        f"Oligomeric structure of functional protein\n" \
+        f"Prior to proceeding to preparing topology and input coordinates, you need to make" \
+        f" sure that your structure has a fully functional oligomeric structure.\nFor instance, active site might be " \
+        f"fully formed only if there are 2 (or even more) mnonomeric units of the protein within the studied oligomer. " \
+        f"Symmetry operations on PDB files might be performed within various software, such as PyMOL or Swiss-PdbViewer.\n" \
+        f"For more info on what oligomeric structure you should proceed with, please, consult the paper " \
+        f"that reported obtaining {pdb_filename} crystal structure.\n" \
+        f"If you need to make any changes, please make them directly in {pdb_filename} file and run MDMS once you're " \
+        f"ready.\n" \
+        f"Are you sure that {pdb_filename} has an appropriate oligomeric structure?\n" \
+        f"- press 'y' to continue\n" \
+        f"- press 'n' to quit and go back to the menu\n"
+    while True:
+        try:
+            user_input_ol = str(
+                input(USER_CHOICE_OL).lower())
+            if user_input_ol == 'y':
+                break
+            elif user_input_ol == 'n':
+                stop_interface()
+                break
+            pass
+        except BaseException:
+            print('Please, provide valid input')
+
+
+def protonation_state_prompt():
+    # Reminding user that he must determine protonation states of individual residues prior to MD
+    # reading pdb file
+    control = read_file(filename)
+    pdb = 'pdb\s*=\s*(.*)'
+    pdb_match = re.search(pdb, control).group(1)
+    pdb_filename = pdb_match
+    # prompt that will be displayed to the user
+    USER_CHOICE_PS = f"\n!!WARNING!!\n" \
+        f"Protonation states of amino acids\n" \
+        f"Titratable amino acids (Asp, Cys, Glu, His, Tyr and Lys) might adopt different protonation states. In order" \
+        f" to get as realistic insight into studied process as possible, you should determine protonation states of" \
+        f" those residues at a target pH prior to MD start.\n" \
+        f"In order to determine protonation states of titratable amino acids, you might to use 3rd party software," \
+        f" such as Propka, H++ web server or pKD web server.\n" \
+        f"Please, make all changes to protonation states of residues within {pdb_filename} file.\n" \
+        f"Are you sure that amino acids within {pdb_filename} file have an appropriate protonation states?\n" \
+        f"- press 'y' to continue\n" \
+        f"- press 'n' to stop and go back to the menu\n"
+    while True:
+        try:
+            user_input_ol = str(
+                input(USER_CHOICE_PS).lower())
+            if user_input_ol == 'y':
+                break
+            elif user_input_ol == 'n':
+                stop_interface()
+                break
+            pass
+        except BaseException:
+            print('Please, provide valid input')
+    pass
 
 
 def ligands_pdb():
@@ -588,7 +657,7 @@ def hydrogens_prompt():
                                  f"In order to proceed, all of the ligands must have all of the necessary hydrogen atoms.\n"
                                  f"Have you added hydrogen atoms to all of the ligands?\n"
                                  f"- press 'y' to continue\n"
-                                 f"- press 'n' to stop MDMS run\n")
+                                 f"- press 'n' to stop MDMS run and go back to the menu\n")
         # following clause will be executed only if there are ligands in the
         # control file
         if ligands_list:
@@ -605,48 +674,20 @@ def hydrogens_prompt():
                 except BaseException:
                     print('Please, provide valid input')
 
-def sym_operations_prompt():
-    # Reminding user that he must perform crystallographic operations prior to next steps
-    # reading pdb file
-    control = read_file(filename)
-    pdb = 'pdb\s*=\s*(.*)'
-    pdb_match = re.search(pdb, control).group(1)
-    pdb_filename = pdb_match
-    # prompt that will be displayed to the user
-    USER_CHOICE_OL = f"\n!!WARNING!!\n" \
-        f"Oligomeric structure of functional protein\n" \
-        f"Prior to proceeding to preparing topology and input coordinates, you need to make" \
-        f" sure that your structure has a fully functional oligomeric structure.\nFor instance, active site might be " \
-        f"fully formed only if there are 2 (or even more) mnonomeric units of the protein within the studied oligomer. " \
-        f"Symmetry operations on PDB files might be performed within various software, such as PyMOL or Swiss-PdbViewer.\n" \
-        f"For more info on what oligomeric structure you should proceed with, please, consult the paper " \
-        f"that reported obtaining {pdb_filename} crystal structure.\n" \
-        f"Are you sure that {pdb_filename} has an appropriate oligomeric structure?\n" \
-        f"- press 'y' to continue\n" \
-        f"- press 'n' to stop MDMS \n"
-    while True:
-        try:
-            user_input_ol = str(
-                input(USER_CHOICE_OL).lower())
-            if user_input_ol == 'y':
-                break
-            elif user_input_ol == 'n':
-                stop_interface()
-                break
-            pass
-        except BaseException:
-            print('Please, provide valid input')
+
 
 prep_functions = [
     file_naming,
     init_pdb,
     missing_atoms_pdb,
     missing_res_pdb,
+    sym_operations_prompt,
+    protonation_state_prompt
     ligands_pdb,
     metals_pdb,
     waters_pdb,
     hydrogens_prompt,
-    sym_operations_prompt,]
+]
 
 methods_generator = (y for y in prep_functions)
 
