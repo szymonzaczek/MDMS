@@ -3,6 +3,7 @@ import fnmatch
 import pandas as pd
 import re
 import readline
+import pybel
 from Bio.PDB import *
 from pathlib import Path
 
@@ -650,14 +651,12 @@ def hydrogens_prompt():
         USER_CHOICE_HYDROGENS = (f"\n!!WARNING!!\n"
                                  f"Hydrogen addition to ligands\n"
                                  f"You have chosen to include ligands molecules in your system. In order to correctly proceed to MD simulations,"
-                                 f" hydrogen atoms must be added to your ligands molecules, whenever necessary. Adding hydrogens is outside of "
-                                 f"scope of MDMS, therefore you must use other software to do so, such as OpenBabel, PyMOL, Chimera, LigPrep,"
-                                 f" Avogadro or any other that suites you best. In order to best utilize MDMS, just edit PDB files that were generated"
-                                 f" with MDMS and overwrite them when you will have already added hydrogens.\n"
-                                 f"In order to proceed, all of the ligands must have all of the necessary hydrogen atoms.\n"
-                                 f"Have you added hydrogen atoms to all of the ligands?\n"
-                                 f"- press 'y' to continue\n"
-                                 f"- press 'n' to stop MDMS run and go back to the menu\n")
+                                 f" hydrogen atoms must be added to your ligands molecules, whenever necessary.\n"
+                                 f"This can be normally done with plenty of software, such as PyMOL, Chimera, LigPrep, Avogadro, etc.\n"
+                                 f"Nonetheless, MDMS is capable of adding hydrogens via Python implementation of Openbabel software - Pybel.\n"
+                                 f"Would you like to have hydrogens added via Pybel? If no, you will need to do it by yourself.\n"
+                                 f"- press 'y' to add hydrogens to ligands using Pybel (it is automatic)\n"
+                                 f"- press 'n' to add hydrogens with 3rd party software - you will need to do this manually\n")
         # following clause will be executed only if there are ligands in the
         # control file
         if ligands_list:
@@ -665,9 +664,21 @@ def hydrogens_prompt():
                 try:
                     user_input_hydrogens = str(
                         input(USER_CHOICE_HYDROGENS).lower())
+                    # adding hydrogens with pybyl
                     if user_input_hydrogens == 'y':
+                        for ligand in ligands_list:
+                            mol = pybel.readfile('pdb', f'{ligand}.pdb')
+                            # iterating over ligands in mol - in case of MDMS there will only be one molecule in mol
+                            # but pybel is created this way that it can contain more atoms
+                            for x in mol:
+                                # adding hydrogens
+                                x.addh()
+                                # overwriting ligand file
+                                x.write(format='pdb', filename=f'{ligand}.pdb', overwrite=True)
                         break
                     elif user_input_hydrogens == 'n':
+                        print(f'Please, quit MDMS and proceed to adding hydrogens to the ligand file. After you will '
+                              f'have done so, you might proceed to the next step of MDMS - topology preparation')
                         stop_interface()
                         break
                     pass
