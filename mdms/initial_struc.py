@@ -699,15 +699,27 @@ def hydrogens_prompt():
                             df[6] = df[6].astype(float).map('{:,.3f}'.format)
                             # adding spaces to x coordinates - this is required for a proper reading of
                             # a pdb file - exactly 7 spaces are required
-                            df[6] = df[6].astype(str).str.pad(7, side='left', fillchar=' ')
+                            df[6] = df[6].astype(str).str.pad(8, side='left', fillchar=' ')
                             # sorting at first by residue number, at then by atom number - each residue
                             # will be represented as OHH thanks to this
                             ligand_sorted = df.sort_values([5, 1])
                             # changing df to a string - it enables saving content easily
                             ligand_sorted_string = ligand_sorted.to_string(index=False, header=None)
+                            # ensuring that there are no additional spaces at the beginning of each line
+                            ligand_sorted_string_no_spaces = ''
+                            # iterating over each line
+                            for line in ligand_sorted_string.splitlines():
+                                # finding out if a first character in a line is a space
+                                if line[0:1].isspace():
+                                    # if a first character in a line is a string, it is removed
+                                    line = line[1:]
+                                # appending formatted lines to a new string
+                                ligand_sorted_string_no_spaces = ligand_sorted_string_no_spaces + '\n' + line
+                            # removing first line from newly created string
+                            ligand_sorted_string_no_spaces = ligand_sorted_string_no_spaces.split('\n', 1)[-1]
                             # saving
                             with open(f'{ligand}.pdb', 'w') as file:
-                                file.write(ligand_sorted_string)
+                                file.write(ligand_sorted_string_no_spaces)
                         break
                     elif user_input_hydrogens == 'n':
                         print(f'Please, quit MDMS and proceed to adding hydrogens to the ligand file. After you will '

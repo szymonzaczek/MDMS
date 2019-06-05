@@ -38,7 +38,7 @@ try:
     os.remove(Path('out_2.txt'))
     os.remove(Path('out_3.txt'))
 except:
-    print('It seems as AmberTools with its components (pdb4amber and tleap in particular) is not properly installed.\n'
+    print('It seems as AmberTools with its components (pdb4amber and tleap in particular) are not installed properly/\n'
           'Please, prior to using MDMS make sure that AmberTools is running properly.')
 
 print(
