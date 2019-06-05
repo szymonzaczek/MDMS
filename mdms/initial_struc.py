@@ -444,7 +444,6 @@ def ligands_pdb():
                         ligands.append(x)
                 # this loop ensures that user picked all the ligands that he
                 # wanted
-
                 USER_CHOICE_LIG_CONT = (
                     f"Would you like to add more ligands, or would you like to continue to next steps?\n"
                     f"- press 'a' in order to add more ligands\n"
@@ -664,10 +663,10 @@ def hydrogens_prompt():
                 try:
                     user_input_hydrogens = str(
                         input(USER_CHOICE_HYDROGENS).lower())
-                    # adding hydrogens with pybyl
+                    # adding hydrogens with pybel
                     if user_input_hydrogens == 'y':
                         for ligand in ligands_list:
-                            mol = pybel.readfile('pdb', f'{ligand}.pdb')
+                            mol = pybel.readfile('pdb', f'{ligand}_raw.pdb')
                             # iterating over ligands in mol - in case of MDMS there will only be one molecule in mol
                             # but pybel is created this way that it can contain more atoms
                             for x in mol:
@@ -675,6 +674,40 @@ def hydrogens_prompt():
                                 x.addh()
                                 # overwriting ligand file
                                 x.write(format='pdb', filename=f'{ligand}.pdb', overwrite=True)
+                            # empty string, to which we we will append lines
+                            ligand_temp_string = ''
+                            # keeping only atom or hetatm entries from pdb
+                            with open(f'{ligand}.pdb', 'r') as file:
+                                a = file.read()
+                                for line in a.splitlines():
+                                    if 'ATOM' in line or 'HETATM' in line:
+                                        # since we act on ligands, if atom line is detected it is replaced
+                                        # with hetatm
+                                        if 'ATOM' in line:
+                                            line = line.replace('ATOM  ', 'HETATM')
+                                        # appending formatted line to a string
+                                        ligand_temp_string = ligand_temp_string + '\n' + line
+                            # string has an additional empty line at the beginning - this gets rid of it
+                            ligand_temp_string = ligand_temp_string.split('\n', 1)[-1]
+                            # writing file
+                            with open(f'{ligand}.pdb', 'w') as file:
+                                file.write(ligand_temp_string)
+                            # reading cleaned file
+                            df = pd.read_csv(f'{ligand}.pdb', header=None, delim_whitespace=True)
+                            # displaying 3 digits in x coordinates - if not used, numpy prints
+                            # tons of unnecessary digits
+                            df[6] = df[6].astype(float).map('{:,.3f}'.format)
+                            # adding spaces to x coordinates - this is required for a proper reading of
+                            # a pdb file - exactly 7 spaces are required
+                            df[6] = df[6].astype(str).str.pad(7, side='left', fillchar=' ')
+                            # sorting at first by residue number, at then by atom number - each residue
+                            # will be represented as OHH thanks to this
+                            ligand_sorted = df.sort_values([5, 1])
+                            # changing df to a string - it enables saving content easily
+                            ligand_sorted_string = ligand_sorted.to_string(index=False, header=None)
+                            # saving
+                            with open(f'{ligand}.pdb', 'w') as file:
+                                file.write(ligand_sorted_string)
                         break
                     elif user_input_hydrogens == 'n':
                         print(f'Please, quit MDMS and proceed to adding hydrogens to the ligand file. After you will '
@@ -693,7 +726,7 @@ prep_functions = [
     missing_atoms_pdb,
     missing_res_pdb,
     sym_operations_prompt,
-    protonation_state_prompt
+    protonation_state_prompt,
     ligands_pdb,
     metals_pdb,
     waters_pdb,
