@@ -289,7 +289,7 @@ def antechamber_parmchk_input():
             for x in range(0, len(ligands_list)):
                 # copying original ligand PDB file - output from pdb4amber will be
                 # supplied to antechamber and parmchk
-                ligand_copy = f"cp {ligands_list[x]}_raw.pdb {ligands_list[x]}_original.pdb"
+                ligand_copy = f"cp {ligands_list[x]}.pdb {ligands_list[x]}_original.pdb"
                 subprocess.run([f"{ligand_copy}"], shell=True)
                 # input for pdb4amber
                 pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_original.pdb -o {ligands_list[x]}.pdb "

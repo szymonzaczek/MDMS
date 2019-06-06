@@ -1,6 +1,7 @@
 import os
 import fnmatch
 import pandas as pd
+import numpy as np
 import re
 import readline
 import pybel
@@ -277,7 +278,7 @@ def missing_res_pdb():
                 print(
                     "\nERROR!!!\nIt appears that your PDB file contains missing residues. LEaP is not capable of automatically adding "
                     "missing residues to the structure. \nFor this purpose, you might use MODELLER software:\n"
-                    "  (A. Fiser, R.K. Do, A. Sali., Modeling of loops in protein structures, Protein Science 9. 1753-1773, 2000, "
+                    "(A. Fiser, R.K. Do, A. Sali., Modeling of loops in protein structures, Protein Science 9. 1753-1773, 2000, "
                     "https://salilab.org/modeller/).\n"
                     "Prior to proceeding, make sure that there are no missing residues in your structure. \nApply changes to the "
                     "PDB file that will be provided into the MDMS and run MDMS again with altered initial structure.\n"
@@ -653,7 +654,10 @@ def hydrogens_prompt():
                                  f" hydrogen atoms must be added to your ligands molecules, whenever necessary.\n"
                                  f"This can be normally done with plenty of software, such as PyMOL, Chimera, LigPrep, Avogadro, etc.\n"
                                  f"Nonetheless, MDMS is capable of adding hydrogens via Python implementation of Openbabel software - Pybel.\n"
-                                 f"Would you like to have hydrogens added via Pybel? If no, you will need to do it by yourself.\n"
+                                 f"If you choose not to use Pybel, you will need to add hydrogen atoms to ligands by yourself.\n"
+                                 f"Please note that Pybel fully completes the valence - thus it is not possible to automatically "
+                                 f"prepare charged species with it - for doing so, you will need to process ligand files manually.\n"
+                                 f"Would you like to have hydrogens added via Pybel?\n"
                                  f"- press 'y' to add hydrogens to ligands using Pybel (it is automatic)\n"
                                  f"- press 'n' to add hydrogens with 3rd party software - you will need to do this manually\n")
         # following clause will be executed only if there are ligands in the
@@ -700,6 +704,14 @@ def hydrogens_prompt():
                             # adding spaces to x coordinates - this is required for a proper reading of
                             # a pdb file - exactly 7 spaces are required
                             df[6] = df[6].astype(str).str.pad(8, side='left', fillchar=' ')
+                            # creating new column which will count occurence of each atom name
+                            df[11] = df.groupby([2]).cumcount()+1
+                            # finding out duplicated atom names
+                            df[12] = df[2].duplicated(keep=False)
+                            # if there is a duplicated atom name, add number from df[11] column
+                            df[2] = np.where(df[12] == True, df[2].astype(str) + df[11].astype(str), df[2])
+                            # remove 2 columns that were only used for finding duplicates and assigning new atom names
+                            df = df.drop(df.columns[[12,11]], axis=1)
                             # sorting at first by residue number, at then by atom number - each residue
                             # will be represented as OHH thanks to this
                             ligand_sorted = df.sort_values([5, 1])
