@@ -206,6 +206,76 @@ def init_pdb():
                 "The input that you've provided is not valid. Please, provide a valid input.")
 
 
+def protein_chains_choice():
+    # if there are multiple chains specified in PDB, make a choice which will be used - strip the ones that are not used
+    # reading pdb file
+    control = read_file(filename)
+    pdb = 'pdb\s*=\s*(.*)'
+    pdb_match = re.search(pdb, control).group(1)
+    pdb_filename = pdb_match
+    # string which will contain atoms and hetatoms
+    pdb_atoms = ''
+    # clearing pdb so it will only contain atoms or hetatms
+    with open(f'{pdb_filename}', 'r') as file:
+        for line in file:
+            if line.startswith(('ATOM')):
+                pdb_atoms = pdb_atoms + line + '\n'
+    # writing pdb_atoms string to a temporary file which will be removed after this step
+    with open('atoms_temp.pdb', 'w') as file:
+        file.write(pdb_atoms)
+    # reading chain info from temp pdb file with pandas
+    df = pd.read_csv(f'atoms_temp.pdb', header=None, delim_whitespace=True, usecols=[4])
+    # checking if there is only a single chain in the provided pdb
+    if df[4].nunique() == 1:
+        # there is only one chain - proceed to next functions
+        pass
+    else:
+        # choice must be provided which chains will be used in calculations
+        print('jest wiecej chainow niz jeden')
+        chains_amount = len(df[4].unique())
+        unique_chains = df[4].unique().tolist()
+        # list for storing chains for simulations
+        chains = []
+        USER_CHOICE_CHAINS = (f'\nChoosing protein chains\n'
+                              f'There are {chains_amount} different chains in the provided PDB file.\n'
+                              f'Each chain identify different molecular chains. For instance, if there are 4 chains in '
+                              f'the PDB file, 3 of them might be different polypeptides, whereas one might be a ligand.\n'
+                              f'Right now, you will make choice about protein chains\n.'
+                              f'Ligands entries will be processed separately.\n'
+                              f'Please, carefully consider which chains will be considered in the simulated model.\n'
+                              f'There are following unique protein chains identifiers:\n'
+                              f'{unique_chains}\n'
+                              f'Which protein chains would you like to retain for MD simulations? (provide their exact name, '
+                              f'separating each entry by a comma - at least one chain must be chosen, otherwise an empty'
+                              f' system would have been simulated):\n')
+        while True:
+            try:
+                # getting info about chains from user
+                user_input_chains = str(input(USER_CHOICE_CHAINS).upper())
+                # turning input into a list, ensuring that no matter how much
+                # spaces are inserted everything is fine
+                input_chains = re.sub(
+                    r'\s', '', user_input_chains).split(',')
+                # checking if inputted chains are in unique_chains list - if
+                # yes, append them to chain list
+                for x in input_chains:
+                    if x in unique_chains:
+                        chains.append(x)
+                # chains are chosen only once - the other idea is to proceed as with ligands
+                #if chains != unique_chains:
+                # ensuring that at least one chain is chosen - then the chains list will not be empty, thus such
+                # expression works
+                if chains:
+                    save_to_file(f"protein_chains = {chains}\n", filename)
+                    break
+                pass
+            except:
+                print('Wrong input has been provided.')
+    print('koncowka')
+    # removing temporary file
+    os.remove(Path('atoms_temp.pdb'))
+
+
 def missing_atoms_pdb():
     # getting lines starting with remark from a pdb file
     pdb_remark = read_remark_pdb()
@@ -747,6 +817,7 @@ def hydrogens_prompt():
 prep_functions = [
     file_naming,
     init_pdb,
+    protein_chains_choice,
     missing_atoms_pdb,
     missing_res_pdb,
     sym_operations_prompt,
