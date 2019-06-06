@@ -271,7 +271,6 @@ def protein_chains_choice():
                 pass
             except:
                 print('Wrong input has been provided.')
-    print('koncowka')
     # removing temporary file
     os.remove(Path('atoms_temp.pdb'))
 
@@ -813,6 +812,59 @@ def hydrogens_prompt():
                     print('Please, provide valid input')
 
 
+def chain_processing():
+    # getting rid of unnecessary protein chains
+    # reading if chain is specified in prep file
+    control = read_file(filename)
+    chain = 'protein_chains\s*=\s*\[(.*)\]'
+    chain_match = re.search(chain, control)
+    # if there is chain info specified, proceed, otherwhise proceed
+    if chain_match:
+        # taking only chain entries
+        chain_match = chain_match.group(1)
+        # removing quotes from string
+        chain_string = chain_match.replace("'", "")
+        # removing whitespaces and turning string into a list
+        chain_list = re.sub(r'\s', '', chain_string).split(',')
+        # reading pdb file
+        pdb = 'pdb\s*=\s*(.*)'
+        pdb_match = re.search(pdb, control).group(1)
+        pdb_filename = pdb_match
+        # empty list containing info from individual line
+        line_content = []
+        # empty string containing info about lines with chosen chain identifier - it will be converted to string later on
+        pdb_modified = ''
+        # find atoms with chain info from chain_list, remove everything else from pdb file
+        # read pdb but only if line starts with atom - only protein atoms are considered
+        with open(f"{pdb_filename}", 'r') as file:
+            for line in file:
+                # updating list with content of a current line
+                line_content = line.split()
+                # if first word in a line is atom, proceed
+                if line_content[0] == 'ATOM':
+                    # append line content to pdb_modified
+                    pdb_modified = pdb_modified + '\n' + line
+        # remove the first line from pdb_modified - it is empty line
+        pdb_modified = pdb_modified.split('\n', 1)[-1]
+        # save pdb_modified so it could be read by pandas
+        with open(f"pdb_chain_temp.pdb", 'w') as file:
+            file.write(pdb_modified)
+        # empty string to which final PDB file will be written
+        pdb_refined = ''
+        # read pdb_modified with pandas
+        df1 = pd.read_csv(f'pdb_chain_temp.pdb', header=None, delim_whitespace=True)
+        # creating new dataframe containing only specified chains
+        df2 = df1.loc[df1[4].isin(chain_list)]
+        # convert dataframe to a string
+        pdb_refined = df2.to_string(index=False, header=None)
+        # save string to a file as a new pdb file
+        with open('protein_with_good_chains.pdb', 'w') as file:
+            file.write(pdb_refined)
+        # remove temp file
+        os.remove(Path('pdb_chain_temp.pdb'))
+    pass
+
+
 
 prep_functions = [
     file_naming,
@@ -826,6 +878,7 @@ prep_functions = [
     metals_pdb,
     waters_pdb,
     hydrogens_prompt,
+    chain_processing,
 ]
 
 methods_generator = (y for y in prep_functions)
