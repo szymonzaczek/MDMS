@@ -289,10 +289,10 @@ def antechamber_parmchk_input():
             for x in range(0, len(ligands_list)):
                 # copying original ligand PDB file - output from pdb4amber will be
                 # supplied to antechamber and parmchk
-                ligand_copy = f"cp {ligands_list[x]}.pdb {ligands_list[x]}_original.pdb"
+                ligand_copy = f"cp {ligands_list[x]}.pdb {ligands_list[x]}_prior_pdb4amber.pdb"
                 subprocess.run([f"{ligand_copy}"], shell=True)
                 # input for pdb4amber
-                pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_original.pdb -o {ligands_list[x]}.pdb "
+                pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_prior_pdb4amber.pdb -o {ligands_list[x]}.pdb "
                 # running pdb4amber (both original and remade files are retained
                 # but later on remade ligands will be operated on
                 subprocess.run([f"{pdb4amber_input}"], shell=True)
@@ -348,10 +348,10 @@ def antechamber_parmchk_input():
                 for x in range(0, len(ligands_list)):
                     # copying original ligand PDB file - output from pdb4amber will be
                     # supplied to antechamber and parmchk
-                    ligand_copy = f"cp {ligands_list[x]}_raw.pdb {ligands_list[x]}_original.pdb"
+                    ligand_copy = f"cp {ligands_list[x]}_raw.pdb {ligands_list[x]}_prior_pdb4amber.pdb"
                     subprocess.run([f"{ligand_copy}"], shell=True)
                     # input for pdb4amber
-                    pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_original.pdb -o {ligands_list[x]}.pdb "
+                    pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_prior_pdb4amber.pdb -o {ligands_list[x]}.pdb "
                     # input for pdb4amber appended to the file
                     with open(pdb_process_input, 'a') as file:
                         file.write(pdb4amber_input)
@@ -402,10 +402,10 @@ def pdb_process():
     # get proper names, i.e. 4zaf_old.pdb
     structure_match_split = structure_match.split('.')[0]
     # copying original PDB file so it will be retained after files operations
-    struc_copy = f"cp {structure_match} {structure_match_split}_original.pdb"
+    struc_copy = f"cp {structure_match} {structure_match_split}_prior_pdb4amber.pdb"
     subprocess.run([f"{struc_copy}"], shell=True)
     # input for pdb4amber - ligands are removed
-    pdb4amber_input = f"pdb4amber -i {structure_match_split}_original.pdb --add-missing-atoms -p -o {structure_match_split}_no_lig.pdb"
+    pdb4amber_input = f"pdb4amber -i {structure_match_split}_prior_pdb4amber.pdb --add-missing-atoms -p -o {structure_match_split}_no_lig.pdb"
     # running pdb4amber (both original and remade files are retained but later
     # on remade ligands will be operated on)
     # if pdb4amber works, it is run directly from MDMS
@@ -427,9 +427,9 @@ def pdb_process():
                 # even though pdb4amber inputs were created and user was asked to process them, he didn't do so -
                 # therefore, he receives a prompt reminding what to do
                 print(f"\n!!WARNING!!\n"
-                      f"\nYou have not processed {structure_match_split}_original.pdb file with pdb4amber yet.\n"
+                      f"\nYou have not processed {structure_match_split}_prior_pdb4amber.pdb file with pdb4amber yet.\n"
                       f"Since there were some issues with running pdb4amber from within MDMS, you need to process "
-                      f"{structure_match_split}_original.pdb with pdb4amber manually.\n"
+                      f"{structure_match_split}_prior_pdb4amber.pdb with pdb4amber manually.\n"
                       f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
                       f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
                       f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "

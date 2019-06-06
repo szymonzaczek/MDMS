@@ -3,6 +3,7 @@ import fnmatch
 import pandas as pd
 import numpy as np
 import re
+import subprocess
 import readline
 import pybel
 from Bio.PDB import *
@@ -814,6 +815,16 @@ def hydrogens_prompt():
 
 def chain_processing():
     # getting rid of unnecessary protein chains
+    # reading pdb file
+    pdb = 'pdb\s*=\s*(.*)'
+    pdb_match = re.search(pdb, control).group(1)
+    # stripping of extension from structure - this way it will be easier to
+    # get proper names, i.e. 4zaf_old.pdb
+    pdb_match_split = pdb_match.split('.')[0]
+    # copying original PDB file so it will be retained after files operations
+    struc_copy = f"cp {pdb_match} {pdb_match_split}_original.pdb"
+    subprocess.run([f"{struc_copy}"], shell=True)
+    pdb_filename = pdb_match
     # reading if chain is specified in prep file
     control = read_file(filename)
     chain = 'protein_chains\s*=\s*\[(.*)\]'
@@ -826,10 +837,6 @@ def chain_processing():
         chain_string = chain_match.replace("'", "")
         # removing whitespaces and turning string into a list
         chain_list = re.sub(r'\s', '', chain_string).split(',')
-        # reading pdb file
-        pdb = 'pdb\s*=\s*(.*)'
-        pdb_match = re.search(pdb, control).group(1)
-        pdb_filename = pdb_match
         # empty list containing info from individual line
         line_content = []
         # empty string containing info about lines with chosen chain identifier - it will be converted to string later on
