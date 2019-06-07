@@ -694,6 +694,81 @@ def waters_pdb():
                             # saving info about crystallographic waters to a
                             # control file
                             save_to_file(f"waters = {unique_water}\n", filename)
+                            # prompt if user wants to add hydrogens with pybel or another software
+                            USER_CHOICE_HYD_ADD_WAT = f"\nAdding hydrogen atoms to water molecules\n" \
+                                f"MDMS is capable of adding hydrogen atoms to water molecules using Pybel library. You" \
+                                f"can either use it, or add hydrogen atoms in another software.\n" \
+                                f"Would you like to have hydrogen added to water molecules using Pybel library?\n" \
+                                f"- press 'y' if you want to have hydrogens added to water using Pybel (automatic)\n" \
+                                f"- press 'n' if you want to add hydrogens atoms to water molecules with another software" \
+                                f" (you will need to do this manually though)\n" \
+                                f"Please, provide your choice:\n"
+                            while True:
+                                try:
+                                    user_input_hyd_add_wat = str(input(USER_CHOICE_HYD_ADD_WAT).lower())
+                                    if user_input_hyd_add_wat == 'y':
+                                        print(f'{x}.pdb')
+                                        # adding hydrogens to waters with Pybel
+                                        mol = pybel.readfile('pdb', f'{x}.pdb')
+                                        for y in mol:
+                                            # adding hydrogens
+                                            y.addh()
+                                            # overwriting water file
+                                            y.write(format='pdb', filename=f'{x}.pdb', overwrite=True)
+                                        # string to which hydrogenated molecule will be appended, in order to format it
+                                        # properly
+                                        water_temp_string = ''
+                                        # keeping only atom or hetatm entries from pdb
+                                        with open(f'{x}.pdb', 'r') as file:
+                                            a = file.read()
+                                            for line in a.splitlines():
+                                                if 'ATOM' in line or 'HETATM' in line:
+                                                    # replacing atom with hetatm - waters are treated as ligands
+                                                    if 'ATOM' in line:
+                                                        line = line.replace('ATOM  ', 'HETATM')
+                                                    # appending formatted line to a string
+                                                    water_temp_string = water_temp_string + '\n' + line
+                                        # removing empty line at the beginning
+                                        water_temp_string = water_temp_string.split('\n', 1)[-1]
+                                        # writing file
+                                        with open(f'{x}.pdb', 'w') as file:
+                                            file.write(water_temp_string)
+                                        # reading cleaned file
+                                        df = pd.read_csv(f'{x}.pdb', header=None, delim_whitespace=True)
+                                        # displaying 3 digits in x coordinates - if not used, numpy prints tons of
+                                        # unnecessary digits
+                                        df[6] = df[6].astype(float).map('{:,.3f}'.format)
+                                        # adding spaces to x coordinates - required for a proper reading of a pdb file
+                                        df[6] = df[6].astype(str).str.pad(8, side='left', fillchar=' ')
+                                        # sorting by residue number and by atom number - each residue will be represented
+                                        # as OHH thanks to this
+                                        water_sorted = df.sort_values([5, 1])
+                                        # changing df to a string - it enables saving content easily
+                                        water_sorted_string = water_sorted.to_string(index=False, header=None)
+                                        # ensuring that there are no additional spaces at the beginning of each line
+                                        water_sorted_string_no_spaces = ''
+                                        # iterating over each line
+                                        for line in water_sorted_string.splitlines():
+                                            # finding out if a first character in a line is a space
+                                            if line[0:1].isspace():
+                                                line = line[1:]
+                                            # appending formatted lines to a new string
+                                            water_sorted_string_no_spaces = water_sorted_string_no_spaces + '\n' + line
+                                        # removing first line from newly created string
+                                        water_sorted_string_no_spaces = water_sorted_string_no_spaces.split('\n', 1)[-1]
+                                        # saving
+                                        with open(f'{x}.pdb', 'w') as file:
+                                            file.write(water_sorted_string_no_spaces)
+                                        print('11')
+                                        break
+                                    else:
+                                        # user chose to add hydrogens manually
+                                        print(f"\nPlease, add hydrogen atoms to {x}.pdb file prior to proceeding to"
+                                              f" topology preparation.\n")
+                                        break
+                                except:
+                                    print('Please, provide valid input')
+                                    pass
                             break
                         elif user_input_waters == 'n':
                             # if user decides to omit crystallographic waters,
