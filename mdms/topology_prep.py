@@ -3,6 +3,7 @@ import pandas as pd
 import re
 import subprocess
 import readline
+import openpyxl
 from pathlib import Path
 
 # allowing tab completion of files' paths
@@ -494,6 +495,84 @@ def pdb_process():
         waters_string = waters_match.replace("'", "")
         # removing whitespaces and turning string into a list
         waters_list = re.sub(r'\s', '', waters_string).split(',')
+        # formatting waters with pdb4amber
+        if pdb4amber_test:
+            # automatic run of pdb4amber
+            for x in range(0, len(waters_list)):
+                # copying original water PDB file
+                water_copy = f"cp {waters_list[x]}_raw.pdb {waters_list[x]}_prior_pdb4amber.pdb"
+                subprocess.run([f"{water_copy}"], shell=True)
+                # input for pdb4amber
+                pdb4amber_input = f"pdb4amber -i {waters_list[x]}_prior_pdb4amber.pdb -o {waters_list[x]}.pdb"
+                # running pdb4amber - all files are retained though
+                subprocess.run([f"{pdb4amber_input}"], shell=True)
+            pass
+        else:
+            # manual run of pdb4amber
+            # try to find if there is a water_pdb4amber_inputs entry in the control file
+            water_inputs = r'ligands_pdb4amber_inputs\s*=\s*\[(.*)\]'
+            water_inputs_match = re.search(water_inputs, control)
+            if water_inputs_match:
+                # search for outputs from pdb4amber - they must have been processed manually; if they exist, everthing
+                # is fine; if they don't print info on how to proceed again
+                for x in range(0, len(waters_list)):
+                    wat_path = Path(f'{waters_list[x]}.pdb')
+                    if wat_path.exists():
+                        # processed pdb exists, we might continue to the next steps
+                        continue
+                    else:
+                        print(f"\n!!WARNING!!\n"
+                              f"\nYou have not processed water files with pdb4amber yet.\n"
+                              f"There were some problems with running pdb4amber from within MDMS.\n"
+                              f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                              f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                              f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                              f"your own installation of Python.\n"
+                              f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                              f"interpreter (i. e. by loading the appropriate module).\n"
+                              f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                              f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                              f"In such case, just copy the content of each line of water_pdb4amber.in file into terminal and press"
+                              f"enter. As a result, you will obtain processed PDB water's file which will be ready for further"
+                              f"steps.")
+                        # just single printing of the prompt should be enough, therefore it is halted here
+                        break
+            else:
+                # first run of this part - inputs for pdb4amber are created
+                print(f"\n!!WARNING!!\n"
+                      f"There were some problems with running pdb4amber from within MDMS.\n"
+                      f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                      f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                      f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                      f"your own installation of Python.\n"
+                      f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                      f"interpreter (i. e. by loading the appropriate module).\n"
+                      f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                      f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                      f"In such case, just copy the content of each line of water_pdb4amber.in file into terminal and press"
+                      f"enter. As a result, you will obtain processed PDB water's file which will be ready for further"
+                      f"steps.")
+                pdb_process_input = ('water_pdb4amber.in')
+                pdb_process_input_path = Path(pdb_process_input)
+                if pdb_process_input_path.exists():
+                    os.remove(pdb_process_input_path)
+                for x in range(0, len(waters_list)):
+                    # copying original water PDB file
+                    water_copy = f"cp {waters_list[x]}.pdb {waters_list[x]}_prior_pdb4amber.pdb"
+                    subprocess.run([f"{water_copy}"], shell=True)
+                    # input for pdb4amber
+                    pdb4amber_input = f"pdb4amber -i {waters_list[x]}_prior_pdb4amber.pdb -o {waters_list[x]}.pdb"
+                    # input for pdb4amber appended to the file
+                    with open(pdb_process_input, 'a') as file:
+                        file.write(pdb4amber_input)
+                print(f"\nYou will now be redirected to menu of MDMS. Please, quit MDMS and process waters' PDB files"
+                      f"from within the terminal."
+                      f"Afer processing the file, proceed with topology preparation step within MDMS.\n")
+                # saving info to the control file that pdb4amber was not run from within MDMS
+                save_to_file(f"water_pdb4amber_inputs = True\n", filename)
+                stop_interface()
+        # antechamber input for waters
+
         # creating a list that will store waters filenames
         waters_files = []
         # appending waters filenames to the list

@@ -6,6 +6,7 @@ import re
 import subprocess
 import readline
 import pybel
+import openpyxl
 from Bio.PDB import *
 from pathlib import Path
 
@@ -738,13 +739,29 @@ def waters_pdb():
                                         # displaying 3 digits in x coordinates - if not used, numpy prints tons of
                                         # unnecessary digits
                                         df[6] = df[6].astype(float).map('{:,.3f}'.format)
+                                        print('1')
                                         # adding spaces to x coordinates - required for a proper reading of a pdb file
                                         df[6] = df[6].astype(str).str.pad(8, side='left', fillchar=' ')
+                                        print('2')
+                                        # creating new column which will count occurences of each atom name
+                                        df[11] = df.groupby([2, 5]).cumcount() + 1
+                                        print('3')
+                                        # finding out duplicated atom names
+                                        df[12] = df[5].duplicated(keep='first')
+                                        print('4')
+                                        # if there is a duplicated atom name and residue number, add number from df[11] column
+                                        df[2] = np.where(df[12] == True, df[2].astype(str) + df[11].astype(str), df[2])
+                                        print('5')
+                                        # remove 2 columns that were only used for finding duplicates and assigning new atom names
+                                        df = df.drop(df.columns[[12, 11]], axis=1)
+                                        print('6')
                                         # sorting by residue number and by atom number - each residue will be represented
                                         # as OHH thanks to this
                                         water_sorted = df.sort_values([5, 1])
+                                        print('7')
                                         # changing df to a string - it enables saving content easily
                                         water_sorted_string = water_sorted.to_string(index=False, header=None)
+                                        print('8')
                                         # ensuring that there are no additional spaces at the beginning of each line
                                         water_sorted_string_no_spaces = ''
                                         # iterating over each line
@@ -757,9 +774,13 @@ def waters_pdb():
                                         # removing first line from newly created string
                                         water_sorted_string_no_spaces = water_sorted_string_no_spaces.split('\n', 1)[-1]
                                         # saving
-                                        with open(f'{x}.pdb', 'w') as file:
+                                        with open(f'{x}_raw.pdb', 'w') as file:
                                             file.write(water_sorted_string_no_spaces)
                                         print('11')
+                                        # removing HOH.pdb - later on, it will contain already formatted data after
+                                        # pdb4amber
+                                        if Path(f'{x}.pdb').exists():
+                                            os.remove(Path(f'{x}.pdb'))
                                         break
                                     else:
                                         # user chose to add hydrogens manually
@@ -891,6 +912,7 @@ def hydrogens_prompt():
 def chain_processing():
     # getting rid of unnecessary protein chains
     # reading pdb file
+    control = read_file(filename)
     pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     # stripping of extension from structure - this way it will be easier to
@@ -901,7 +923,6 @@ def chain_processing():
     subprocess.run([f"{struc_copy}"], shell=True)
     pdb_filename = pdb_match
     # reading if chain is specified in prep file
-    control = read_file(filename)
     chain = 'protein_chains\s*=\s*\[(.*)\]'
     chain_match = re.search(chain, control)
     # if there is chain info specified, proceed, otherwhise proceed

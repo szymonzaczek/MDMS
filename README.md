@@ -53,6 +53,8 @@ Use conda or pip to download required dependencies for running MDMS:
 
 `pip install biopython`
 
+`pip install openbabel`
+
 
 ### Getting Started
 
