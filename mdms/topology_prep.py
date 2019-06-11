@@ -3,7 +3,6 @@ import pandas as pd
 import re
 import subprocess
 import readline
-import openpyxl
 from pathlib import Path
 
 # allowing tab completion of files' paths
@@ -571,16 +570,43 @@ def pdb_process():
                 # saving info to the control file that pdb4amber was not run from within MDMS
                 save_to_file(f"water_pdb4amber_inputs = True\n", filename)
                 stop_interface()
-        # antechamber input for waters
-
-        # creating a list that will store waters filenames
-        waters_files = []
-        # appending waters filenames to the list
-        for water in waters_list:
-            waters_files.append(f"{water}.pdb")
-        # appending waters to files that will create final complex
-        for water in waters_files:
-            full_files.append(water)
+        #finding atoms_type_match
+        #atoms_type = r'atoms_type\s*=\s*([a-z]*[A-Z]*[1-9]*)'
+        #atoms_type_match = re.search(atoms_type, control).group(1)
+        ## getting charge_model info
+        #charge_model = r'charge_model\s*=\s*([a-z]*[A-Z]*[1-9]*)'
+        #charge_model_match = re.search(charge_model, control).group(1)
+        # antechamber input for waters HERE HERE HERE
+        #for x in range(0, len(waters_list)):
+        #    antechamber_input = f"antechamber -fi pdb -fo mol2 -i {waters_list[x]}.pdb -o {waters_list[x]}.mol2 -at {atoms_type_match} -c {charge_model_match} -pf y -nc 0 -m 1"
+        #    # running antechamber
+        #    subprocess.run([f"{antechamber_input}"], shell=True)
+        #    # checking if mol2 was succesfully created
+        #    mol2_path = Path(f'{waters_list[x]}.mol2')
+        #    # if mol2 was not created, toop stops and user is returned to menu
+        #    if file_check(mol2_path) == False:
+        #        print(f"\nAntechamber has failed to determine atomic charges for {waters_list[x]}. Please, have a look "
+        #              f"at the output file for getting more information about a problem that has occurred.\n")
+        #        break
+        #    # parmchk input for waters
+        #    parmchk_input = f"parmchk2 -i {waters_list[x]}.mol2 -o {waters_list[x]}.frcmod -f mol2 -s {atoms_type_match}"
+        #    # running parmchk
+        #    subprocess.run([f"{parmchk_input}"], shell=True)
+        #    # checking if frcmod was successfully created
+        #    frcmod_path = Path(f'{waters_list[x]}.frcmod')
+        #    if file_check(frcmod_path) == False:
+        #        # if frcmod was not created, go back to the menu
+        #        print(f"\nParmchk has failed to run correctly for {waters_list[x]}. Please, check validity of "
+        #              f"{waters_list[x]}.mol2 file.\n")
+        #        break
+        ## creating a list that will store waters filenames
+        #waters_files = []
+        ## appending waters filenames to the list
+        #for water in waters_list:
+        #    waters_files.append(f"{water}.pdb")
+        ## appending waters to files that will create final complex
+        #for water in waters_files:
+        #    full_files.append(water)
     if metals_match:
         # taking only ligands entries
         metals_match = metals_match.group(1)
@@ -801,6 +827,27 @@ def tleap_input():
             with open(tleap_file, 'a') as f:
                 f.write(f"{ligand} = loadmol2 {ligand}.mol2\n")
                 f.write(f"loadamberparams {ligand}.frcmod\n")
+    # finding if crystal waters were retained for MD
+    waters = r'waters\s*=\s*\[(.*)\]'
+    waters_match = re.search(waters, control)
+    if waters_match:
+        # taking only residues names
+        waters_match = waters_match.group(1)
+        # removing quotes from string
+        waters_string = waters_match.replace("'", "")
+        # removing whitespaces and turning string into a list
+        waters_list = re.sub(r'\s', '', waters_string).split(',')
+        # 3 letter codes for water models
+        water_models_dict = {
+            'tip3p': 'TP3',
+            'tip4pew': 'TP4',
+            'spce': 'SPC'
+        }
+        # assigning crystal waters to chosen water model
+        for x in range(0, len(waters_list)):
+            water_model = water_models_dict.get(user_input_water_ff)
+            with open(tleap_file, 'a') as f:
+                f.write(f"{waters_list[x]} = {water_model}\n")
     # reading complex file
     with open(tleap_file, 'a') as f:
         f.write(f"mol = loadpdb {complex}\n")

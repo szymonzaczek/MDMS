@@ -597,7 +597,7 @@ def metals_pdb():
             if x in unique_res:
                 unique_metals.append(x)
         unique_metals_string = ', '.join(unique_metals)
-        USER_CHOICE_METALS = f"\nMetal ions handling\n" \
+        USER_CHOICE_METALS = f"\nMetal ions handling" \
             f"\nThere are following metal ions in your PDB structure: \n{unique_metals_string}.\n" \
             f"\nObtaining force field parameters for metal ions " \
             f"is outside of scope of this program but you might follow tutorials written by Pengfei Li and Kenneth M. Merz Jr., " \
