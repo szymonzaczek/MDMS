@@ -403,8 +403,9 @@ def protonation_state_prompt():
     # prompt that will be displayed to the user
     USER_CHOICE_PS = f"\n!!WARNING!!\n" \
         f"Protonation states of amino acids\n" \
-        f"Titratable amino acids (Asp, Cys, Glu, His, Tyr and Lys) might adopt different protonation states. In order" \
-        f" to get as realistic insight into studied process as possible, you should determine protonation states of" \
+        f"Titratable amino acids (Asp, Cys, Glu, His, Tyr and Lys) might adopt different protonation states. " \
+        f"Even though protonation states assigned automatically by Amber are in most cases correct, ideally," \
+        f" you should determine protonation states of" \
         f" those residues at a target pH prior to MD start.\n" \
         f"In order to determine protonation states of titratable amino acids, you might to use 3rd party software," \
         f" such as Propka, H++ web server or pKD web server.\n" \
@@ -561,6 +562,7 @@ def ligands_pdb():
                 print("You've provided wrong residues")
                 pass
         print(f"\nLigands that will be included in your system are: \n{ligands}")
+        hydrogens_prompt()
         pass
 
 
@@ -597,8 +599,8 @@ def metals_pdb():
             if x in unique_res:
                 unique_metals.append(x)
         unique_metals_string = ', '.join(unique_metals)
-        USER_CHOICE_METALS = f"\nMetal ions handling" \
-            f"\nThere are following metal ions in your PDB structure: \n{unique_metals_string}.\n" \
+        USER_CHOICE_METALS = f"\nMetal ions handling\n" \
+            f"There are following metal ions in your PDB structure: \n{unique_metals_string}." \
             f"\nObtaining force field parameters for metal ions " \
             f"is outside of scope of this program but you might follow tutorials written by Pengfei Li and Kenneth M. Merz Jr., " \
             f"which are available on Amber Website (http://ambermd.org/tutorials/advanced/tutorial20/index.htm).\n" \
@@ -814,12 +816,11 @@ def hydrogens_prompt():
         ligands_string = ligands_match.replace("'", "")
         # removing whitespaces and turning string into a list
         ligands_list = re.sub(r'\s', '', ligands_string).split(',')
-        USER_CHOICE_HYDROGENS = (f"\n!!WARNING!!\n"
-                                 f"Hydrogen addition to ligands\n"
+        USER_CHOICE_HYDROGENS = (f"Adding hydrogen atoms to ligands\n"
                                  f"You have chosen to include ligands molecules in your system. In order to correctly proceed to MD simulations,"
                                  f" hydrogen atoms must be added to your ligands molecules, whenever necessary.\n"
                                  f"This can be normally done with plenty of software, such as PyMOL, Chimera, LigPrep, Avogadro, etc.\n"
-                                 f"Nonetheless, MDMS is capable of adding hydrogens via Python implementation of Openbabel software - Pybel.\n"
+                                 f"Nonetheless, MDMS is capable of adding hydrogens via Python implementation of OpenBabel software - Pybel.\n"
                                  f"If you choose not to use Pybel, you will need to add hydrogen atoms to ligands by yourself.\n"
                                  f"Please note that Pybel fully completes the valence - thus it is not possible to automatically "
                                  f"prepare charged species with it - for doing so, you will need to process ligand files manually.\n"
@@ -980,7 +981,6 @@ prep_functions = [
     ligands_pdb,
     metals_pdb,
     waters_pdb,
-    hydrogens_prompt,
     chain_processing,
 ]
 
