@@ -628,6 +628,9 @@ def metals_pdb():
                         save_to_file(f"metals = {unique_metals}\n", filename)
                         # lines containing specified ligands are saved to
                         # separate pdb files
+                        print(f"\n!!WARNING!!"
+                              f"\nPlease, remember to put parameters for metal ions into tleap input file - otherwise "
+                              f"you will be unable to get topology.\n")
                         for x in unique_metals:
                             metals_pdb = '\n'.join(
                                 [s for s in het_atoms if x in s])
@@ -669,7 +672,7 @@ def waters_pdb():
                 single_water_pdb = '\n'.join([s for s in het_atoms if x in s])
                 waters_pdb = ''.join(single_water_pdb)
             waters_number = len(waters_pdb.split('\n'))
-            USER_CHOICE_WATERS = f"\nCrystal water handling\n" \
+            USER_CHOICE_WATERS = f"\nCrystal water handling" \
                 f"\nThere are {waters_number} water molecules in your structure.\n" \
                 f"Water molecules that are present in PDB structures are leftovers from experiments carried out in order to obtain" \
                 f" protein's structure. There is no straightforward answer if they should be kept for MD simulations or not - " \
@@ -710,7 +713,6 @@ def waters_pdb():
                                 try:
                                     user_input_hyd_add_wat = str(input(USER_CHOICE_HYD_ADD_WAT).lower())
                                     if user_input_hyd_add_wat == 'y':
-                                        print(f'{x}.pdb')
                                         # adding hydrogens to waters with Pybel
                                         mol = pybel.readfile('pdb', f'{x}.pdb')
                                         for y in mol:
@@ -741,29 +743,21 @@ def waters_pdb():
                                         # displaying 3 digits in x coordinates - if not used, numpy prints tons of
                                         # unnecessary digits
                                         df[6] = df[6].astype(float).map('{:,.3f}'.format)
-                                        print('1')
                                         # adding spaces to x coordinates - required for a proper reading of a pdb file
                                         df[6] = df[6].astype(str).str.pad(8, side='left', fillchar=' ')
-                                        print('2')
                                         # creating new column which will count occurences of each atom name
                                         df[11] = df.groupby([2, 5]).cumcount() + 1
-                                        print('3')
                                         # finding out duplicated atom names
                                         df[12] = df[5].duplicated(keep='first')
-                                        print('4')
                                         # if there is a duplicated atom name and residue number, add number from df[11] column
                                         df[2] = np.where(df[12] == True, df[2].astype(str) + df[11].astype(str), df[2])
-                                        print('5')
                                         # remove 2 columns that were only used for finding duplicates and assigning new atom names
                                         df = df.drop(df.columns[[12, 11]], axis=1)
-                                        print('6')
                                         # sorting by residue number and by atom number - each residue will be represented
                                         # as OHH thanks to this
                                         water_sorted = df.sort_values([5, 1])
-                                        print('7')
                                         # changing df to a string - it enables saving content easily
                                         water_sorted_string = water_sorted.to_string(index=False, header=None)
-                                        print('8')
                                         # ensuring that there are no additional spaces at the beginning of each line
                                         water_sorted_string_no_spaces = ''
                                         # iterating over each line
@@ -778,7 +772,6 @@ def waters_pdb():
                                         # saving
                                         with open(f'{x}_raw.pdb', 'w') as file:
                                             file.write(water_sorted_string_no_spaces)
-                                        print('11')
                                         # removing HOH.pdb - later on, it will contain already formatted data after
                                         # pdb4amber
                                         if Path(f'{x}.pdb').exists():
