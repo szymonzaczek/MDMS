@@ -254,7 +254,7 @@ def running_simulations():
                            f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo")
                     else:
                         file.write(f"\nmpirun -np {nr_processors_match} {engine_match}.MPI -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {steps_list[x-1]}.ncrst "
-                           f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo")
+                           f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -x {steps_list[x]}.nc -inf {steps_list[x]}.mdinfo")
         elif parallelism_match == 'serial':
             with open(job_name, 'w') as file:
                 file.write(read_file(queue_script_match))
@@ -265,7 +265,7 @@ def running_simulations():
                                    f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo")
                     else:
                         file.write(f"\n{engine_match} -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {steps_list[x-1]}.ncrst "
-                                   f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo")
+                                   f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -x {steps_list[x]}.nc -inf {steps_list[x]}.mdinfo")
         # after executing parallel or serial, job is submitted to the queue
         job_script = f"{command_match} {job_name}"
         print(job_script)
@@ -282,7 +282,7 @@ def running_simulations():
                                    f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo\n")
                     else:
                         file.write(f"mpirun -np {nr_processors_match} {engine_match}.MPI -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {steps_list[x - 1]}.ncrst "
-                                   f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo\n")
+                                   f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -x {steps_list[x]}.nc -inf {steps_list[x]}.mdinfo\n")
         elif parallelism_match == 'serial':
             with open(job_name, 'w') as file:
                 for x in range(0, len(steps_list)):
@@ -292,7 +292,7 @@ def running_simulations():
                                    f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo\n")
                     else:
                         file.write(f"{engine_match} -O -i {steps_input_list[x]} -p {top_name_match}.prmtop -c {steps_list[x-1]}.ncrst "
-                                   f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -inf {steps_list[x]}.mdinfo\n")
+                                   f"-o {steps_list[x]}.out -r {steps_list[x]}.ncrst -x {steps_list[x]}.nc -inf {steps_list[x]}.mdinfo\n")
         # files are saved, now onto executing them
         execution = read_file(job_name)
         for line in execution.splitlines():

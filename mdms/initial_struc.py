@@ -242,7 +242,7 @@ def protein_chains_choice():
                               f'There are {chains_amount} different chains in the provided PDB file.\n'
                               f'Each chain identify different molecular chains. For instance, if there are 4 chains in '
                               f'the PDB file, 3 of them might be different polypeptides, whereas one might be a ligand.\n'
-                              f'Right now, you will make choice about protein chains\n.'
+                              f'Right now, you will make choice about protein chains.\n'
                               f'Ligands entries will be processed separately.\n'
                               f'Please, carefully consider which chains will be considered in the simulated model.\n'
                               f'There are following unique protein chains identifiers:\n'
@@ -469,6 +469,7 @@ def ligands_pdb():
             'EDO',
             'CL',
             'PGE',
+            'GOL',
             'PG4',
             'PEG',
             'P6G',

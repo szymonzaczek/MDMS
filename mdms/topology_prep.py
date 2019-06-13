@@ -70,7 +70,12 @@ def clearing_control():
         'charge_model',
         'atoms_type',
         'ligands_charges',
-        'ligands_multiplicities']
+        'ligands_multiplicities',
+        'ff',
+        'wat_ff',
+        'top_name',
+        'box_size'
+        ]
     # writing content of control file without parameters in parameters list to
     # the temporary file
     with open(f"{filename}") as oldfile, open(filetemp, 'w') as newfile:
@@ -505,6 +510,7 @@ def pdb_process():
                 pdb4amber_input = f"pdb4amber -i {waters_list[x]}_prior_pdb4amber.pdb -o {waters_list[x]}.pdb"
                 # running pdb4amber - all files are retained though
                 subprocess.run([f"{pdb4amber_input}"], shell=True)
+                full_files.append(f'{waters_list[x]}.pdb')
             pass
         else:
             # manual run of pdb4amber
@@ -607,6 +613,10 @@ def pdb_process():
         ## appending waters to files that will create final complex
         #for water in waters_files:
         #    full_files.append(water)
+    # finding crystal waters residue in control file
+    waters = r'waters\s*=\s*\[(.*)\]'
+    waters_match = re.search(waters, control)
+
     if metals_match:
         # taking only ligands entries
         metals_match = metals_match.group(1)
