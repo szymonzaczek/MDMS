@@ -362,15 +362,29 @@ def missing_res_pdb():
             # of missing residues
             if remark_match is not None:
                 print(
-                    "\nERROR!!!\nIt appears that your PDB file contains missing residues. LEaP is not capable of automatically adding "
+                    "\n!!WARNING!!!\nIt appears that your PDB file contains missing residues. Following informations"
+                    "were found in the PDB entry:\n", missing_res_prompt)
+                USER_CHOICE_MISSING_RES = (f"LEaP is not capable of automatically adding "
                     "missing residues to the structure. \nFor this purpose, you might use MODELLER software:\n"
                     "(A. Fiser, R.K. Do, A. Sali., Modeling of loops in protein structures, Protein Science 9. 1753-1773, 2000, "
                     "https://salilab.org/modeller/).\n"
-                    "Prior to proceeding, make sure that there are no missing residues in your structure. \nApply changes to the "
-                    "PDB file that will be provided into the MDMS and run MDMS again with altered initial structure.\n"
-                    "Information about missing residues from PDB file:\n")
-                print(missing_res_prompt)
-                stop_interface()
+                    "Only in some very specific cases you might skip adding missing residues to the structure. "
+                    "If you are not sure wether it is necessary for your case - most likely it is.\n"
+                    "Therefore, prior to proceeding, make sure that you handled missing residues somehow (unless you "
+                    "know that there are not necessary).\n"
+                    "Are you sure that you might proceed, even though your structure does not have all of the residues "
+                    "that have been reported to exist in the PDB entry?\n"
+                    "- press 'y' to continue\n"
+                    "- press 'n' to quit and go back to the menu\n")
+                while True:
+                    try:
+                        user_input_missing_res = str(input(USER_CHOICE_MISSING_RES).lower())
+                        if user_input_missing_res == 'y':
+                            break
+                        elif user_input_missing_res == 'n':
+                            stop_interface()
+                    except:
+                        print('Please, provide valid input')
 
 
 def sym_operations_prompt():
@@ -1035,23 +1049,6 @@ def chain_processing():
         # remove temp file
         os.remove(Path('pdb_chain_temp.pdb'))
     pass
-
-
-
-#prep_functions = [
-#    file_naming,
-#    init_pdb,
-#    protein_chains_choice,
-#    missing_atoms_pdb,
-#    missing_res_pdb,
-#    sym_operations_prompt,
-#    protonation_state_prompt,
-#    initial_pdb_process,
-#    ligands_pdb,
-#    metals_pdb,
-#    waters_pdb,
-#    chain_processing,
-#]
 
 
 prep_functions = [
