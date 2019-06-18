@@ -614,9 +614,6 @@ def pdb_process():
         #for water in waters_files:
         #    full_files.append(water)
     # finding crystal waters residue in control file
-    waters = r'waters\s*=\s*\[(.*)\]'
-    waters_match = re.search(waters, control)
-
     if metals_match:
         # taking only ligands entries
         metals_match = metals_match.group(1)

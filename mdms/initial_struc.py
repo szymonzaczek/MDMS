@@ -13,6 +13,21 @@ from pathlib import Path
 # allowing tab completion of files' paths
 readline.parse_and_bind("tab: complete")
 
+# test if pdb4amber works
+try:
+    # global is declared - it will be checked upon when pdb4amber is supposed to start
+    global pdb4amber_test
+    # pdb4amber test - running it and checking output if it contains string is enough
+    subprocess.run(['pdb4amber > out_1.txt 2>&1'], shell=True)
+    if 'usage: pdb4amber' not in open('out_1.txt').read():
+        raise Exception
+    pdb4amber_test = True
+    # removing files that were required for tests
+    os.remove(Path('out_1.txt'))
+except:
+    pdb4amber_test = False
+
+
 def file_naming():
     # getting name for a control file, which will containg all info
     global filename
@@ -427,6 +442,69 @@ def protonation_state_prompt():
             print('Please, provide valid input')
     pass
 
+
+def initial_pdb_process():
+    # this function will run the initial strcture through pdb4amber, in order to make sure that further steps work
+    # correctly
+    control = read_file(filename)
+    pdb = 'pdb\s*=\s*(.*)'
+    pdb_match = re.search(pdb, control).group(1)
+    pdb_match_split = pdb_match.split('.')[0]
+    pdb_filename = pdb_match
+    print('1')
+    # copying original pdb file
+    struc_copy = f"cp {pdb_filename} full_pdb_{pdb_filename}"
+    print('2')
+    subprocess.run([f"{struc_copy}"], shell = True)
+    print('3')
+    # if pdb4amber works, execute it directly from within MDMS
+    if pdb4amber_test:
+        print('4')
+        pdb4amber_input = f"pdb4amber -i full_pdb_{pdb_filename} -o processed_{pdb_match_split}.pdb"
+        # running pdb4amber
+        print('5')
+        subprocess.run([f"{pdb4amber_input}"], shell=True)
+    # if pdb4amber does not work, it must be run manually by user
+    else:
+        struc_path = Path(f"processed_{pdb_filename}")
+        if struc_path:
+            # if its true, even though pdb4amber does not work from within MDMS, user has already run it
+            pass
+        else:
+            print(f"\n!!WARNING!!\n"
+                  f"There were some problems with running pdb4amber from within MDMS.\n"
+                  f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                  f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                  f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                  f"your own installation of Python.\n"
+                  f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                  f"interpreter (i. e. by loading the appropriate module).\n"
+                  f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                  f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                  f"In such case, just copy the content of  struc_pdb4amber.in file into terminal and press"
+                  f"enter. As a result, you will obtain processed PDB structure' file which will be ready for further"
+                  f"steps.")
+            process_input = ('struc_pdb4amber.in')
+            process_input_path = Path(process_input)
+            if process_input_path.exists():
+                os.remove(process_input_path)
+            # input for pdb4amber
+            pdb4amber_input = f"pdb4amber -i full_pdb_{pdb_filename} -o processed_{pdb_match_split}.pdb"
+            # input for pdb4amber written to the file
+            with open(process_input, 'w') as file:
+                file.write(pdb4amber_input)
+            print(f"\nYou will now be redirected to the menu of MDMS. Please, quit MDMS and process PDB file "
+                  f"from within the terminal, and then provide it as the initial structure for your system"
+                  f" of interests")
+            # optional saving info about processing of initial struc with pdb4amber
+            # save_to_file()
+            stop_interface()
+    # output from pdb4amber replaces original pdb file - if its done at the end, its possible to check if output from
+    # pdb4amber exists
+    print('6')
+    if Path(f"processed_{pdb_match_split}.pdb").exists:
+        renaming = f"mv processed_{pdb_match_split}.pdb {pdb_filename}"
+        subprocess.run([f"{renaming}"], shell=True)
 
 def ligands_pdb():
     # getting het_atms from pdb file
@@ -956,7 +1034,7 @@ def chain_processing():
         # convert dataframe to a string
         pdb_refined = df2.to_string(index=False, header=None)
         # save string to a file as a new pdb file
-        with open('protein_with_good_chains.pdb', 'w') as file:
+        with open(pdb_match, 'w') as file:
             file.write(pdb_refined)
         # remove temp file
         os.remove(Path('pdb_chain_temp.pdb'))
@@ -964,14 +1042,31 @@ def chain_processing():
 
 
 
+#prep_functions = [
+#    file_naming,
+#    init_pdb,
+#    protein_chains_choice,
+#    missing_atoms_pdb,
+#    missing_res_pdb,
+#    sym_operations_prompt,
+#    protonation_state_prompt,
+#    initial_pdb_process,
+#    ligands_pdb,
+#    metals_pdb,
+#    waters_pdb,
+#    chain_processing,
+#]
+
+
 prep_functions = [
     file_naming,
     init_pdb,
-    protein_chains_choice,
     missing_atoms_pdb,
     missing_res_pdb,
     sym_operations_prompt,
     protonation_state_prompt,
+    initial_pdb_process,
+    protein_chains_choice,
     ligands_pdb,
     metals_pdb,
     waters_pdb,
