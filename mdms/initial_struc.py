@@ -446,23 +446,20 @@ def protonation_state_prompt():
 def initial_pdb_process():
     # this function will run the initial strcture through pdb4amber, in order to make sure that further steps work
     # correctly
+    print('\nRight now your PDB will be processed in order to ensure a proper working with Amber software. If there'
+          ' are any missing atoms in amino acids, they will be automatically added with pdb4amber program.\n')
     control = read_file(filename)
     pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_match_split = pdb_match.split('.')[0]
     pdb_filename = pdb_match
-    print('1')
     # copying original pdb file
     struc_copy = f"cp {pdb_filename} full_pdb_{pdb_filename}"
-    print('2')
     subprocess.run([f"{struc_copy}"], shell = True)
-    print('3')
     # if pdb4amber works, execute it directly from within MDMS
     if pdb4amber_test:
-        print('4')
         pdb4amber_input = f"pdb4amber -i full_pdb_{pdb_filename} -o processed_{pdb_match_split}.pdb"
         # running pdb4amber
-        print('5')
         subprocess.run([f"{pdb4amber_input}"], shell=True)
     # if pdb4amber does not work, it must be run manually by user
     else:
@@ -501,7 +498,6 @@ def initial_pdb_process():
             stop_interface()
     # output from pdb4amber replaces original pdb file - if its done at the end, its possible to check if output from
     # pdb4amber exists
-    print('6')
     if Path(f"processed_{pdb_match_split}.pdb").exists:
         renaming = f"mv processed_{pdb_match_split}.pdb {pdb_filename}"
         subprocess.run([f"{renaming}"], shell=True)
