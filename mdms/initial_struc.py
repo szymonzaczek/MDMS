@@ -6,7 +6,6 @@ import re
 import subprocess
 import readline
 import pybel
-import openpyxl
 from Bio.PDB import *
 from pathlib import Path
 
@@ -236,7 +235,7 @@ def protein_chains_choice():
     with open(f'{pdb_filename}', 'r') as file:
         for line in file:
             if line.startswith(('ATOM')):
-                pdb_atoms = pdb_atoms + line + '\n'
+                pdb_atoms = pdb_atoms + line
     # writing pdb_atoms string to a temporary file which will be removed after this step
     with open('atoms_temp.pdb', 'w') as file:
         file.write(pdb_atoms)
@@ -248,7 +247,6 @@ def protein_chains_choice():
         pass
     else:
         # choice must be provided which chains will be used in calculations
-        print('jest wiecej chainow niz jeden')
         chains_amount = len(df[4].unique())
         unique_chains = df[4].unique().tolist()
         # list for storing chains for simulations
@@ -515,6 +513,52 @@ def initial_pdb_process():
     if Path(f"processed_{pdb_match_split}.pdb").exists:
         renaming = f"mv processed_{pdb_match_split}.pdb {pdb_filename}"
         subprocess.run([f"{renaming}"], shell=True)
+    # removing anything apart from ATOM, HETATM, TER and END entries
+    entries_allowed = ['ATOM', 'HETATM', 'TER', 'END']
+    # empty string to which we will append updated PDB
+    pdb_modified = ''
+    with open(f"{pdb_filename}", 'r') as file:
+        for line in file:
+            line_content = line.split()
+            # if a first line is in entries_allowed, keep it
+            if line_content[0] in entries_allowed:
+                pdb_modified = pdb_modified + line
+    # remove first line from pdb_modified - it is an empty line
+    #pdb_modified = pdb_modified.split('\n', 1)[-1]
+    # overwrite pdb_modified as pdb_filename
+    with open(f"{pdb_filename}", 'w') as file:
+        file.write(pdb_modified)
+    # setting temperature factor and occupancy to 0
+    with open(f"{pdb_filename}", 'r') as file:
+        lines = file.readlines()
+    # empty list, which will have modified lines
+    new_list = []
+    for x in lines:
+        line_content = list(x)
+        if line_content[0] == 'A' or line_content[0] == 'H':
+            # turning string into a list
+            # those exact positions are occupancies and b factor entries
+            line_content[54] = ' '
+            line_content[55] = ' '
+            line_content[56] = '1'
+            line_content[57] = '.'
+            line_content[58] = '0'
+            line_content[59] = '0'
+            line_content[60] = ' '
+            line_content[61] = ' '
+            line_content[62] = '1'
+            line_content[63] = '.'
+            line_content[64] = '0'
+            line_content[65] = '0'
+            new_line = ''.join(line_content)
+            new_list.append(new_line)
+        else:
+            new_list.append(x)
+    # saving modified PDB entry
+    with open(f"{pdb_filename}", 'w') as file:
+        for x in new_list:
+            file.write(x)
+
 
 def ligands_pdb():
     # getting het_atms from pdb file
