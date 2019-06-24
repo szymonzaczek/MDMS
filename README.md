@@ -28,7 +28,7 @@ MDMS is aimed both to newcomers to the field as well as mature scientists. Newco
 
 Use pip to install MDMS directly on your machine:
 
-`pip install -i https://test.pypi.org/simple/ mdms-szymonzaczek`
+`pip install mdms`
 
 In some cases, you might need to make mdms_menu.py file executable in order to use in any directory on your machine.
 
@@ -71,13 +71,15 @@ If typing `mdms_menu.py` has no effect, you should make `mdms_menu.py` script an
 - establishing initial protein (or protein-ligand complex) structure
   - downloading a protein structure directly from Protein Data Bank
   - using a protein structure that was earlier downloaded and/or somehow modified
+  - choosing chains (if multiple chains are found in the structure)
   - checking if there are any missing atoms in amino acid residues (basing on the REMARK entries); this is also checked later on by pdb4amber
   - checking if there are any missing residues in the protein (basing on the REMARK entries)
   - automatic removal of residues, which are common leftovers after experiments
   - choosing which ligands are to be included for MD simulations
+  - adding hydrogen atoms to ligands
   - choosing if metal ions are to be retained for MD (if they are present in the crystal structure - user will must provide parameters for them though)
-  - choosing if crystal waters are to be retained for MD (if they are present in the crystal structure - user will must add hydrogen atoms though)
-  - reminding that user needs to add hydrogen atoms to ligands
+  - choosing if crystal waters are to be retained for MD (if they are present in the crystal structure
+  - adding hydrogen atoms to crystal waters
   - reminding user that he should use functional oligomeric structure of the protein
 - preparing topology and coordinate files for Amber
   - checking if there are hydrogen present in the ligand - if not, user is asked if this is on purpose
