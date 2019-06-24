@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="mdms-szymonzaczek",
+    name="mdms",
     version="1.0.0",
     author="Szymon Zaczek",
     author_email="szymon.zaczek@edu.p.lodz.pl",
