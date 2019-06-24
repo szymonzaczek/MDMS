@@ -70,7 +70,12 @@ def clearing_control():
         'charge_model',
         'atoms_type',
         'ligands_charges',
-        'ligands_multiplicities']
+        'ligands_multiplicities',
+        'ff',
+        'wat_ff',
+        'top_name',
+        'box_size'
+        ]
     # writing content of control file without parameters in parameters list to
     # the temporary file
     with open(f"{filename}") as oldfile, open(filetemp, 'w') as newfile:
@@ -289,10 +294,10 @@ def antechamber_parmchk_input():
             for x in range(0, len(ligands_list)):
                 # copying original ligand PDB file - output from pdb4amber will be
                 # supplied to antechamber and parmchk
-                ligand_copy = f"cp {ligands_list[x]}_raw.pdb {ligands_list[x]}_original.pdb"
+                ligand_copy = f"cp {ligands_list[x]}.pdb {ligands_list[x]}_prior_pdb4amber.pdb"
                 subprocess.run([f"{ligand_copy}"], shell=True)
                 # input for pdb4amber
-                pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_original.pdb -o {ligands_list[x]}.pdb "
+                pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_prior_pdb4amber.pdb -o {ligands_list[x]}.pdb "
                 # running pdb4amber (both original and remade files are retained
                 # but later on remade ligands will be operated on
                 subprocess.run([f"{pdb4amber_input}"], shell=True)
@@ -348,10 +353,10 @@ def antechamber_parmchk_input():
                 for x in range(0, len(ligands_list)):
                     # copying original ligand PDB file - output from pdb4amber will be
                     # supplied to antechamber and parmchk
-                    ligand_copy = f"cp {ligands_list[x]}_raw.pdb {ligands_list[x]}_original.pdb"
+                    ligand_copy = f"cp {ligands_list[x]}_raw.pdb {ligands_list[x]}_prior_pdb4amber.pdb"
                     subprocess.run([f"{ligand_copy}"], shell=True)
                     # input for pdb4amber
-                    pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_original.pdb -o {ligands_list[x]}.pdb "
+                    pdb4amber_input = f"pdb4amber -i {ligands_list[x]}_prior_pdb4amber.pdb -o {ligands_list[x]}.pdb "
                     # input for pdb4amber appended to the file
                     with open(pdb_process_input, 'a') as file:
                         file.write(pdb4amber_input)
@@ -389,12 +394,12 @@ def antechamber_parmchk_input():
 
 
 def pdb_process():
-    # This function strips original PDB of anything apart from protein, checks its validity with pdb4amber and create
-    # PDB complex of protein and ligands, which will be passed onto tleap
-    # this will inform user what is being done
+    ## This function strips original PDB of anything apart from protein, checks its validity with pdb4amber and create
+    ## PDB complex of protein and ligands, which will be passed onto tleap
+    ## this will inform user what is being done
     print('\nRight now your PDB will be processed in order to ensure a proper working with Amber software. If there'
           ' are any missing atoms in amino acids, they will be automatically added with pdb4amber program.\n')
-    # reading pdb from control file
+    ## reading pdb from control file
     control = read_file(filename)
     structure = r'pdb\s*=\s*(.*)'
     structure_match = re.search(structure, control).group(1)
@@ -402,10 +407,10 @@ def pdb_process():
     # get proper names, i.e. 4zaf_old.pdb
     structure_match_split = structure_match.split('.')[0]
     # copying original PDB file so it will be retained after files operations
-    struc_copy = f"cp {structure_match} {structure_match_split}_original.pdb"
+    struc_copy = f"cp {structure_match} {structure_match_split}_prior_pdb4amber.pdb"
     subprocess.run([f"{struc_copy}"], shell=True)
     # input for pdb4amber - ligands are removed
-    pdb4amber_input = f"pdb4amber -i {structure_match_split}_original.pdb --add-missing-atoms -p -o {structure_match_split}_no_lig.pdb"
+    pdb4amber_input = f"pdb4amber -i {structure_match_split}_prior_pdb4amber.pdb --add-missing-atoms -p -o {structure_match_split}_no_lig.pdb"
     # running pdb4amber (both original and remade files are retained but later
     # on remade ligands will be operated on)
     # if pdb4amber works, it is run directly from MDMS
@@ -427,9 +432,9 @@ def pdb_process():
                 # even though pdb4amber inputs were created and user was asked to process them, he didn't do so -
                 # therefore, he receives a prompt reminding what to do
                 print(f"\n!!WARNING!!\n"
-                      f"\nYou have not processed {structure_match_split}_original.pdb file with pdb4amber yet.\n"
+                      f"\nYou have not processed {structure_match_split}_prior_pdb4amber.pdb file with pdb4amber yet.\n"
                       f"Since there were some issues with running pdb4amber from within MDMS, you need to process "
-                      f"{structure_match_split}_original.pdb with pdb4amber manually.\n"
+                      f"{structure_match_split}_prior_pdb4amber.pdb with pdb4amber manually.\n"
                       f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
                       f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
                       f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
@@ -472,7 +477,7 @@ def pdb_process():
                   f"Afer processing the file, proceed with topology preparation step within MDMS.\n")
             save_to_file(f"protein_pdb4amber_inputs = True\n", filename)
             stop_interface()
-    # finding ligands residues in control file
+    ## finding ligands residues in control file
     ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
     # finding crystal waters residue in control file
@@ -494,14 +499,121 @@ def pdb_process():
         waters_string = waters_match.replace("'", "")
         # removing whitespaces and turning string into a list
         waters_list = re.sub(r'\s', '', waters_string).split(',')
-        # creating a list that will store waters filenames
-        waters_files = []
-        # appending waters filenames to the list
-        for water in waters_list:
-            waters_files.append(f"{water}.pdb")
-        # appending waters to files that will create final complex
-        for water in waters_files:
-            full_files.append(water)
+        # formatting waters with pdb4amber
+        if pdb4amber_test:
+            # automatic run of pdb4amber
+            for x in range(0, len(waters_list)):
+                # copying original water PDB file
+                water_copy = f"cp {waters_list[x]}_raw.pdb {waters_list[x]}_prior_pdb4amber.pdb"
+                subprocess.run([f"{water_copy}"], shell=True)
+                # input for pdb4amber
+                pdb4amber_input = f"pdb4amber -i {waters_list[x]}_prior_pdb4amber.pdb -o {waters_list[x]}.pdb"
+                # running pdb4amber - all files are retained though
+                subprocess.run([f"{pdb4amber_input}"], shell=True)
+                full_files.append(f'{waters_list[x]}.pdb')
+            pass
+        else:
+            # manual run of pdb4amber
+            # try to find if there is a water_pdb4amber_inputs entry in the control file
+            water_inputs = r'ligands_pdb4amber_inputs\s*=\s*\[(.*)\]'
+            water_inputs_match = re.search(water_inputs, control)
+            if water_inputs_match:
+                # search for outputs from pdb4amber - they must have been processed manually; if they exist, everthing
+                # is fine; if they don't print info on how to proceed again
+                for x in range(0, len(waters_list)):
+                    wat_path = Path(f'{waters_list[x]}.pdb')
+                    if wat_path.exists():
+                        # processed pdb exists, we might continue to the next steps
+                        continue
+                    else:
+                        print(f"\n!!WARNING!!\n"
+                              f"\nYou have not processed water files with pdb4amber yet.\n"
+                              f"There were some problems with running pdb4amber from within MDMS.\n"
+                              f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                              f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                              f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                              f"your own installation of Python.\n"
+                              f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                              f"interpreter (i. e. by loading the appropriate module).\n"
+                              f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                              f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                              f"In such case, just copy the content of each line of water_pdb4amber.in file into terminal and press"
+                              f"enter. As a result, you will obtain processed PDB water's file which will be ready for further"
+                              f"steps.")
+                        # just single printing of the prompt should be enough, therefore it is halted here
+                        break
+            else:
+                # first run of this part - inputs for pdb4amber are created
+                print(f"\n!!WARNING!!\n"
+                      f"There were some problems with running pdb4amber from within MDMS.\n"
+                      f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
+                      f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
+                      f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
+                      f"your own installation of Python.\n"
+                      f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
+                      f"interpreter (i. e. by loading the appropriate module).\n"
+                      f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
+                      f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
+                      f"In such case, just copy the content of each line of water_pdb4amber.in file into terminal and press"
+                      f"enter. As a result, you will obtain processed PDB water's file which will be ready for further"
+                      f"steps.")
+                pdb_process_input = ('water_pdb4amber.in')
+                pdb_process_input_path = Path(pdb_process_input)
+                if pdb_process_input_path.exists():
+                    os.remove(pdb_process_input_path)
+                for x in range(0, len(waters_list)):
+                    # copying original water PDB file
+                    water_copy = f"cp {waters_list[x]}.pdb {waters_list[x]}_prior_pdb4amber.pdb"
+                    subprocess.run([f"{water_copy}"], shell=True)
+                    # input for pdb4amber
+                    pdb4amber_input = f"pdb4amber -i {waters_list[x]}_prior_pdb4amber.pdb -o {waters_list[x]}.pdb"
+                    # input for pdb4amber appended to the file
+                    with open(pdb_process_input, 'a') as file:
+                        file.write(pdb4amber_input)
+                print(f"\nYou will now be redirected to menu of MDMS. Please, quit MDMS and process waters' PDB files"
+                      f"from within the terminal."
+                      f"Afer processing the file, proceed with topology preparation step within MDMS.\n")
+                # saving info to the control file that pdb4amber was not run from within MDMS
+                save_to_file(f"water_pdb4amber_inputs = True\n", filename)
+                stop_interface()
+        #finding atoms_type_match
+        #atoms_type = r'atoms_type\s*=\s*([a-z]*[A-Z]*[1-9]*)'
+        #atoms_type_match = re.search(atoms_type, control).group(1)
+        ## getting charge_model info
+        #charge_model = r'charge_model\s*=\s*([a-z]*[A-Z]*[1-9]*)'
+        #charge_model_match = re.search(charge_model, control).group(1)
+        # antechamber input for waters HERE HERE HERE
+        #for x in range(0, len(waters_list)):
+        #    antechamber_input = f"antechamber -fi pdb -fo mol2 -i {waters_list[x]}.pdb -o {waters_list[x]}.mol2 -at {atoms_type_match} -c {charge_model_match} -pf y -nc 0 -m 1"
+        #    # running antechamber
+        #    subprocess.run([f"{antechamber_input}"], shell=True)
+        #    # checking if mol2 was succesfully created
+        #    mol2_path = Path(f'{waters_list[x]}.mol2')
+        #    # if mol2 was not created, toop stops and user is returned to menu
+        #    if file_check(mol2_path) == False:
+        #        print(f"\nAntechamber has failed to determine atomic charges for {waters_list[x]}. Please, have a look "
+        #              f"at the output file for getting more information about a problem that has occurred.\n")
+        #        break
+        #    # parmchk input for waters
+        #    parmchk_input = f"parmchk2 -i {waters_list[x]}.mol2 -o {waters_list[x]}.frcmod -f mol2 -s {atoms_type_match}"
+        #    # running parmchk
+        #    subprocess.run([f"{parmchk_input}"], shell=True)
+        #    # checking if frcmod was successfully created
+        #    frcmod_path = Path(f'{waters_list[x]}.frcmod')
+        #    if file_check(frcmod_path) == False:
+        #        # if frcmod was not created, go back to the menu
+        #        print(f"\nParmchk has failed to run correctly for {waters_list[x]}. Please, check validity of "
+        #              f"{waters_list[x]}.mol2 file.\n")
+        #        break
+        ## creating a list that will store waters filenames
+        #waters_files = []
+        ## appending waters filenames to the list
+        #for water in waters_list:
+        #    waters_files.append(f"{water}.pdb")
+        ## appending waters to files that will create final complex
+        #for water in waters_files:
+        #    full_files.append(water)
+    # finding crystal waters residue in control file
     if metals_match:
         # taking only ligands entries
         metals_match = metals_match.group(1)
@@ -722,6 +834,27 @@ def tleap_input():
             with open(tleap_file, 'a') as f:
                 f.write(f"{ligand} = loadmol2 {ligand}.mol2\n")
                 f.write(f"loadamberparams {ligand}.frcmod\n")
+    # finding if crystal waters were retained for MD
+    waters = r'waters\s*=\s*\[(.*)\]'
+    waters_match = re.search(waters, control)
+    if waters_match:
+        # taking only residues names
+        waters_match = waters_match.group(1)
+        # removing quotes from string
+        waters_string = waters_match.replace("'", "")
+        # removing whitespaces and turning string into a list
+        waters_list = re.sub(r'\s', '', waters_string).split(',')
+        # 3 letter codes for water models
+        water_models_dict = {
+            'tip3p': 'TP3',
+            'tip4pew': 'TP4',
+            'spce': 'SPC'
+        }
+        # assigning crystal waters to chosen water model
+        for x in range(0, len(waters_list)):
+            water_model = water_models_dict.get(user_input_water_ff)
+            with open(tleap_file, 'a') as f:
+                f.write(f"{waters_list[x]} = {water_model}\n")
     # reading complex file
     with open(tleap_file, 'a') as f:
         f.write(f"mol = loadpdb {complex}\n")
