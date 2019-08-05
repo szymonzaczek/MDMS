@@ -3,6 +3,7 @@ import pandas as pd
 import re
 import subprocess
 import readline
+import fileinput
 from pathlib import Path
 
 # allowing tab completion of files' paths
@@ -14,7 +15,7 @@ try:
     global pdb4amber_test
     # pdb4amber test - running it and checking output if it contains string is enough
     subprocess.run(['pdb4amber > out_1.txt 2>&1'], shell=True)
-    if 'usage: pdb4amber' not in open('out_1.txt').read():
+    if 'age: pdb4amber' not in open('out_1.txt').read():
         raise Exception
     pdb4amber_test = True
     # removing files that were required for tests
@@ -401,23 +402,31 @@ def pdb_process():
           ' are any missing atoms in amino acids, they will be automatically added with pdb4amber program.\n')
     ## reading pdb from control file
     control = read_file(filename)
+    print('here1')
     structure = r'pdb\s*=\s*(.*)'
     structure_match = re.search(structure, control).group(1)
     # stripping of extension from structure - this way it will be easier to
     # get proper names, i.e. 4zaf_old.pdb
+    print('here2')
     structure_match_split = structure_match.split('.')[0]
     # copying original PDB file so it will be retained after files operations
+    print('here3')
     struc_copy = f"cp {structure_match} {structure_match_split}_prior_pdb4amber.pdb"
     subprocess.run([f"{struc_copy}"], shell=True)
     # input for pdb4amber - ligands are removed
+    print('here4')
+    #JUST FOR THE PROMETHEUS ADDING MISSING ATOMS WITH PDB4AMBER IS DISABLED
     pdb4amber_input = f"pdb4amber -i {structure_match_split}_prior_pdb4amber.pdb --add-missing-atoms -p -o {structure_match_split}_no_lig.pdb"
+    pdb4amber_input = f"pdb4amber -i {structure_match_split}_prior_pdb4amber.pdb -p -o {structure_match_split}_no_lig.pdb"
     # running pdb4amber (both original and remade files are retained but later
     # on remade ligands will be operated on)
     # if pdb4amber works, it is run directly from MDMS
+    print('here5')
     if pdb4amber_test:
         # running pdb4amber (both original and remade files are retained
         # but later on remade ligands will be operated on
         subprocess.run([f"{pdb4amber_input}"], shell=True)
+        print('here6')
     else:
         protein_inputs = r'protein_pdb4amber_inputs\s*=\s*\[(.*)\]'
         protein_inputs_match = re.search(protein_inputs, control)
@@ -719,6 +728,46 @@ def pdb_process():
             save_to_file('complex_pdb4amber_inputs = True\n', filename)
             stop_interface()
 
+def metal_modelling():
+    # CURRENTLY DISABLED
+    # MCPB.py is run in order to get parameters for metal ions
+    # read metal ions
+    control = read_file(filename)
+    # finding metal residues in control file
+    metals = r'metals\s*=\s*\[(.*)\]'
+    metals_match = re.search(metals, control)
+    if metals_match:
+        # taking only ligands entries
+        metals_match = metals_match.group(1)
+        # removing quotes from string
+        metals_string = metals_match.replace("'", "")
+        # removing whitespaces and turning string into a list
+        metals_list = re.sub(r'\s', '', metals_string).split(',')
+        # generating mol2 file for the metal
+        for metal in metals_list:
+            USER_CHOICE_METAL_CHARGE = f"\nCharge of {metal} ion\n" \
+                f"What charge of {metal} ion would you like to use in your simulations?\n" \
+                f"Please, provide integer value.\n"
+            while True:
+                try:
+                    # user provides metal ion charge
+                    user_input_metal_charge = int(input(USER_CHOICE_METAL_CHARGE))
+                    # if charge value is between -5 and 8, it is fine
+                    if -5 <= user_input_metal_charge <= 8:
+                        charge = user_input_metal_charge
+                        break
+                except:
+                    print('Please, provide valid input.')
+            antechamber_input = f"antechamber -fi pdb -fo mol2 -i {metal}.pdb -o {metal}_pre.mol2 -at amber -pf y"
+            # running antechamber
+            subprocess.run([f"{antechamber_input}"], shell=True)
+            # replacing DU entry in pre.mol2 and charge with their actual values
+            for line in fileinput.FileInput(f"{metal}_pre.mol2, inplace=1"):
+                line = line.replace("DU", f"{metal}")
+                line = line.replace("0.000000", f'{charge}.000000')
+                print(line)
+
+
 
 def tleap_input():
     tleap_file = Path('tleap.in')
@@ -931,6 +980,7 @@ top_prep_functions = [
     ligands_parameters,
     antechamber_parmchk_input,
     pdb_process,
+#    metal_modelling,
     tleap_input]
 
 methods_generator = (y for y in top_prep_functions)

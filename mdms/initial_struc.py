@@ -18,7 +18,7 @@ try:
     global pdb4amber_test
     # pdb4amber test - running it and checking output if it contains string is enough
     subprocess.run(['pdb4amber > out_1.txt 2>&1'], shell=True)
-    if 'usage: pdb4amber' not in open('out_1.txt').read():
+    if 'age: pdb4amber' not in open('out_1.txt').read():
         raise Exception
     pdb4amber_test = True
     # removing files that were required for tests
@@ -112,6 +112,8 @@ def read_het_atoms_pdb():
         # saving het_atoms to a csv file - it will be easier to read it then
         with open('het_atoms.csv', 'w') as f:
             f.write('\n'.join(pdb_hetatoms))
+        # converting list to a string
+        pdb_hetatoms = '\n'.join(pdb_hetatoms)
         return pdb_hetatoms
     else:
         return None
@@ -229,6 +231,65 @@ def protein_chains_choice():
     pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
+    # creating object of PDBParser
+    p = PDBParser()
+    # getting pdb structure
+    structure = p.get_structure('X', f'{pdb_filename}')
+    # getting list of chains
+    chains_list = Selection.unfold_entities(structure, 'C')
+    chains_amount = len(chains_list)
+    # getting names of chains
+    chains_names_string = ''
+    for model in structure:
+        for chain in model:
+            chains_string = chains_string + chain
+    # formatting chains string
+    chains_names_string = chains_string.replace('<Chain id=', '')
+    # turning chains string to a list
+    chains_names_list = chains_names_string.split('>')
+    # removing empty entry
+    chains_names_list = list(filter(None, chains_names_list))
+    # if there are no info about chains or there is only a single chain, chains_list have one element; thus, program
+    # should proceed on choosing chains only if there is more than one element in chains_lsit
+    if chains_amount > 1:
+        # list for storing chains for simulations
+        chains = []
+        USER_CHOICE_CHAINS = (f'\nChoosing protein chains\n'
+                              f'There are {chains_amount} different chains in the provided PDB file.\n'
+                              f'Each chain identify different molecular chains. For instance, if there are 4 chains in '
+                              f'the PDB file, 3 of them might be different polypeptides, whereas one might be a ligand.\n'
+                              f'Right now, you will make choice about protein chains.\n'
+                              f'Ligands entries will be processed separately.\n'
+                              f'Please, consider carefully which chains should be in the simulated model.\n'
+                              f'There are following unique protein chains identifiers:\n'
+                              f'{chains_names_list}\n'
+                              f'Which protein chains would you like to retain for MD simulations? (provide their exact name, '
+                              f'separating each entry by a comma - at least one chain must be chosen, otherwise an empty'
+                              f' system would have been simulated):\n')
+        while True:
+            try:
+                # getting info about chains from user
+                user_input_chains = str(input(USER_CHOICE_CHAINS).upper())
+                # turning input into a list, ensuring that no matter how much
+                # spaces are inserted everything is fine
+                input_chains = re.sub(
+                    r'\s', '', user_input_chains).split(',')
+                # checking if inputted chains are in unique_chains list - if
+                # yes, append them to chain list
+                for x in input_chains:
+                    if x in chains_names_list:
+                        chains.append(x)
+                # chains are chosen only once - the other idea is to proceed as with ligands
+                # ensuring that at least one chain is chosen - then the chains list will not be empty, thus such
+                # expression works
+                if chains:
+                    save_to_file(f"protein_chains = {chains}\n", filename)
+                    break
+                pass
+            except:
+                print('Wrong input has been provided.')
+    # deprecated - it used pandas for file reading
+    """
     # string which will contain atoms and hetatoms
     pdb_atoms = ''
     # clearing pdb so it will only contain atoms or hetatms
@@ -287,7 +348,7 @@ def protein_chains_choice():
             except:
                 print('Wrong input has been provided.')
     # removing temporary file
-    os.remove(Path('atoms_temp.pdb'))
+    os.remove(Path('atoms_temp.pdb'))"""
 
 
 def missing_atoms_pdb():
@@ -470,6 +531,7 @@ def initial_pdb_process():
     subprocess.run([f"{struc_copy}"], shell = True)
     # if pdb4amber works, execute it directly from within MDMS
     if pdb4amber_test:
+        # HERE THE NAMING SEEMS TO BE SCREWED
         pdb4amber_input = f"pdb4amber -i full_pdb_{pdb_filename} -o processed_{pdb_match_split}.pdb"
         # running pdb4amber
         subprocess.run([f"{pdb4amber_input}"], shell=True)
@@ -559,15 +621,13 @@ def initial_pdb_process():
         for x in new_list:
             file.write(x)
 
-
 def ligands_pdb():
     # getting het_atms from pdb file
-    het_atoms = read_het_atoms_pdb()
-    # it will only get executed if there are hetatoms records in PDB
+    het_atoms = read_het_atoms_pdb()    # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
         # reading het_atoms as columns - since finding unique residues are
         # sought after, 4 first columns are enough
-        df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
+        df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3], na_filter=False)
         # changing naming of columns
         df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
         # getting unique residues
@@ -624,7 +684,12 @@ def ligands_pdb():
         unique_ligands_str = '\n'.join(unique_ligands)
         nr_unique_ligands = len(unique_ligands)
         USER_CHOICE_LIGANDS = (f"\nChoosing ligands\n"
-                               f"There are {nr_unique_ligands} unique residues in your PDB file which are not amino acids and waters.\n"
+                               f"There are {nr_unique_ligands} unique residues in your PDB file which are not recognized"
+                               f" as amino acids, metal ions or water molecules.\n"
+                               f"Those residues are most likely ligands, which might be included in the system which"
+                               f" will be simulated.\n"
+                               f"You should only use ligands that are directly involved in the process that you are "
+                               f"interested in.\n"
                                f"Each ligand that will be retained for simulations will require parametrization.\n"
                                f"Which residues you would like to keep for simulations? "
                                f"Unique residues are:\n"
@@ -683,10 +748,10 @@ def ligands_pdb():
                             # lines containing specified ligands are saved to
                             # separate pdb files
                             for x in ligands:
-                                ligands_pdb = '\n'.join(
-                                    [s for s in het_atoms if x in s])
+                                ligand_pdb = '\n'.join(
+                                    [s for s in het_atoms.splitlines() if x in s])
                                 with open(f"{x}_raw.pdb", "w") as f:
-                                    f.write(ligands_pdb)
+                                    f.write(ligand_pdb)
                             break
                     except BaseException:
                         pass
@@ -705,7 +770,7 @@ def metals_pdb():
     # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
         # getting het atms as csv
-        df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
+        df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3], na_filter=False)
         # changing naming of columns
         df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
         # metal list that was used in ligands_pdb function
@@ -749,7 +814,7 @@ def metals_pdb():
             f"interface:\n" \
             f"- press 'y' to retain metal ions for MD simulations\n" \
             f"- press 'n' not to include metal ions in your MD simulations\n" \
-            # if there are metals in pdb, there is a choice if they stay for MD
+        # if there are metals in pdb, there is a choice if they stay for MD
         # or they are removed
         if unique_metals:
             while True:
@@ -766,9 +831,10 @@ def metals_pdb():
                               f"you will be unable to get topology.\n")
                         for x in unique_metals:
                             metals_pdb = '\n'.join(
-                                [s for s in het_atoms if x in s])
+                                [s for s in het_atoms.splitlines() if x in s])
                             with open(f"{x}.pdb", "w") as f:
                                 f.write(metals_pdb)
+                        # MCPB.py should be run after protein and ligands have all necessary hydrogens
                         break
                     elif user_input_metals == 'n':
                         # metals will be ignored - no further action required
@@ -779,11 +845,11 @@ def metals_pdb():
 
 
 def waters_pdb():
-    # getting het_atms from pdb file
+    # getting hetatoms from pdb file
     het_atoms = read_het_atoms_pdb()
     # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
-        # getting het atms as csv
+        # getting hetatoms as csv
         df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3])
         # changing naming of columns
         df.columns = ['type', 'atom_nr', 'atom_name', 'residue_name']
@@ -802,9 +868,9 @@ def waters_pdb():
         # string
         if unique_water:
             for x in unique_water:
-                single_water_pdb = '\n'.join([s for s in het_atoms if x in s])
-                waters_pdb = ''.join(single_water_pdb)
-            waters_number = len(waters_pdb.split('\n'))
+                single_water_pdb = '\n'.join([s for s in het_atoms.splitlines() if x in s])
+                water_pdb = ''.join(single_water_pdb)
+            waters_number = len(water_pdb.split('\n'))
             USER_CHOICE_WATERS = f"\nCrystal water handling" \
                 f"\nThere are {waters_number} water molecules in your structure.\n" \
                 f"Water molecules that are present in PDB structures are leftovers from experiments carried out in order to obtain" \
@@ -829,14 +895,14 @@ def waters_pdb():
                         if user_input_waters == 'y':
                             # saving crystallographic waters to a separate file
                             with open(f"{x}.pdb", "w") as f:
-                                f.write(waters_pdb)
+                                f.write(water_pdb)
                             # saving info about crystallographic waters to a
                             # control file
                             save_to_file(f"waters = {unique_water}\n", filename)
                             # prompt if user wants to add hydrogens with pybel or another software
                             USER_CHOICE_HYD_ADD_WAT = f"\nAdding hydrogen atoms to water molecules\n" \
                                 f"MDMS is capable of adding hydrogen atoms to water molecules using Pybel library. You" \
-                                f"can either use it, or add hydrogen atoms in another software.\n" \
+                                f" can either use it, or add hydrogen atoms in another software.\n" \
                                 f"Would you like to have hydrogen added to water molecules using Pybel library?\n" \
                                 f"- press 'y' if you want to have hydrogens added to water using Pybel (automatic)\n" \
                                 f"- press 'n' if you want to add hydrogens atoms to water molecules with another software" \

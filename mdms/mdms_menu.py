@@ -20,7 +20,7 @@ if sys.version_info < (3, 6):
 try:
     # pdb4amber test - running it and checking output if it contains string is enough
     subprocess.run(['pdb4amber > out_1.txt 2>&1'], shell=True)
-    if 'usage: pdb4amber' not in open('out_1.txt').read():
+    if 'age: pdb4amber' not in open('out_1.txt').read():
         raise Exception
     # sander test - run without any input, but if it is available specific error will appear
     subprocess.run(['sander -O > out_2.txt 2>&1'], shell=True)
@@ -38,7 +38,7 @@ try:
     os.remove(Path('out_2.txt'))
     os.remove(Path('out_3.txt'))
 except:
-    print('It seems as AmberTools with its components (pdb4amber and tleap in particular) are not installed properly/\n'
+    print('It seems as AmberTools with its components (pdb4amber and tleap in particular) are not installed properly.\n'
           'Please, prior to using MDMS make sure that AmberTools is running properly.')
 
 print(
