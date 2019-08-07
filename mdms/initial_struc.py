@@ -240,11 +240,12 @@ def protein_chains_choice():
     chains_amount = len(chains_list)
     # getting names of chains
     chains_names_string = ''
+    # take only the first mode
     for model in structure:
         for chain in model:
-            chains_string = chains_string + chain
+            chains_names_string = chains_names_string + str(chain)
     # formatting chains string
-    chains_names_string = chains_string.replace('<Chain id=', '')
+    chains_names_string = chains_names_string.replace('<Chain id=', '')
     # turning chains string to a list
     chains_names_list = chains_names_string.split('>')
     # removing empty entry
@@ -387,7 +388,7 @@ def missing_atoms_pdb():
                             pass
                         elif user_input_cont == 'n':
                             stop_interface()
-                            break
+                            pass
                         else:
                             raise ValueError
                         break
@@ -517,7 +518,7 @@ def protonation_state_prompt():
 
 
 def initial_pdb_process():
-    # this function will run the initial strcture through pdb4amber, in order to make sure that further steps work
+    # this function will run the initial structure through pdb4amber, in order to make sure that further steps work
     # correctly
     print('\nRight now your PDB will be processed in order to ensure a proper working with Amber software. If there'
           ' are any missing atoms in amino acids, they will be automatically added with pdb4amber program.\n')
@@ -528,7 +529,42 @@ def initial_pdb_process():
     pdb_filename = pdb_match
     # copying original pdb file
     struc_copy = f"cp {pdb_filename} full_pdb_{pdb_filename}"
-    subprocess.run([f"{struc_copy}"], shell = True)
+    subprocess.run([f"{struc_copy}"], shell=True)
+    # remove pdb_filename - it will be replaced in a second
+    try:
+        os.remove(Path(f'{pdb_filename}'))
+    except:
+        pass
+    # remove from the file everything that contains additional information (REMARK lines etc.)
+    # creating a parser object
+    p = PDBParser()
+    # loading structure
+    structure = p.get_structure('X', f'full_pdb_{pdb_filename}')
+    # creating IO object
+    io = PDBIO()
+    # assigning structure to IO
+    io.set_structure(structure)
+    # saving structure - it will not have any REMARK lines etc.
+    io.save(f'temp1_{pdb_filename}')
+    # renumber atoms, chains, residues
+    pdb_sort_inp = f"pdb_sort temp1_{pdb_filename} > temp2_{pdb_filename}"
+    subprocess.run([f"{pdb_sort_inp}"], shell=True)
+    # tidy up a molecule
+    pdb_tidy_inp = f"pdb_tidy temp2_{pdb_filename} > {pdb_filename}"
+    subprocess.run([f"{pdb_tidy_inp}"], shell=True)
+    # further steps might not be necessary
+    """
+    # setting temperature factor (pdb_b) to 10.0 and occupancy (pdb_occ) to 1.00
+    # preparing pipe
+    pdb_edit_input_1 = f"pdb_occ {pdb_filename} > temp_{pdb_filename}"
+    # running pipe
+    subprocess.run([f"{pdb_edit_input_1}"], shell=True)
+    pdb_edit_input_2 = f"pdb_b temp_{pdb_filename} > temp2_{pdb_filename}"
+    subprocess.run([f"{pdb_edit_input_2}"], shell=True)
+    # removing temp file
+    os.remove(Path(f"temp_{pdb_filename}"))
+    """
+    """
     # if pdb4amber works, execute it directly from within MDMS
     if pdb4amber_test:
         # HERE THE NAMING SEEMS TO BE SCREWED
@@ -620,6 +656,7 @@ def initial_pdb_process():
     with open(f"{pdb_filename}", 'w') as file:
         for x in new_list:
             file.write(x)
+    """
 
 def ligands_pdb():
     # getting het_atms from pdb file
