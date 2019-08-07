@@ -662,6 +662,14 @@ def ligands_pdb():
     # getting het_atms from pdb file
     het_atoms = read_het_atoms_pdb()    # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
+        # crating a list with unique res names
+        unique_res_list = []
+        for line in het_atoms.splitlines():
+            # checking if a current resname is already in unique_res_list
+            if line[17:20] not in unique_res_list:
+                # append new resname to unique_res_list
+                unique_res_list.append(line[17:20])
+        """
         # reading het_atoms as columns - since finding unique residues are
         # sought after, 4 first columns are enough
         df = pd.read_csv(f'het_atoms.csv', header=None, delim_whitespace=True, usecols=[0, 1, 2, 3], na_filter=False)
@@ -671,7 +679,8 @@ def ligands_pdb():
         unique_res = df.residue_name.unique()
         unique_res = unique_res.tolist()
         # creating another list that will contain only worthwile ligands
-        unique_ligands = unique_res
+        unique_ligands = unique_res"""
+        unique_ligands = unique_res_list
         # removing waters from unique residues
         water_list = ['HOH', 'WAT']
         # remove common metal atoms from unique residues - they will be
@@ -690,8 +699,7 @@ def ligands_pdb():
             'CU',
             'ZN',
             'CD']
-        # remove other common from unique residues - leftovers after
-        # experiments
+        # remove common leftovers from experiments from unique residues
         exp_leftovers_list = [
             'SCN',
             'ACT',
@@ -715,9 +723,33 @@ def ligands_pdb():
         for x in metal_list:
             if x in unique_ligands:
                 unique_ligands.remove(x)
+        leftovers_list = []
+        USER_CHOICE_LEFTOVERS = (f"\nLeftovers from experiments\n"
+                                 f"There are some residues in your PDB files that might be regarded as a common leftovers"
+                                 f" from experimental determination of a protein structure.\n"
+                                 f"Those residues are: {leftovers_list}\n"
+                                 f"Since those residues are a common leftovers from experiments, they are likely to be "
+                                 f"not relevant in your simulations. Nevertheless, you should refer to the original "
+                                 f"paper that reported the structure to find out the origin of those residues.\n"
+                                 f"Do you want to remove all of the residues that are a common leftovers from experiments, "
+                                 f"or you would like to include any of them in your simulations?"
+                                 f"- press 'y' if you want to remove them all\n"
+                                 f"- press 'n' if you want to retain any of those residues in MD simulation\n")
         for x in exp_leftovers_list:
             if x in unique_ligands:
-                unique_ligands.remove(x)
+                leftovers_list.append(x)
+        if leftovers_list:
+            while True:
+                try:
+                    user_input_leftovers = str(input(USER_CHOICE_LEFTOVERS).lower())
+                    if user_input_leftovers == 'y':
+                        for x in exp_leftovers_list:
+                            if x in unique_ligands:
+                                unique_ligands.remove(x)
+                        break
+                    elif user_input_leftovers == 'n':
+                        # nothing to be done - leftovers are left in ligands list and will be processed in a second by a user
+                        break
         unique_ligands_str = '\n'.join(unique_ligands)
         nr_unique_ligands = len(unique_ligands)
         USER_CHOICE_LIGANDS = (f"\nChoosing ligands\n"
