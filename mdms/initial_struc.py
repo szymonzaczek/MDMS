@@ -418,8 +418,62 @@ def missing_res_pdb():
                 ([s for s in pdb_remark if remark_match in s]))
             # making string easier to read
             missing_res_prompt = re.sub(remark, "", remark_with_missing_res)
-            # if there is a missing residue, halt the program - there is no tool in Ambertools that can handle modelling
-            # of missing residues
+            # handling missing residues with pdbfixer - should be run after choosing to run it
+            if remark_match is not None:
+                print(
+                    "\n!!WARNING!!!\nIt appears that your PDB file contains missing residues. Following informations"
+                    "were found in the PDB entry:\n", missing_res_prompt)
+                # test if pdbfixer is installed
+                global pdbfixer_test
+                try:
+                    subprocess.run(['pdbfixer -h > pdbfixer_test.out'], shell=True)
+                    if 'Usage: pdbfixer' not in open('pdbfixer_test.out').read():
+                        raise Exception
+                    pdbfixer_test = True
+                    # removing files required for the test
+                    os.remove(Path('pdbfixer_test.out'))
+                except:
+                    pdbfixer_test = False
+                print(f"\nThere is no software available in native AmberTools installation which"
+                      f" enable modelling missing residues in PDB files, thus other software "
+                      f"must be used for this purpose.\nPerhaps the most powerful tool for "
+                      f"modelling missing residues is MODELLER software:\n"
+                      f"(A. Fiser, R.K. Do, A. Sali., Modeling of loops in protein structures, Protein Science 9. 1753-1773, 2000, "
+                      f"https://salilab.org/modeller/).\n"
+                      f"Nonetheless, MDMS might add missing residues to your PDB file using "
+                      f"PDBFixer program, which is based on OPenMM software. For this purpose"
+                      f" though, you will need a valid PDBFixer installation.\n"
+                      f"For installation manual of PDBFixer, please consult the webpage and links provided therein:\n"
+                      f"https://github.com/pandegroup/pdbfixer")
+                USER_CHOICE_MISSING_RES = (f"Would you like to add missing residues to your PDB file with PDBFixer"
+                                           f" automatically (MDMS will do it), or you would rather handle it "
+                                           f"differently?\n"
+                                           f"- press 'y' if you want to add missing residues using PDBFixer\n"
+                                           f"- press 'n' if you want to handle missing residues differently\n")
+                if pdbfixer_test:
+                    while True:
+                        try:
+                            user_input_missing_res = str(input(USER_CHOICE_MISSING_RES).lower())
+                            if user_input_missing_res == 'y':
+                                # save info to control file that pdbfixer should be run
+                                save_to_file = (f"add_missing_res = True", filename)
+                                break
+                            elif user_input_missing_res == 'n':
+                                # user do not want to add missing residues with pdfixer - nothing is to be run here
+                                break
+                        except:
+                            print('Please, provide valid input.')
+                else:
+                    print("\nPDBFixer is not installed correctly\n"
+                          "If you want MDMS to use PDBFixer to add missing residues to your structure, quit MDMS, install"
+                          " PDBFixer and rerun MDMS.\n"
+                          "If you want to handle missing residues differently (either you do not require residues that "
+                          "are missing in your simulations or you'd rather use different software for modelling missing "
+                          "residues), make sure that all of the changes to the PDB file are applied prior to topology "
+                          "preparation step.")
+                    pass
+            # previous version:
+            """
             if remark_match is not None:
                 print(
                     "\n!!WARNING!!!\nIt appears that your PDB file contains missing residues. Following informations"
@@ -445,6 +499,7 @@ def missing_res_pdb():
                             stop_interface()
                     except:
                         print('Please, provide valid input')
+            """
 
 
 def sym_operations_prompt():
@@ -530,6 +585,14 @@ def initial_pdb_process():
     # copying original pdb file
     struc_copy = f"cp {pdb_filename} full_pdb_{pdb_filename}"
     subprocess.run([f"{struc_copy}"], shell=True)
+    # if user wanted to add missing residues with pdbifxer, it is run
+    add_miss_res = 'add_missing_res\s*=\s*(.*)'
+    add_miss_res_match = re.search(add_miss_res, control).group(1)
+    # add_miss_res is in the control file only if user decided to add missing residues with pdbfixer
+    if add_miss_res_match:
+        # running pdbfixer inplace
+        pdbfixer_input = f"{pdb_filename} --output={pdb_filename} --add-atoms=none --add-residues"
+        subprocess.run([f"{pdbfixer_input}"], shell=True)
     # remove pdb_filename - it will be replaced in a second
     try:
         os.remove(Path(f'{pdb_filename}'))
@@ -547,8 +610,8 @@ def initial_pdb_process():
     # saving structure - it will not have any REMARK lines etc.
     io.save(f'temp1_{pdb_filename}')
     # remove atoms alternate locations with default settings
-    pdb_selatloc_inp = f"pdb_selaltloc temp1_{pdb_filename} > temp2_{pdb_filename}"
-    subprocess.run([f"{pdb_selatloc_inp}"], shell=True)
+    pdb_selaltloc_inp = f"pdb_selaltloc temp1_{pdb_filename} > temp2_{pdb_filename}"
+    subprocess.run([f"{pdb_selaltloc_inp}"], shell=True)
     # renumber atoms, chains, residues
     pdb_sort_inp = f"pdb_sort temp2_{pdb_filename} > temp3_{pdb_filename}"
     subprocess.run([f"{pdb_sort_inp}"], shell=True)
