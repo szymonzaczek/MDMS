@@ -546,12 +546,19 @@ def initial_pdb_process():
     io.set_structure(structure)
     # saving structure - it will not have any REMARK lines etc.
     io.save(f'temp1_{pdb_filename}')
+    # remove atoms alternate locations with default settings
+    pdb_selatloc_inp = f"pdb_selaltloc temp1_{pdb_filename} > temp2_{pdb_filename}"
+    subprocess.run([f"{pdb_selatloc_inp}"], shell=True)
     # renumber atoms, chains, residues
-    pdb_sort_inp = f"pdb_sort temp1_{pdb_filename} > temp2_{pdb_filename}"
+    pdb_sort_inp = f"pdb_sort temp2_{pdb_filename} > temp3_{pdb_filename}"
     subprocess.run([f"{pdb_sort_inp}"], shell=True)
     # tidy up a molecule
-    pdb_tidy_inp = f"pdb_tidy temp2_{pdb_filename} > {pdb_filename}"
+    pdb_tidy_inp = f"pdb_tidy temp3_{pdb_filename} > {pdb_filename}"
     subprocess.run([f"{pdb_tidy_inp}"], shell=True)
+    # remove temp1, temp2, temp3
+    #os.remove(Path(f"temp1_{pdb_filename}"))
+    #os.remove(Path(f"temp2_{pdb_filename}"))
+    #os.remove(Path(f"temp3_{pdb_filename}"))
     # further steps might not be necessary
     """
     # setting temperature factor (pdb_b) to 10.0 and occupancy (pdb_occ) to 1.00
@@ -717,13 +724,33 @@ def ligands_pdb():
             'NO3']
         # cleaning unique_ligands list so that will only contain ligands that
         # should be acted upon
+
+        for x in metal_list:
+            for y in unique_ligands:
+                # check if any part of x is in y
+                if x in y:
+                    # remove whitespaces from y, to have a match ONLY if x and y are the same EXACT strings
+                    z = y.replace(' ', '')
+                    # if z and x are exactly the same, remove y from unique_ligands
+                    if x == z:
+                        unique_ligands.remove(y)
         for x in water_list:
             if x in unique_ligands:
                 unique_ligands.remove(x)
         for x in metal_list:
             if x in unique_ligands:
                 unique_ligands.remove(x)
+        # creating a list with leftovers and appending data
         leftovers_list = []
+        for x in exp_leftovers_list:
+            for y in unique_ligands:
+                # check if any part of x is in y
+                if x in y:
+                    # remove whitespaces from y, to have a match ONLY if x and y are the same EXACT strings
+                    z = y.replace(' ', '')
+                    # if z and x are exactly the same, remove y from unique_ligands
+                    if x == z:
+                        leftovers_list.append(x)
         USER_CHOICE_LEFTOVERS = (f"\nLeftovers from experiments\n"
                                  f"There are some residues in your PDB files that might be regarded as a common leftovers"
                                  f" from experimental determination of a protein structure.\n"
@@ -732,12 +759,10 @@ def ligands_pdb():
                                  f"not relevant in your simulations. Nevertheless, you should refer to the original "
                                  f"paper that reported the structure to find out the origin of those residues.\n"
                                  f"Do you want to remove all of the residues that are a common leftovers from experiments, "
-                                 f"or you would like to include any of them in your simulations?"
+                                 f"or you would like to include any of them in your simulations?\n"
                                  f"- press 'y' if you want to remove them all\n"
                                  f"- press 'n' if you want to retain any of those residues in MD simulation\n")
-        for x in exp_leftovers_list:
-            if x in unique_ligands:
-                leftovers_list.append(x)
+        # if there are leftovers, user decides if he wants to keep any of those residues for MD
         if leftovers_list:
             while True:
                 try:
@@ -750,6 +775,8 @@ def ligands_pdb():
                     elif user_input_leftovers == 'n':
                         # nothing to be done - leftovers are left in ligands list and will be processed in a second by a user
                         break
+                except:
+                    print('Please, provide valid input.')
         unique_ligands_str = '\n'.join(unique_ligands)
         nr_unique_ligands = len(unique_ligands)
         USER_CHOICE_LIGANDS = (f"\nChoosing ligands\n"
@@ -759,7 +786,10 @@ def ligands_pdb():
                                f" will be simulated.\n"
                                f"You should only use ligands that are directly involved in the process that you are "
                                f"interested in.\n"
-                               f"Each ligand that will be retained for simulations will require parametrization.\n"
+                               f"If you are not sure whether to include a ligand or not in simulations, refer to the "
+                               f"original paper which reported the structure that you are working with.\n"
+                               f"Moreover, each ligand that will be retained for simulations will require parametrization,"
+                               f" but MDMS will guide you through that in a moment.\n"
                                f"Which residues you would like to keep for simulations? "
                                f"Unique residues are:\n"
                                f"{unique_ligands_str}\n"
@@ -828,9 +858,9 @@ def ligands_pdb():
             except BaseException:
                 print("You've provided wrong residues")
                 pass
-        print(f"\nLigands that will be included in your system are: \n{ligands}")
-        hydrogens_prompt()
-        pass
+        if (ligands):
+            print(f"\nLigands that will be included in your system are: \n{ligands}\n")
+            hydrogens_prompt()
 
 
 def metals_pdb():
@@ -1114,7 +1144,7 @@ def hydrogens_prompt():
                                 for line in a.splitlines():
                                     if 'ATOM' in line or 'HETATM' in line:
                                         # since we act on ligands, if atom line is detected it is replaced
-                                        # with hetatm
+                                        # with hetatm; atoms are added by pybel
                                         if 'ATOM' in line:
                                             line = line.replace('ATOM  ', 'HETATM')
                                         # appending formatted line to a string
@@ -1137,7 +1167,7 @@ def hydrogens_prompt():
                             # finding out duplicated atom names
                             df[12] = df[2].duplicated(keep=False)
                             # if there is a duplicated atom name, add number from df[11] column
-                            df[2] = np.where(df[12] == True, df[2].astype(str) + df[11].astype(str), df[2])
+                            df[2] = np.where(df[12]==True, df[2].astype(str) + df[11].astype(str), df[2])
                             # remove 2 columns that were only used for finding duplicates and assigning new atom names
                             df = df.drop(df.columns[[12,11]], axis=1)
                             # sorting at first by residue number, at then by atom number - each residue

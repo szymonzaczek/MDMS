@@ -402,31 +402,25 @@ def pdb_process():
           ' are any missing atoms in amino acids, they will be automatically added with pdb4amber program.\n')
     ## reading pdb from control file
     control = read_file(filename)
-    print('here1')
     structure = r'pdb\s*=\s*(.*)'
     structure_match = re.search(structure, control).group(1)
     # stripping of extension from structure - this way it will be easier to
     # get proper names, i.e. 4zaf_old.pdb
-    print('here2')
     structure_match_split = structure_match.split('.')[0]
     # copying original PDB file so it will be retained after files operations
-    print('here3')
     struc_copy = f"cp {structure_match} {structure_match_split}_prior_pdb4amber.pdb"
     subprocess.run([f"{struc_copy}"], shell=True)
     # input for pdb4amber - ligands are removed
-    print('here4')
     #JUST FOR THE PROMETHEUS ADDING MISSING ATOMS WITH PDB4AMBER IS DISABLED
-    pdb4amber_input = f"pdb4amber -i {structure_match_split}_prior_pdb4amber.pdb --add-missing-atoms -p -o {structure_match_split}_no_lig.pdb"
+    #pdb4amber_input = f"pdb4amber -i {structure_match_split}_prior_pdb4amber.pdb --add-missing-atoms -o {structure_match_split}_no_lig.pdb"
     pdb4amber_input = f"pdb4amber -i {structure_match_split}_prior_pdb4amber.pdb -p -o {structure_match_split}_no_lig.pdb"
     # running pdb4amber (both original and remade files are retained but later
     # on remade ligands will be operated on)
     # if pdb4amber works, it is run directly from MDMS
-    print('here5')
     if pdb4amber_test:
         # running pdb4amber (both original and remade files are retained
         # but later on remade ligands will be operated on
         subprocess.run([f"{pdb4amber_input}"], shell=True)
-        print('here6')
     else:
         protein_inputs = r'protein_pdb4amber_inputs\s*=\s*\[(.*)\]'
         protein_inputs_match = re.search(protein_inputs, control)
