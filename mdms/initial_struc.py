@@ -456,7 +456,7 @@ def missing_res_pdb():
                             user_input_missing_res = str(input(USER_CHOICE_MISSING_RES).lower())
                             if user_input_missing_res == 'y':
                                 # save info to control file that pdbfixer should be run
-                                save_to_file = (f"add_missing_res = True", filename)
+                                save_to_file(f"add_missing_res = True", filename)
                                 break
                             elif user_input_missing_res == 'n':
                                 # user do not want to add missing residues with pdfixer - nothing is to be run here
@@ -587,22 +587,16 @@ def initial_pdb_process():
     subprocess.run([f"{struc_copy}"], shell=True)
     # if user wanted to add missing residues with pdbifxer, it is run
     add_miss_res = 'add_missing_res\s*=\s*(.*)'
-    add_miss_res_match = re.search(add_miss_res, control).group(1)
+    add_miss_res_match = re.search(add_miss_res, control)
+    print(add_miss_res_match)
     # add_miss_res is in the control file only if user decided to add missing residues with pdbfixer
     if add_miss_res_match:
         # running pdbfixer inplace
-        pdbfixer_input = f"{pdb_filename} --output={pdb_filename} --add-atoms=none --add-residues"
+        pdbfixer_input = f"pdbfixer {pdb_filename} --output={pdb_filename} --add-atoms=none --add-residues"
         subprocess.run([f"{pdbfixer_input}"], shell=True)
-    # remove pdb_filename - it will be replaced in a second
-    try:
-        os.remove(Path(f'{pdb_filename}'))
-    except:
-        pass
-    # remove from the file everything that contains additional information (REMARK lines etc.)
-    # creating a parser object
     p = PDBParser()
     # loading structure
-    structure = p.get_structure('X', f'full_pdb_{pdb_filename}')
+    structure = p.get_structure('X', f'{pdb_filename}')
     # creating IO object
     io = PDBIO()
     # assigning structure to IO
@@ -619,9 +613,12 @@ def initial_pdb_process():
     pdb_tidy_inp = f"pdb_tidy temp3_{pdb_filename} > {pdb_filename}"
     subprocess.run([f"{pdb_tidy_inp}"], shell=True)
     # remove temp1, temp2, temp3
-    #os.remove(Path(f"temp1_{pdb_filename}"))
-    #os.remove(Path(f"temp2_{pdb_filename}"))
-    #os.remove(Path(f"temp3_{pdb_filename}"))
+    try:
+        os.remove(Path(f"temp1_{pdb_filename}"))
+        os.remove(Path(f"temp2_{pdb_filename}"))
+        os.remove(Path(f"temp3_{pdb_filename}"))
+    except:
+        pass
     # further steps might not be necessary
     """
     # setting temperature factor (pdb_b) to 10.0 and occupancy (pdb_occ) to 1.00
