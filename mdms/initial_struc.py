@@ -540,36 +540,78 @@ def sym_operations_prompt():
 def protonation_state_prompt():
     # Reminding user that he must determine protonation states of individual residues prior to MD
     # reading pdb file
+    # Reminding user that protonation states of titrable amino acids should be determined; it might be done by Propka
+    # from within MDMS
     control = read_file(filename)
     pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
-    # prompt that will be displayed to the user
-    USER_CHOICE_PS = f"\n!!WARNING!!\n" \
-        f"Protonation states of amino acids\n" \
-        f"Titratable amino acids (Asp, Cys, Glu, His, Tyr and Lys) might adopt different protonation states. " \
-        f"Even though protonation states assigned automatically by Amber are in most cases correct, ideally," \
-        f" you should determine protonation states of" \
-        f" those residues at a target pH prior to MD start.\n" \
-        f"In order to determine protonation states of titratable amino acids, you might to use 3rd party software," \
-        f" such as Propka, H++ web server or pKD web server.\n" \
-        f"Please, make all changes to protonation states of residues within {pdb_filename} file.\n" \
-        f"Are you sure that amino acids within {pdb_filename} file have an appropriate protonation states?\n" \
-        f"- press 'y' to continue\n" \
-        f"- press 'n' to stop and go back to the menu\n"
-    while True:
-        try:
-            user_input_ol = str(
-                input(USER_CHOICE_PS).lower())
-            if user_input_ol == 'y':
-                break
-            elif user_input_ol == 'n':
-                stop_interface()
-                break
-            pass
-        except BaseException:
-            print('Please, provide valid input')
-    pass
+    # testing if Propka is installed
+    global propka_test
+    try:
+        subprocess.run(['propka31 -h > propka_test.out'], shell=True)
+        if 'age: propka31' not in open('propka_test.out').read():
+            raise Exception
+        propka_test = True
+        os.remove(Path('propka_test.out'))
+    except:
+        propka_test = False
+    print("\nProtonation states of amino acids\n"
+          "There are a few amino acids which can adopt different protonation states while being simulated with Amber.\n"
+          "Those are: Asp, Glu, His and Cys.\n"
+          "Default protonation states defined in Amber are in most cases correct for near-neutral pH. Nonetheless, "
+          "they still should be validated with any of the popular tools for predicting pKa values such as Propka, H++ web server"
+          " or pKD web server.\n"
+          "MDMS is capable of performing determination of protonation states using Propka3.1 (M. H. M. Olsson, C. R. SØndergaard, M. Rostkowski, J. H. Jensen, J. Chem. Theory Comput. 2011, 7, 525–537.)\n"
+          "If Propka is to be used, it must be correctly installed.\n")
+    if propka_test:
+        # ask user if propka is to be used
+        print('Propka is installed properly.\n')
+        USER_CHOICE_PS = f"Do you want to use Propka for determination of protonation states of your structure?\n" \
+            f"- press 'y' to use Propka\n" \
+            f"- press 'n' to skip a determination of protonation states with Propka\n"
+        while True:
+            try:
+                user_input_ps = str(
+                    input(USER_CHOICE_PS).lower())
+                if user_input_ps == 'y':
+                    USER_CHOICE_PH = f"Please, provide pH at which pKa values for amino acids are to be determined:\n"
+                    while True:
+                        try:
+                            user_input_ph = float(USER_CHOICE_PH)
+                            save_to_file(f'ph = {user_input_ph}\n', filename)
+                            break
+                        except:
+                            print('Please, provide floating point number.')
+                    break
+                elif user_input_ps == 'n':
+                    break
+                pass
+            except BaseException:
+                print('Please, provide valid input')
+    else:
+        # tell user that he dos not have propka and ask if he protonation states are defined correctly
+        print('Propka is not installed properly.\n')
+        # prompt that will be displayed to the user
+        USER_CHOICE_PS = f"Are you sure that amino acids within {pdb_filename} file have appropriate protonation states?\n" \
+            f"If not, please, make all of the changes to protonation states of residues within {pdb_filename} file in " \
+            f"another terminal or install Propka and rerun MDMS.\n" \
+            f"Do you want to proceed?\n" \
+            f"- press 'y' to continue\n" \
+            f"- press 'n' to stop and go back to the menu\n"
+        while True:
+            try:
+                user_input_ps = str(
+                    input(USER_CHOICE_PS).lower())
+                if user_input_ps == 'y':
+                    break
+                elif user_input_ps == 'n':
+                    stop_interface()
+                    break
+                pass
+            except BaseException:
+                print('Please, provide valid input')
+        pass
 
 
 def initial_pdb_process():
@@ -585,27 +627,34 @@ def initial_pdb_process():
     # copying original pdb file
     struc_copy = f"cp {pdb_filename} full_pdb_{pdb_filename}"
     subprocess.run([f"{struc_copy}"], shell=True)
-    # if user wanted to add missing residues with pdbifxer, it is run
+    # remove atoms alternate locations with default settings
+    pdb_selaltloc_inp = f"pdb_selaltloc {pdb_filename} > temp1_{pdb_filename}"
+    subprocess.run([f"{pdb_selaltloc_inp}"], shell=True)
+    # if user wanted to add missing residues with pdbfixer, it is run
     add_miss_res = 'add_missing_res\s*=\s*(.*)'
     add_miss_res_match = re.search(add_miss_res, control)
     print(add_miss_res_match)
     # add_miss_res is in the control file only if user decided to add missing residues with pdbfixer
     if add_miss_res_match:
         # running pdbfixer inplace
-        pdbfixer_input = f"pdbfixer {pdb_filename} --output={pdb_filename} --add-atoms=none --add-residues"
+        pdbfixer_input = f"pdbfixer temp1_{pdb_filename} --output=temp1_{pdb_filename} --add-atoms=none --add-residues"
         subprocess.run([f"{pdbfixer_input}"], shell=True)
     p = PDBParser()
     # loading structure
-    structure = p.get_structure('X', f'{pdb_filename}')
+    structure = p.get_structure('X', f'temp1_{pdb_filename}')
     # creating IO object
     io = PDBIO()
     # assigning structure to IO
     io.set_structure(structure)
     # saving structure - it will not have any REMARK lines etc.
-    io.save(f'temp1_{pdb_filename}')
-    # remove atoms alternate locations with default settings
-    pdb_selaltloc_inp = f"pdb_selaltloc temp1_{pdb_filename} > temp2_{pdb_filename}"
-    subprocess.run([f"{pdb_selaltloc_inp}"], shell=True)
+    io.save(f'temp2_{pdb_filename}')
+    # determine if instruction to run Propka was saved to control file
+    propka = 'ph\s*=\s*(.*)'
+    propka_match = re.search(propka, control)
+    if propka_match:
+        # run Propka
+        print(propka_match)
+        pass
     # renumber atoms, chains, residues
     pdb_sort_inp = f"pdb_sort temp2_{pdb_filename} > temp3_{pdb_filename}"
     subprocess.run([f"{pdb_sort_inp}"], shell=True)
@@ -1271,8 +1320,8 @@ def chain_processing():
     # get proper names, i.e. 4zaf_old.pdb
     pdb_match_split = pdb_match.split('.')[0]
     # copying original PDB file so it will be retained after files operations
-    struc_copy = f"cp {pdb_match} {pdb_match_split}_original.pdb"
-    subprocess.run([f"{struc_copy}"], shell=True)
+    #struc_copy = f"cp {pdb_match} {pdb_match_split}_original.pdb"
+    #subprocess.run([f"{struc_copy}"], shell=True)
     pdb_filename = pdb_match
     # reading if chain is specified in prep file
     chain = 'protein_chains\s*=\s*\[(.*)\]'

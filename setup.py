@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mdms",
-    version="1.0.60",
+    version="1.0.61",
     author="Szymon Zaczek",
     author_email="szymon.zaczek@edu.p.lodz.pl",
     description='An interface to one of the most popular Molecular Dynamics codes - Amber - which aids user in '
