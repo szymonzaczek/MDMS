@@ -421,8 +421,8 @@ def missing_res_pdb():
             # handling missing residues with pdbfixer - should be run after choosing to run it
             if remark_match is not None:
                 print(
-                    "\n!!WARNING!!!\nIt appears that your PDB file contains missing residues. Following informations"
-                    "were found in the PDB entry:\n", missing_res_prompt)
+                    "\n!!WARNING!!!\nIt appears that your PDB file contains missing residues. Following information"
+                    " were found in the PDB entry:\n", missing_res_prompt)
                 # test if pdbfixer is installed
                 global pdbfixer_test
                 try:
@@ -578,7 +578,7 @@ def protonation_state_prompt():
                     USER_CHOICE_PH = f"Please, provide pH at which pKa values for amino acids are to be determined:\n"
                     while True:
                         try:
-                            user_input_ph = float(USER_CHOICE_PH)
+                            user_input_ph = float(input(USER_CHOICE_PH))
                             save_to_file(f'ph = {user_input_ph}\n', filename)
                             break
                         except:
@@ -633,7 +633,6 @@ def initial_pdb_process():
     # if user wanted to add missing residues with pdbfixer, it is run
     add_miss_res = 'add_missing_res\s*=\s*(.*)'
     add_miss_res_match = re.search(add_miss_res, control)
-    print(add_miss_res_match)
     # add_miss_res is in the control file only if user decided to add missing residues with pdbfixer
     if add_miss_res_match:
         # running pdbfixer inplace
@@ -650,11 +649,99 @@ def initial_pdb_process():
     io.save(f'temp2_{pdb_filename}')
     # determine if instruction to run Propka was saved to control file
     propka = 'ph\s*=\s*(.*)'
-    propka_match = re.search(propka, control)
+    propka_match = re.search(propka, control).group(1)
     if propka_match:
-        # run Propka
-        print(propka_match)
-        pass
+        ph = float(propka_match)
+        # run Propka - it is not run if test for running propka was not passed
+        # asp: 3.80
+        model_pkas = {
+            'ASP': 7.10,
+            'GLU': 4.50,
+            'HIS': 6.50,
+            'CYS': 9.00,
+            'LYS': 10.50,
+        }
+        altered_resnames = {
+            'ASP': 'ASH',
+            'GLU': 'GLH',
+            'HIS': 'HIP',
+            'CYS': 'CYM',
+            'LYS': 'LYN',
+        }
+        # adding titrable residues to a list
+        titrable_residues = []
+        for key in altered_resnames.keys():
+            titrable_residues.append(key)
+        # run Propka in a loop, if anything goes wrong - just stop running propka
+        while True:
+            try:
+                residues_to_change = []
+                # propka needs pdb as an extension of a file
+                propka_structure_name = f'temp2_{pdb_filename}'
+                propka_structure_name = propka_structure_name.replace('ent', 'pdb')
+                # creating copy of a pdb file for running propka
+                subprocess.run([f'cp temp2_{pdb_filename} {propka_structure_name}'], shell=True)
+                # running propka
+                propka_input = f"propka31 -o {ph} {propka_structure_name} > propka.out"
+                subprocess.run([f'{propka_input}'], shell=True)
+                # reading output from propka
+                propka_output = read_file('propka.out')
+                # getting only important result
+                propka_result = propka_output[propka_output.find('SUMMARY OF THIS PREDICTION'):]
+                # removing the first line
+                propka_result = "\n".join(propka_result.split("\n")[1:])
+                # iterating over lines in propka result
+                for line in propka_result.splitlines():
+                    # iterating over titrable residues
+                    for residue in titrable_residues:
+                        # if titrable residue is found in line
+                        if residue in line:
+                            # split line content into list
+                            line_list = line.split()
+                            # get the fourth element of the list - this is residue number
+                            pka = float(line_list[3])
+                            # get the model pKa for this amino acid
+                            def_pka = model_pkas.get(residue)
+                            # if both model and calculated pka is either less or bigger than pH, do not change anything;
+                            # otherwise residue name needs to be changed
+                            if (pka > ph and def_pka > ph) or (pka < ph and def_pka < ph):
+                                pass
+                            else:
+                                residues_to_change.append(str(line_list[1]))
+                # changing list with residues to change to format that will be passed to pdb-tools - not needed
+                #residues_to_change = str(residues_to_change).replace('[', '')
+                #residues_to_change = residues_to_change.replace(']', '')
+                # reading pdb file
+                file = read_file(f'temp2_{pdb_filename}')
+                file_renamed_res = ''
+                for line in file.splitlines():
+                    # only lines that starts with ATOM are releveant here
+                    if line.startswith('ATOM'):
+                        # getting residue numbers from pdb
+                        res_id = str(line[23:26]).replace(' ', '')
+                        # if res_id should be changed, change it; if not, append line to a string
+                        if res_id in residues_to_change:
+                            # getting old_resname
+                            old_resname = str(line[17:20])
+                            # replace old resname with new resname
+                            line = str(line).replace(old_resname, altered_resnames.get(old_resname))
+                            # append changed line to a string
+                            file_renamed_res = file_renamed_res + '\n' + line
+                        else:
+                            file_renamed_res = file_renamed_res + '\n' + line
+                    # if the line does not start with ATOM, append line to a string
+                    else:
+                        file_renamed_res = file_renamed_res + '\n' + line
+                # remove the first line
+                file_renamed_res = "\n".join(file_renamed_res.split("\n")[1:])
+                # after applying all changes, save content to a file
+                if Path(f'temp2_{pdb_filename}').exists():
+                    os.remove(Path(f'temp2_{pdb_filename}'))
+                with open(f'temp2_{pdb_filename}', 'w') as file:
+                    file.write(file_renamed_res)
+                break
+            except:
+                print('Something went wrong with running Propka. For more information, see Propka output files.')
     # renumber atoms, chains, residues
     pdb_sort_inp = f"pdb_sort temp2_{pdb_filename} > temp3_{pdb_filename}"
     subprocess.run([f"{pdb_sort_inp}"], shell=True)
