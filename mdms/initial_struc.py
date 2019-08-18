@@ -1091,8 +1091,10 @@ def metals_pdb():
         for x in metal_list:
             if x in unique_res:
                 unique_metals.append(x)
+        print(unique_metals)
         unique_metals_string = ', '.join(unique_metals)
-        USER_CHOICE_METALS = f"\nMetal ions handling\n" \
+        # list for storing metals for MD
+        """USER_CHOICE_METALS = f"\nMetal ions handling\n" \
             f"There are following metal ions in your PDB structure: \n{unique_metals_string}." \
             f"\nObtaining force field parameters for metal ions " \
             f"is outside of scope of this program but you might follow tutorials written by Pengfei Li and Kenneth M. Merz Jr., " \
@@ -1108,7 +1110,56 @@ def metals_pdb():
             f"Do you want to retain metal ions for MD simulations? \nIt will require your further manual input outside of this " \
             f"interface:\n" \
             f"- press 'y' to retain metal ions for MD simulations\n" \
-            f"- press 'n' not to include metal ions in your MD simulations\n" \
+            f"- press 'n' not to include metal ions in your MD simulations\n" \""""
+        USER_CHOICE_METALS = f"Unique metals are:\n" \
+            f"{unique_metals_string}\n" \
+            f"Please specify, which metal ions you would like to include in your simulations by providing their exact name and separating each entry by a comma - " \
+            f"if you decide to not include any metal ions and proceed to the next step, just press enter.\n"
+        while True:
+            try:
+                # getting input metals from user
+                user_input_metals = str(input(USER_CHOICE_METALS).upper())
+                # turning input into a list, ensuring that no matter how much spaces are inserted everything is fine
+                input_metals = re.sub(r'\s', '', user_input_metals).split(',')
+                metals = []
+                if len(input_metals) == 0:
+                    print('You chose to proceed to the next step.')
+                    # metal ions are not be used; stop the loop and go to further steps
+                    break
+                else:
+                    # check if inputted metal ions are in unique_metals_list - if yes, append them to metal list
+                    for x in input_metals:
+                        if x in unique_metals:
+                            metals.append(x)
+                    # loop will stop only if there is at least one metal ion added to the list; otherwise, enter
+                    # might be pressed in each iteration in order to continue
+                    if len(metals) > 0:
+                        save_to_file(f"metals = {unique_metals}\n", filename)
+                        for x in unique_metals:
+                            metals_pdb = '\n'.join(
+                                [s for s in het_atoms.splitlines() if x in s])
+                            with open(f"{x}.pdb", "w") as f:
+                                f.write(metals_pdb)
+                        break
+            except:
+                print('Please, provide valid input.')
+
+
+
+                """if len(metals) == 0:
+                    print('You did not provide valid metal ions names.')
+                # ensuring that user picked all the metal ions that he wanted
+                USER_CHOICE_LIG_CONT = (
+                    f"Would you like to add more metal ions, or would you like to continue to next steps?\n"
+                    f"- press 'a' in order to add more ligands\n"
+                    f"- press 'c' in order to continue to the next step\n")
+                while True:
+                    try:
+                        pass
+                    except:
+                        print('Please, provide valid input.')
+            except:
+                print('Please, provide valid input.')
         # if there are metals in pdb, there is a choice if they stay for MD
         # or they are removed
         if unique_metals:
@@ -1136,7 +1187,7 @@ def metals_pdb():
                         break
                 except BaseException:
                     print('You have provided wrong input.')
-        pass
+        pass"""
 
 
 def waters_pdb():
