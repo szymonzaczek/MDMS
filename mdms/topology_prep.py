@@ -658,9 +658,9 @@ def pdb_process():
                 outfile.write(infile.read())
     # name of the pdb file that will be an input for tleap
     complex = f"{structure_match_split}_full.pdb"
-    # processing protein-ligand complex pdb file with pdb4amber
+    # processing protein-ligand complex pdb file with pdb4amber; hydrogen atoms are added to the protein
     # another round of pdb4amber - it must be changed
-    pdb4amber_input_complex = f"pdb4amber -i {complex_raw} -o {complex}"
+    pdb4amber_input_complex = f"pdb4amber --reduce --no-reduce-db -i {complex_raw} -o {complex}"
     if pdb4amber_test:
         # if test works, pdb4amber is run
         # running pdb4amber
@@ -730,36 +730,215 @@ def metal_modelling():
     # finding metal residues in control file
     metals = r'metals\s*=\s*\[(.*)\]'
     metals_match = re.search(metals, control)
+    # getting info about pdb filename
+    structure = r'pdb\s*=\s*(.*)'
+    structure_match = re.search(structure, control).group(1)
+    # stripping of extension from structure - this way it will be easier to
+    # get proper names, i.e. 4zaf_old.pdb
+    structure_match_split = structure_match.split('.')[0]
     if metals_match:
-        # taking only ligands entries
-        metals_match = metals_match.group(1)
-        # removing quotes from string
-        metals_string = metals_match.replace("'", "")
-        # removing whitespaces and turning string into a list
-        metals_list = re.sub(r'\s', '', metals_string).split(',')
-        # generating mol2 file for the metal
-        for metal in metals_list:
-            USER_CHOICE_METAL_CHARGE = f"\nCharge of {metal} ion\n" \
-                f"What charge of {metal} ion would you like to use in your simulations?\n" \
-                f"Please, provide integer value.\n"
-            while True:
-                try:
-                    # user provides metal ion charge
-                    user_input_metal_charge = int(input(USER_CHOICE_METAL_CHARGE))
-                    # if charge value is between -5 and 8, it is fine
-                    if -5 <= user_input_metal_charge <= 8:
-                        charge = user_input_metal_charge
+        # checking if metal_modelling function was run - if it was, extract necessary info from obtained tleap input file
+        save_to_file(f"mcpb_input = True\n", filename)
+        mcpb = r'mcpb_input\s*=\s*\[(.*)]'
+        mcpb_match = re.search(mcpb, control)
+        if mcpb_match:
+            # look for groupname in the control file
+            #save_to_file(f"mcpb_groupname = {user_input_groupname}\n", filename)
+            groupname = r'mcpb_groupname\s*=\s*\[(.*)]'
+            groupname_match = re.search(groupname, control).group(1)
+            # establishing tleap input name
+            mcpb_tleap = f'{groupname_match}_tleap.in'
+            # getting necessary info from tleap input
+            additional_atom_types = []
+            with open(f'{mcpb_tleap}', 'r') as file:
+                a = file.read()
+                for line in a.splitlines():
+                    # look for add atoms entries
+                    additional_atom_types = []
+                    atom_type = r'({.*})'
+                    atom_type_match = re.search(atom_type, line).group(1)
+                    additional_atom_types.append(atom_type_match)
+            # make addAtomTypes, so it will look like this:
+            #addAtomTypes
+            #{
+            #    {"M1"  "Zn" "sp3"}
+            #{"Y1"  "N" "sp3"}
+            #{"Y2"  "N" "sp3"}
+            #{"Y3"  "N" "sp3"}
+            #{"Y4"  "N" "sp3"}
+            #}
+            atom_types = ''
+            # look for loadmol2 in line in tleap input
+            # look for loadamberparams in tleap input
+            # look for mol = in tleap input
+            # look for bond in tleap input
+            # create a file that will be added to tleap input created by MDMS
+
+
+
+            pass
+        else:
+            # taking only ligands entries
+            metals_match = metals_match.group(1)
+            # removing quotes from string
+            metals_string = metals_match.replace("'", "")
+            # removing whitespaces and turning string into a list
+            metals_list = re.sub(r'\s', '', metals_string).split(',')
+            # generating mol2 file for the metal
+            for metal in metals_list:
+                USER_CHOICE_METAL_CHARGE = f"\nCharge of {metal} ion\n" \
+                    f"What charge of {metal} ion would you like to use in your simulations?\n" \
+                    f"Please, provide integer value.\n"
+                while True:
+                    try:
+                        # user provides metal ion charge
+                        user_input_metal_charge = int(input(USER_CHOICE_METAL_CHARGE))
+                        # if charge value is between -5 and 8, it is fine
+                        if -5 <= user_input_metal_charge <= 8:
+                            charge = user_input_metal_charge
+                            break
+                    except:
+                        print('Please, provide valid input.')
+                antechamber_input = f"antechamber -fi pdb -fo mol2 -i {metal}.pdb -o {metal}.mol2 -at amber -pf y"
+                # running antechamber
+                subprocess.run([f"{antechamber_input}"], shell=True)
+                # replacing DU entry in pre.mol2 and charge with their actual values
+                for line in fileinput.FileInput(f"{metal}.mol2, inplace=1"):
+                    if "DU" in line:
+                        line = line.replace("DU", f"{metal}")
+                        line = line.replace("0.000000", f'{charge}.000000')
+                        print(line)
+                # get the residue number for metal
+                metal_pdb = f'{metal}.pdb'
+                metal_atom_number = ''
+                for line in metal_pdb.splitlines():
+                    metal_atom_number = int(line[6:11])
+                # radius over which take the atoms for MCPB
+                USER_CHOICE_CUTOFF = f"Please, provide the cutoff value indicating maximum bond length between metal ion" \
+                    f" and surrounding atoms (default value is 2.8):\n\n."
+                while True:
+                    try:
+                        user_input_cutoff = float(input(USER_CHOICE_CUTOFF))
                         break
+                    except:
+                        print('Please, provide valid input')
+                # determine which residues create bonds with the metal ion
+                metal_center_file = 'metal_center.pdb'
+                metal_cpptraj_input= f"parm {structure_match_split}_full.pdb noconect\n" \
+                    f"trajin {structure_match_split}_full.pdb\n" \
+                    f"ref {structure_match_split}_full.pdb\n" \
+                    f"strip !(@{metal_atom_number}<:{user_input_cutoff})\n" \
+                    f"trajout {metal_center_file}\n" \
+                    f"run\n" \
+                    f"quit"
+                try:
+                    subprocess.run([f'cpptraj -i {metal_cpptraj_input}'], shell=True)
                 except:
-                    print('Please, provide valid input.')
-            antechamber_input = f"antechamber -fi pdb -fo mol2 -i {metal}.pdb -o {metal}_pre.mol2 -at amber -pf y"
-            # running antechamber
-            subprocess.run([f"{antechamber_input}"], shell=True)
-            # replacing DU entry in pre.mol2 and charge with their actual values
-            for line in fileinput.FileInput(f"{metal}_pre.mol2, inplace=1"):
-                line = line.replace("DU", f"{metal}")
-                line = line.replace("0.000000", f'{charge}.000000')
-                print(line)
+                    print('Cpptraj failed to run.\n'
+                          'For modelling of metal ions, cpptraj must be run.')
+                # metal_center pdb is written; find out what residues are within
+                unique_res_list = []
+                for line in metal_center_file.splitlines():
+                    if line[17:20] not in unique_res_list:
+                        unique_res_list.append(line[17:20])
+                # find if there is a mol2 file for entry in unique res list - if there is, ligand files will be put into
+                # input file for MCPB.py; otherwise there is no ligand around metal ion
+                ligands_metal_center = []
+                try:
+                    for residue in unique_res_list:
+                        residue_file_mol2 = Path(f'{residue}.mol2')
+                        if residue_file_mol2.exists():
+                            ligands_metal_center.append(residue)
+                except:
+                    pass
+                # provide group name - it will be changed to uppercase
+                USER_CHOICE_GROUPNAME = f"Group name is used for naming files throughout MCPB.py modelling." \
+                    f"What group name would you like to use? \n"
+                while True:
+                    try:
+                        user_input_groupname = str(input(USER_CHOICE_GROUPNAME).upper())
+                        if len(user_input_groupname) == 0:
+                            raise Exception
+                        break
+                    except:
+                        print('Please, prvide a group name.')
+                # save input group name to the control file - it will enable extracting info from tleap input obtained
+                # once MCPB.py is finished
+                save_to_file(f"mcpb_groupname = {user_input_groupname}\n", filename)
+                opt_options = ['0', '1', '2']
+                opt_choice = ''
+                USER_CHOICE_OPT = f"Would you like to optimize the geometry of the large model? Such optimization should" \
+                    f" slightly enhance the quality of the obtained force constants but the computational cost associated " \
+                    f"with calculations will drastically increase.\n" \
+                    f"There are 3 options available:\n" \
+                    f"- press '0' if you do not want to optimize geometry of the large model at all\n" \
+                    f"- press '1' if you want to optimize geometry only of the hydrogen atoms\n" \
+                    f"- press '2' if you want to run full geometry optimiation\n" \
+                    f"Please, provide your choice:\n"
+                while True:
+                    try:
+                        user_input_opt = str(input(USER_CHOICE_OPT))
+                        if user_input_opt in opt_options:
+                            opt_choice = user_input_opt
+                            break
+                        else:
+                            raise Exception
+                    except:
+                        print('Please, provide valid input')
+                # check if mcpb_input exists
+                if Path(f"{structure_match_split}_full.pdb").exists:
+                    os.remove(Path(f'{structure_match_split}_full.pdb'))
+                # everything should be ready - create input file
+                mcpb_input = (f"{structure_match_split}_full.pdb\n" \
+                    f"group name {user_input_groupname}\n" \
+                    f"cut_off {user_input_cutoff}\n" \
+                    f"ion_ids {metal_atom_number}\n" \
+                    f"ion_mol2files {metal}.mol2\n")
+                # mol2 and frcmod files must be added in a slightly different way, separated by a coma
+                if ligands_metal_center:
+                    ligands_mol2 = []
+                    ligands_frcmod = []
+                    mol2_extension = 'mol2'
+                    frcmod_extension = 'frcmod'
+                    for x in ligands_metal_center:
+                        ligands_mol2.append(x + '.' + mol2_extension + '\n')
+                        ligands_frcmod.append(x + '.' + frcmod_extension + '\n')
+                    ligands_mol2 = ', '.join(ligands_mol2)
+                    ligands_frcmod = ', '.join(ligands_frcmod)
+                mcpb_input = mcpb_input + f'naa_mol2files {ligands_mol2}\n'
+                mcpb_input = mcpb_input + f'frcmod_files {ligands_frcmod}\n'
+                mcpb_input = mcpb_input + f'large_opt {opt_choice}'
+                # save mcpb input file; its naming is according to group_name
+                with open(f'{user_input_groupname}.in') as file:
+                    file.write(mcpb_input)
+                # print to user that he should run MCPB.py
+                print(f'Input file for obtaining force field parameters for MCPB.py was created. It is named '
+                      f'{user_input_groupname}.in.\n'
+                      f'Right now, you need to run MCPB.py with following command:\n'
+                      f'MCPB.py -i {user_input_groupname}.in -s 1\n'
+                      f'Once executed, first step of MCPB.py will be run - its purpose is to create Gaussian input files.\n'
+                      f'After that, you will need to perform QM calculations with either Gaussian or GAMESS-US software.\n'
+                      f'Further on, you will need to follow MCPB.py tutorial available at http://ambermd.org/tutorials/advanced/tutorial20/mcpbpy.htm.\n'
+                      f'Once you will finish obtaining paramers with MCPB.py, please, run topology_prep step of MDMS once more - '
+                      f'MDMS will notice that parameters are ready and you will not be prompted to fill any more info regarding MCPB.py\n.')
+                # saving info to the prep file that MCPB.py input was prepared
+                save_to_file(f"mcpb_input = True\n", filename)
+                # since user must proceed with MCPB.py by himself, interface is stopped
+                stop_interface()
+
+
+
+
+
+
+            for ligand in ligands_metal_center:
+                ligand_line = f'naa_mol2files {ligand}'
+                mcpb_input = mcpb_input +
+
+            #ligands_metal_center
+
+
+
 
 
 

@@ -1249,6 +1249,9 @@ def waters_pdb():
                             USER_CHOICE_HYD_ADD_WAT = f"\nAdding hydrogen atoms to water molecules\n" \
                                 f"MDMS is capable of adding hydrogen atoms to water molecules using Pybel library. You" \
                                 f" can either use it, or add hydrogen atoms in another software.\n" \
+                                f"Please not that Pybel fully fills valence shell, thus the obtained protonation state" \
+                                f" might not be ideal for your case and will require manual editing of the PDB file " \
+                                f"containing ligand.\n" \
                                 f"Would you like to have hydrogen added to water molecules using Pybel library?\n" \
                                 f"- press 'y' if you want to have hydrogens added to water using Pybel (automatic)\n" \
                                 f"- press 'n' if you want to add hydrogens atoms to water molecules with another software" \
