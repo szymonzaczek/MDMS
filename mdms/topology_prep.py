@@ -748,36 +748,58 @@ def metal_modelling():
             groupname_match = re.search(groupname, control).group(1)
             # establishing tleap input name
             mcpb_tleap = f'{groupname_match}_tleap.in'
-            # getting necessary info from tleap input
+            # getting necessary info about additional atoms from tleap input
             additional_atom_types = []
+            additional_mol2 = []
+            additional_frcmod = []
+            additional_bonds = []
+            molecule = []
             with open(f'{mcpb_tleap}', 'r') as file:
                 a = file.read()
                 for line in a.splitlines():
                     # look for add atoms entries
-                    additional_atom_types = []
                     atom_type = r'({.*})'
                     atom_type_match = re.search(atom_type, line).group(1)
                     additional_atom_types.append(atom_type_match)
-            # make addAtomTypes, so it will look like this:
-            #addAtomTypes
-            #{
-            #    {"M1"  "Zn" "sp3"}
-            #{"Y1"  "N" "sp3"}
-            #{"Y2"  "N" "sp3"}
-            #{"Y3"  "N" "sp3"}
-            #{"Y4"  "N" "sp3"}
-            #}
-            atom_types = ''
-            # look for loadmol2 in line in tleap input
-            # look for loadamberparams in tleap input
-            # look for mol = in tleap input
-            # look for bond in tleap input
-            # create a file that will be added to tleap input created by MDMS
-
-
-
-            pass
+                    # look for mol2 entries
+                    if 'loadmol2' in line:
+                        additional_mol2.append(line)
+                    # look for loadamberparams entries
+                    if 'loadamberparams' in line:
+                        additional_frcmod.append(line)
+                    # look for bond entries
+                    if 'bond' in line:
+                        additional_bonds.append(line)
+                    # look for mol entry
+                    if 'mol =' in line:
+                        molecule.append(line)
+            # make addAtomTypes and format it properly
+            add_atom_types = ''
+            if additional_atom_types:
+                for x in additional_atom_types:
+                    add_atom_types = additional_atom_types + x + '\n'
+                add_atom_types = additional_atom_types + '}\n'
+            # create file with tleap input which is a result from running MCPB.py
+            tleap_mcpb_modification = ''
+            if add_atom_types:
+                tleap_mcpb_modification = tleap_mcpb_modification + add_atom_types
+            if additional_mol2:
+                tleap_mcpb_modification = tleap_mcpb_modification + '\n'.join(additional_mol2)
+            if additional_frcmod:
+                tleap_mcpb_modification = tleap_mcpb_modification + '\n'.join(additional_frcmod)
+            if additional_bonds:
+                tleap_mcpb_modification = tleap_mcpb_modification + '\n'.join(additional_frcmod)
+            if molecule:
+                tleap_mcpb_modification = tleap_mcpb_modification + '\n'.join(additional_frcmod)
+            tleap_modifications_file = Path(f'tleap_{groupname_match}.in')
+            # checking if mcpb otuput in a tleap format is already present
+            if tleap_modifications_file.exists:
+                os.remove(tleap_modifications_file)
+            # saving results from mcpb to the file
+            with open(tleap_modifications_file, 'w') as file:
+                file.write(tleap_mcpb_modification)
         else:
+            # mcpb_input = True was not written to the control file, this will be run
             # taking only ligands entries
             metals_match = metals_match.group(1)
             # removing quotes from string
@@ -799,23 +821,60 @@ def metal_modelling():
                             break
                     except:
                         print('Please, provide valid input.')
+                # look for residue number for metal in the pdb file
+                print(metal)
+                resname = ''
+                resid = ''
+                atom_nr = ''
+                with open(f'{structure_match_split}_full.pdb', 'r') as file:
+                    a = file.read()
+                    for line in a.splitlines():
+                        if line.startswith('HETATM'):
+                            resname = line[17:20]
+                            resname = resname.replace(' ', '')
+                            print(resname)
+                            # if resname is equal to metal, just take the line and overwrite as a metal.pdb
+                            if resname == metal:
+                                if Path(f'{metal}.pdb').exists():
+                                    os.remove(Path(f'{metal}.pdb'))
+                                with open(f'{metal}.pdb', 'w') as file:
+                                    file.write(line)
+                                resid = line[24:27]
+                                resid = str(resid).replace(' ', '')
+                                print(resid)
+                                atom_nr = line[8:12]
+                                atom_nr = str(atom_nr).replace(' ', '')
                 antechamber_input = f"antechamber -fi pdb -fo mol2 -i {metal}.pdb -o {metal}.mol2 -at amber -pf y"
                 # running antechamber
                 subprocess.run([f"{antechamber_input}"], shell=True)
-                # replacing DU entry in pre.mol2 and charge with their actual values
-                for line in fileinput.FileInput(f"{metal}.mol2, inplace=1"):
-                    if "DU" in line:
-                        line = line.replace("DU", f"{metal}")
-                        line = line.replace("0.000000", f'{charge}.000000')
-                        print(line)
-                # get the residue number for metal
+                # replacing DU entry in pre.mol2 and change with their actual values
+                mol2_metal = ''
+                with open(f'{metal}.mol2', 'r') as file:
+                    a = file.read()
+                    for line in a.splitlines():
+                        if "DU" in line:
+                            if len(metal) == 1:
+                                line = line.replace("DU", f"{metal} ")
+                                line = line.replace("0.000000", f'{charge}.000000')
+                            elif len(metal) == 2:
+                                line = line.replace("DU", f"{metal}")
+                                line = line.replace("0.000000", f'{charge}.000000')
+                        mol2_metal = mol2_metal + line + '\n'
+                # replacing {metal}.mol2
+                os.remove(Path(f'{metal}.mol2'))
+                with open(f'{metal}.mol2', 'w') as file:
+                    file.write(mol2_metal)
+                # get the residue number for metal - it must be replaced with newer value from {structure_match_split}_full.pdb
+                # previous resid was given from pdb without hydrogens
                 metal_pdb = f'{metal}.pdb'
                 metal_atom_number = ''
-                for line in metal_pdb.splitlines():
-                    metal_atom_number = int(line[6:11])
-                # radius over which take the atoms for MCPB
+                with open(f'{metal}.pdb', 'r') as file:
+                    a = file.read()
+                    for line in a.splitlines():
+                        metal_atom_number = int(line[6:11])
+                # radius over which take the atoms for  MCPB
                 USER_CHOICE_CUTOFF = f"Please, provide the cutoff value indicating maximum bond length between metal ion" \
-                    f" and surrounding atoms (default value is 2.8):\n\n."
+                    f" and surrounding atoms (default value is 2.8):\n"
                 while True:
                     try:
                         user_input_cutoff = float(input(USER_CHOICE_CUTOFF))
@@ -823,16 +882,21 @@ def metal_modelling():
                     except:
                         print('Please, provide valid input')
                 # determine which residues create bonds with the metal ion
+                print('\n' + structure_match_split + '\n')
                 metal_center_file = 'metal_center.pdb'
                 metal_cpptraj_input= f"parm {structure_match_split}_full.pdb noconect\n" \
                     f"trajin {structure_match_split}_full.pdb\n" \
-                    f"ref {structure_match_split}_full.pdb\n" \
+                    f"reference {structure_match_split}_full.pdb\n" \
                     f"strip !(@{metal_atom_number}<:{user_input_cutoff})\n" \
                     f"trajout {metal_center_file}\n" \
                     f"run\n" \
                     f"quit"
+                if Path('met_cpptraj.in').exists():
+                    os.remove(Path('met_cpptraj.in'))
+                with open('met_cpptraj.in', 'w') as file:
+                    file.write(metal_cpptraj_input)
                 try:
-                    subprocess.run([f'cpptraj -i {metal_cpptraj_input}'], shell=True)
+                    subprocess.run([f'cpptraj -i met_cpptraj.in'], shell=True)
                 except:
                     print('Cpptraj failed to run.\n'
                           'For modelling of metal ions, cpptraj must be run.')
@@ -844,15 +908,12 @@ def metal_modelling():
                 # find if there is a mol2 file for entry in unique res list - if there is, ligand files will be put into
                 # input file for MCPB.py; otherwise there is no ligand around metal ion
                 ligands_metal_center = []
-                try:
-                    for residue in unique_res_list:
-                        residue_file_mol2 = Path(f'{residue}.mol2')
-                        if residue_file_mol2.exists():
-                            ligands_metal_center.append(residue)
-                except:
-                    pass
+                for residue in unique_res_list:
+                    residue_file_mol2 = Path(f'{residue}.mol2')
+                    if residue_file_mol2.exists():
+                        ligands_metal_center.append(residue)
                 # provide group name - it will be changed to uppercase
-                USER_CHOICE_GROUPNAME = f"Group name is used for naming files throughout MCPB.py modelling." \
+                USER_CHOICE_GROUPNAME = f"Group name is used for naming files throughout MCPB.py modelling.\n" \
                     f"What group name would you like to use? \n"
                 while True:
                     try:
@@ -873,7 +934,7 @@ def metal_modelling():
                     f"There are 3 options available:\n" \
                     f"- press '0' if you do not want to optimize geometry of the large model at all\n" \
                     f"- press '1' if you want to optimize geometry only of the hydrogen atoms\n" \
-                    f"- press '2' if you want to run full geometry optimiation\n" \
+                    f"- press '2' if you want to run full geometry optimization\n" \
                     f"Please, provide your choice:\n"
                 while True:
                     try:
@@ -886,18 +947,18 @@ def metal_modelling():
                     except:
                         print('Please, provide valid input')
                 # check if mcpb_input exists
-                if Path(f"{structure_match_split}_full.pdb").exists:
-                    os.remove(Path(f'{structure_match_split}_full.pdb'))
+                if Path(f"{user_input_groupname}.in").exists():
+                    os.remove(Path(f'{user_input_groupname}.in'))
                 # everything should be ready - create input file
                 mcpb_input = (f"{structure_match_split}_full.pdb\n" \
-                    f"group name {user_input_groupname}\n" \
+                    f"group_name {user_input_groupname}\n" \
                     f"cut_off {user_input_cutoff}\n" \
                     f"ion_ids {metal_atom_number}\n" \
                     f"ion_mol2files {metal}.mol2\n")
                 # mol2 and frcmod files must be added in a slightly different way, separated by a coma
+                ligands_mol2 = []
+                ligands_frcmod = []
                 if ligands_metal_center:
-                    ligands_mol2 = []
-                    ligands_frcmod = []
                     mol2_extension = 'mol2'
                     frcmod_extension = 'frcmod'
                     for x in ligands_metal_center:
@@ -905,11 +966,15 @@ def metal_modelling():
                         ligands_frcmod.append(x + '.' + frcmod_extension + '\n')
                     ligands_mol2 = ', '.join(ligands_mol2)
                     ligands_frcmod = ', '.join(ligands_frcmod)
-                mcpb_input = mcpb_input + f'naa_mol2files {ligands_mol2}\n'
-                mcpb_input = mcpb_input + f'frcmod_files {ligands_frcmod}\n'
+                if ligands_mol2:
+                    mcpb_input = mcpb_input + f'naa_mol2files {ligands_mol2}\n'
+                if ligands_frcmod:
+                    mcpb_input = mcpb_input + f'frcmod_files {ligands_frcmod}\n'
                 mcpb_input = mcpb_input + f'large_opt {opt_choice}'
                 # save mcpb input file; its naming is according to group_name
-                with open(f'{user_input_groupname}.in') as file:
+                if Path(f'{user_input_groupname}.in').exists():
+                    os.remove(Path(f'{user_input_groupname}.in'))
+                with open(f'{user_input_groupname}.in', 'w') as file:
                     file.write(mcpb_input)
                 # print to user that he should run MCPB.py
                 print(f'Input file for obtaining force field parameters for MCPB.py was created. It is named '
@@ -921,26 +986,10 @@ def metal_modelling():
                       f'Further on, you will need to follow MCPB.py tutorial available at http://ambermd.org/tutorials/advanced/tutorial20/mcpbpy.htm.\n'
                       f'Once you will finish obtaining paramers with MCPB.py, please, run topology_prep step of MDMS once more - '
                       f'MDMS will notice that parameters are ready and you will not be prompted to fill any more info regarding MCPB.py\n.')
-                # saving info to the prep file that MCPB.py input was prepared
-                save_to_file(f"mcpb_input = True\n", filename)
-                # since user must proceed with MCPB.py by himself, interface is stopped
-                stop_interface()
-
-
-
-
-
-
-            for ligand in ligands_metal_center:
-                ligand_line = f'naa_mol2files {ligand}'
-                mcpb_input = mcpb_input +
-
-            #ligands_metal_center
-
-
-
-
-
+            # saving info to the prep file that MCPB.py input was prepared
+            save_to_file(f"mcpb_input = True\n", filename)
+            # since user must proceed with MCPB.py by himself, interface is stopped
+            stop_interface()
 
 def tleap_input():
     tleap_file = Path('tleap.in')
@@ -1035,6 +1084,19 @@ def tleap_input():
         f.write(f"loadoff atomic_ions.lib\n")
         f.write(f"loadamberparams frcmod.{user_input_water_ff}\n")
         f.write(f"loadamberparams {ions}\n")
+    # finding if there are results from mcpb.py
+    mcpb = r'mcpb_input\s*=\s*\[(.*)]'
+    mcpb_match = re.search(mcpb, control)
+    tleap_mcpb_modifications = ''
+    if mcpb_match:
+        # look for groupname in the control file
+        groupname = r'mcpb_groupname\s*=\s*\[(.*)]'
+        groupname_match = re.search(groupname, control).group(1)
+        tleap_modifications_file = Path(f'tleap_{groupname_match}.in')
+        # assign the whole tleap modification to the string
+        with open(tleap_modifications_file, 'r') as file:
+            tleap_mcpb_modifications = file.read()
+        # saving mcpb modifications to
     # finding if there are ligands in control file
     ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
@@ -1153,7 +1215,7 @@ top_prep_functions = [
     ligands_parameters,
     antechamber_parmchk_input,
     pdb_process,
-#    metal_modelling,
+    metal_modelling,
     tleap_input]
 
 methods_generator = (y for y in top_prep_functions)

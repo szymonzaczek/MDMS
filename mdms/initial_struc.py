@@ -572,8 +572,8 @@ def protonation_state_prompt():
             f"- press 'n' to skip a determination of protonation states with Propka\n"
         while True:
             try:
-                user_input_ps = str(
-                    input(USER_CHOICE_PS).lower())
+                user_input_ps = str(input(USER_CHOICE_PS).lower())
+                print(user_input_ps)
                 if user_input_ps == 'y':
                     USER_CHOICE_PH = f"Please, provide pH at which pKa values for amino acids are to be determined:\n"
                     while True:
@@ -586,7 +586,6 @@ def protonation_state_prompt():
                     break
                 elif user_input_ps == 'n':
                     break
-                pass
             except BaseException:
                 print('Please, provide valid input')
     else:
@@ -611,7 +610,6 @@ def protonation_state_prompt():
                 pass
             except BaseException:
                 print('Please, provide valid input')
-        pass
 
 
 def initial_pdb_process():
@@ -649,13 +647,14 @@ def initial_pdb_process():
     io.save(f'temp2_{pdb_filename}')
     # determine if instruction to run Propka was saved to control file
     propka = 'ph\s*=\s*(.*)'
-    propka_match = re.search(propka, control).group(1)
+    propka_match = re.search(propka, control)
     if propka_match:
+        propka_match = propka_match.group(1)
         ph = float(propka_match)
         # run Propka - it is not run if test for running propka was not passed
         # asp: 3.80
         model_pkas = {
-            'ASP': 7.10,
+            'ASP': 3.80,
             'GLU': 4.50,
             'HIS': 6.50,
             'CYS': 9.00,
@@ -1119,14 +1118,14 @@ def metals_pdb():
             try:
                 # getting input metals from user
                 user_input_metals = str(input(USER_CHOICE_METALS).upper())
-                # turning input into a list, ensuring that no matter how much spaces are inserted everything is fine
-                input_metals = re.sub(r'\s', '', user_input_metals).split(',')
                 metals = []
-                if len(input_metals) == 0:
+                if len(user_input_metals) == 0:
                     print('You chose to proceed to the next step.')
                     # metal ions are not be used; stop the loop and go to further steps
                     break
                 else:
+                    # turning input into a list, ensuring that no matter how much spaces are inserted everything is fine
+                    input_metals = re.sub(r'\s', '', user_input_metals).split(',')
                     # check if inputted metal ions are in unique_metals_list - if yes, append them to metal list
                     for x in input_metals:
                         if x in unique_metals:
