@@ -21,7 +21,13 @@ MDMS is aimed both to newcomers to the field as well as mature scientists. Newco
 
 - Linux distribution with Bash shell
 - Ambertools or Amber distribution
-- biopython, numpy, pandas packages
+- pdb-tools, biopython, numpy, pandas packages
+
+### Optional prerequisites
+
+- Openbabel distribution along with Pybel package
+- pdbfixer python package (part of Omnia suite)
+- Propka3.1 python package
 
 
 ### Installation
@@ -55,6 +61,12 @@ Use conda or pip to download required dependencies for running MDMS:
 
 `pip install openbabel`
 
+`pip install pdb-tools`
+
+`pip install PROPKA`
+
+`conda install -c omnia pdbfixer `
+
 
 ### Getting Started
 
@@ -71,20 +83,24 @@ If typing `mdms_menu.py` has no effect, you should make `mdms_menu.py` script an
 - establishing initial protein (or protein-ligand complex) structure
   - downloading a protein structure directly from Protein Data Bank
   - using a protein structure that was earlier downloaded and/or somehow modified
-  - choosing chains (if multiple chains are found in the structure)
-  - checking if there are any missing atoms in amino acid residues (basing on the REMARK entries); this is also checked later on by pdb4amber
-  - checking if there are any missing residues in the protein (basing on the REMARK entries)
-  - automatic removal of residues, which are common leftovers after experiments
+  - choosing protein chains (if multiple chains are found in the structure)
+  - checking if there are any missing atoms in amino acid residues 
+  - checking if there are any missing residues in the protein
+  - adding missing residues with pdbfixer
+  - reminding user that he should use functional oligomeric structure of the protein
+  - establishing protonation states of titrable residues using Propka3.1
+  - general formatting of PDB files
+  - optional removal of residues, which are common leftovers after experiments
   - choosing which ligands are to be included for MD simulations
   - adding hydrogen atoms to ligands
-  - choosing if metal ions are to be retained for MD (if they are present in the crystal structure - user will must provide parameters for them though)
+  - choosing if metal ions are to be retained for MD (if they are present in the crystal structure)
   - choosing if crystal waters are to be retained for MD (if they are present in the crystal structure
   - adding hydrogen atoms to crystal waters
-  - reminding user that he should use functional oligomeric structure of the protein
 - preparing topology and coordinate files for Amber
   - checking if there are hydrogen present in the ligand - if not, user is asked if this is on purpose
   - determining charges and force field parameters for ligands
   - processing chosen ligands and protein with pdb4amber
+  - preparing input files for MCPB.py in order to obtain metal force field parameters
   - choosing protein force field
   - choosing water force field
   - choosing size of a solvation shell

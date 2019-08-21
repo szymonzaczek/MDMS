@@ -5,9 +5,14 @@ import numpy as np
 import re
 import subprocess
 import readline
-import pybel
 from Bio.PDB import *
 from pathlib import Path
+
+# optional imports
+try:
+    import pybel
+except ImportError:
+    print('Pybel cannot be imported - adding hydrogens to ligands is disabled.')
 
 # allowing tab completion of files' paths
 readline.parse_and_bind("tab: complete")
@@ -289,67 +294,6 @@ def protein_chains_choice():
                 pass
             except:
                 print('Wrong input has been provided.')
-    # deprecated - it used pandas for file reading
-    """
-    # string which will contain atoms and hetatoms
-    pdb_atoms = ''
-    # clearing pdb so it will only contain atoms or hetatms
-    with open(f'{pdb_filename}', 'r') as file:
-        for line in file:
-            if line.startswith(('ATOM')):
-                pdb_atoms = pdb_atoms + line
-    # writing pdb_atoms string to a temporary file which will be removed after this step
-    with open('atoms_temp.pdb', 'w') as file:
-        file.write(pdb_atoms)
-    # reading chain info from temp pdb file with pandas
-    df = pd.read_csv(f'atoms_temp.pdb', header=None, delim_whitespace=True, usecols=[4])
-    # checking if there is only a single chain in the provided pdb
-    if df[4].nunique() == 1:
-        # there is only one chain - proceed to next functions
-        pass
-    else:
-        # choice must be provided which chains will be used in calculations
-        chains_amount = len(df[4].unique())
-        unique_chains = df[4].unique().tolist()
-        # list for storing chains for simulations
-        chains = []
-        USER_CHOICE_CHAINS = (f'\nChoosing protein chains\n'
-                              f'There are {chains_amount} different chains in the provided PDB file.\n'
-                              f'Each chain identify different molecular chains. For instance, if there are 4 chains in '
-                              f'the PDB file, 3 of them might be different polypeptides, whereas one might be a ligand.\n'
-                              f'Right now, you will make choice about protein chains.\n'
-                              f'Ligands entries will be processed separately.\n'
-                              f'Please, carefully consider which chains will be considered in the simulated model.\n'
-                              f'There are following unique protein chains identifiers:\n'
-                              f'{unique_chains}\n'
-                              f'Which protein chains would you like to retain for MD simulations? (provide their exact name, '
-                              f'separating each entry by a comma - at least one chain must be chosen, otherwise an empty'
-                              f' system would have been simulated):\n')
-        while True:
-            try:
-                # getting info about chains from user
-                user_input_chains = str(input(USER_CHOICE_CHAINS).upper())
-                # turning input into a list, ensuring that no matter how much
-                # spaces are inserted everything is fine
-                input_chains = re.sub(
-                    r'\s', '', user_input_chains).split(',')
-                # checking if inputted chains are in unique_chains list - if
-                # yes, append them to chain list
-                for x in input_chains:
-                    if x in unique_chains:
-                        chains.append(x)
-                # chains are chosen only once - the other idea is to proceed as with ligands
-                #if chains != unique_chains:
-                # ensuring that at least one chain is chosen - then the chains list will not be empty, thus such
-                # expression works
-                if chains:
-                    save_to_file(f"protein_chains = {chains}\n", filename)
-                    break
-                pass
-            except:
-                print('Wrong input has been provided.')
-    # removing temporary file
-    os.remove(Path('atoms_temp.pdb'))"""
 
 
 def missing_atoms_pdb():
@@ -472,34 +416,6 @@ def missing_res_pdb():
                           "residues), make sure that all of the changes to the PDB file are applied prior to topology "
                           "preparation step.")
                     pass
-            # previous version:
-            """
-            if remark_match is not None:
-                print(
-                    "\n!!WARNING!!!\nIt appears that your PDB file contains missing residues. Following informations"
-                    "were found in the PDB entry:\n", missing_res_prompt)
-                USER_CHOICE_MISSING_RES = (f"LEaP is not capable of automatically adding "
-                    "missing residues to the structure. \nFor this purpose, you might use MODELLER software:\n"
-                    "(A. Fiser, R.K. Do, A. Sali., Modeling of loops in protein structures, Protein Science 9. 1753-1773, 2000, "
-                    "https://salilab.org/modeller/).\n"
-                    "Only in some very specific cases you might skip adding missing residues to the structure. "
-                    "If you are not sure wether it is necessary for your case - most likely it is.\n"
-                    "Therefore, prior to proceeding, make sure that you handled missing residues somehow (unless you "
-                    "know that there are not necessary).\n"
-                    "Are you sure that you might proceed, even though your structure does not have all of the residues "
-                    "that have been reported to exist in the PDB entry?\n"
-                    "- press 'y' to continue\n"
-                    "- press 'n' to quit and go back to the menu\n")
-                while True:
-                    try:
-                        user_input_missing_res = str(input(USER_CHOICE_MISSING_RES).lower())
-                        if user_input_missing_res == 'y':
-                            break
-                        elif user_input_missing_res == 'n':
-                            stop_interface()
-                    except:
-                        print('Please, provide valid input')
-            """
 
 
 def sym_operations_prompt():
@@ -538,8 +454,6 @@ def sym_operations_prompt():
 
 
 def protonation_state_prompt():
-    # Reminding user that he must determine protonation states of individual residues prior to MD
-    # reading pdb file
     # Reminding user that protonation states of titrable amino acids should be determined; it might be done by Propka
     # from within MDMS
     control = read_file(filename)
@@ -652,7 +566,6 @@ def initial_pdb_process():
         propka_match = propka_match.group(1)
         ph = float(propka_match)
         # run Propka - it is not run if test for running propka was not passed
-        # asp: 3.80
         model_pkas = {
             'ASP': 3.80,
             'GLU': 4.50,
@@ -707,9 +620,6 @@ def initial_pdb_process():
                                 pass
                             else:
                                 residues_to_change.append(str(line_list[1]))
-                # changing list with residues to change to format that will be passed to pdb-tools - not needed
-                #residues_to_change = str(residues_to_change).replace('[', '')
-                #residues_to_change = residues_to_change.replace(']', '')
                 # reading pdb file
                 file = read_file(f'temp2_{pdb_filename}')
                 file_renamed_res = ''
@@ -754,111 +664,7 @@ def initial_pdb_process():
         os.remove(Path(f"temp3_{pdb_filename}"))
     except:
         pass
-    # further steps might not be necessary
-    """
-    # setting temperature factor (pdb_b) to 10.0 and occupancy (pdb_occ) to 1.00
-    # preparing pipe
-    pdb_edit_input_1 = f"pdb_occ {pdb_filename} > temp_{pdb_filename}"
-    # running pipe
-    subprocess.run([f"{pdb_edit_input_1}"], shell=True)
-    pdb_edit_input_2 = f"pdb_b temp_{pdb_filename} > temp2_{pdb_filename}"
-    subprocess.run([f"{pdb_edit_input_2}"], shell=True)
-    # removing temp file
-    os.remove(Path(f"temp_{pdb_filename}"))
-    """
-    """
-    # if pdb4amber works, execute it directly from within MDMS
-    if pdb4amber_test:
-        # HERE THE NAMING SEEMS TO BE SCREWED
-        pdb4amber_input = f"pdb4amber -i full_pdb_{pdb_filename} -o processed_{pdb_match_split}.pdb"
-        # running pdb4amber
-        subprocess.run([f"{pdb4amber_input}"], shell=True)
-    # if pdb4amber does not work, it must be run manually by user
-    else:
-        struc_path = Path(f"processed_{pdb_filename}")
-        if struc_path:
-            # if its true, even though pdb4amber does not work from within MDMS, user has already run it
-            pass
-        else:
-            print(f"\n!!WARNING!!\n"
-                  f"There were some problems with running pdb4amber from within MDMS.\n"
-                  f"If you installed Ambertools previously and it suddenly stopped working, it might be due to "
-                  f"the clash of Python versions - MDMS uses Python 3.6, whereas pdb4amber was written in Python 2.7.\n"
-                  f"This issue usually occurs on HPC facilities which uses environmental modules feature alongside "
-                  f"your own installation of Python.\n"
-                  f"If that might be true in your case, for a moment please choose Python 2.7 as a default Python"
-                  f"interpreter (i. e. by loading the appropriate module).\n"
-                  f"Please also make sure that pdb4amber is installed correctly (just follow Amber Manual on how to "
-                  f"install Ambertools).\nAt this point you should be able to use pdb4amber in the terminal.\n"
-                  f"In such case, just copy the content of  struc_pdb4amber.in file into terminal and press"
-                  f"enter. As a result, you will obtain processed PDB structure' file which will be ready for further"
-                  f"steps.")
-            process_input = ('struc_pdb4amber.in')
-            process_input_path = Path(process_input)
-            if process_input_path.exists():
-                os.remove(process_input_path)
-            # input for pdb4amber
-            pdb4amber_input = f"pdb4amber -i full_pdb_{pdb_filename} -o processed_{pdb_match_split}.pdb"
-            # input for pdb4amber written to the file
-            with open(process_input, 'w') as file:
-                file.write(pdb4amber_input)
-            print(f"\nYou will now be redirected to the menu of MDMS. Please, quit MDMS and process PDB file "
-                  f"from within the terminal, and then provide it as the initial structure for your system"
-                  f" of interests")
-            # optional saving info about processing of initial struc with pdb4amber
-            # save_to_file()
-            stop_interface()
-    # output from pdb4amber replaces original pdb file - if its done at the end, its possible to check if output from
-    # pdb4amber exists
-    if Path(f"processed_{pdb_match_split}.pdb").exists:
-        renaming = f"mv processed_{pdb_match_split}.pdb {pdb_filename}"
-        subprocess.run([f"{renaming}"], shell=True)
-    # removing anything apart from ATOM, HETATM, TER and END entries
-    entries_allowed = ['ATOM', 'HETATM', 'TER', 'END']
-    # empty string to which we will append updated PDB
-    pdb_modified = ''
-    with open(f"{pdb_filename}", 'r') as file:
-        for line in file:
-            line_content = line.split()
-            # if a first line is in entries_allowed, keep it
-            if line_content[0] in entries_allowed:
-                pdb_modified = pdb_modified + line
-    # remove first line from pdb_modified - it is an empty line
-    #pdb_modified = pdb_modified.split('\n', 1)[-1]
-    # overwrite pdb_modified as pdb_filename
-    with open(f"{pdb_filename}", 'w') as file:
-        file.write(pdb_modified)
-    # setting temperature factor and occupancy to 0
-    with open(f"{pdb_filename}", 'r') as file:
-        lines = file.readlines()
-    # empty list, which will have modified lines
-    new_list = []
-    for x in lines:
-        line_content = list(x)
-        if line_content[0] == 'A' or line_content[0] == 'H':
-            # turning string into a list
-            # those exact positions are occupancies and b factor entries
-            line_content[54] = ' '
-            line_content[55] = ' '
-            line_content[56] = '1'
-            line_content[57] = '.'
-            line_content[58] = '0'
-            line_content[59] = '0'
-            line_content[60] = ' '
-            line_content[61] = ' '
-            line_content[62] = '1'
-            line_content[63] = '.'
-            line_content[64] = '0'
-            line_content[65] = '0'
-            new_line = ''.join(line_content)
-            new_list.append(new_line)
-        else:
-            new_list.append(x)
-    # saving modified PDB entry
-    with open(f"{pdb_filename}", 'w') as file:
-        for x in new_list:
-            file.write(x)
-    """
+
 
 def ligands_pdb():
     # getting het_atms from pdb file
@@ -1142,51 +948,6 @@ def metals_pdb():
                         break
             except:
                 print('Please, provide valid input.')
-
-
-
-                """if len(metals) == 0:
-                    print('You did not provide valid metal ions names.')
-                # ensuring that user picked all the metal ions that he wanted
-                USER_CHOICE_LIG_CONT = (
-                    f"Would you like to add more metal ions, or would you like to continue to next steps?\n"
-                    f"- press 'a' in order to add more ligands\n"
-                    f"- press 'c' in order to continue to the next step\n")
-                while True:
-                    try:
-                        pass
-                    except:
-                        print('Please, provide valid input.')
-            except:
-                print('Please, provide valid input.')
-        # if there are metals in pdb, there is a choice if they stay for MD
-        # or they are removed
-        if unique_metals:
-            while True:
-                try:
-                    user_input_metals = str(input(USER_CHOICE_METALS).lower())
-                    if user_input_metals == 'y':
-                        # metals are cut out to a separate PDB and info is
-                        # saved in a control file
-                        save_to_file(f"metals = {unique_metals}\n", filename)
-                        # lines containing specified ligands are saved to
-                        # separate pdb files
-                        print(f"\n!!WARNING!!"
-                              f"\nPlease, remember to put parameters for metal ions into tleap input file - otherwise "
-                              f"you will be unable to get topology.\n")
-                        for x in unique_metals:
-                            metals_pdb = '\n'.join(
-                                [s for s in het_atoms.splitlines() if x in s])
-                            with open(f"{x}.pdb", "w") as f:
-                                f.write(metals_pdb)
-                        # MCPB.py should be run after protein and ligands have all necessary hydrogens
-                        break
-                    elif user_input_metals == 'n':
-                        # metals will be ignored - no further action required
-                        break
-                except BaseException:
-                    print('You have provided wrong input.')
-        pass"""
 
 
 def waters_pdb():
