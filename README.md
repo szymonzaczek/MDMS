@@ -32,9 +32,15 @@ MDMS is aimed both to newcomers to the field as well as mature scientists. Newco
 
 ### Installation
 
-Use pip to install MDMS directly on your machine:
+MDMS can be installed directly on your machine with either pip or conda.
+
+Installing with pip:
 
 `pip install mdms`
+
+Installing with conda:
+
+`conda install -c szymonzaczek mdms`
 
 In some cases, you might need to make mdms_menu.py file executable in order to use in any directory on your machine.
 
