@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mdms",
-    version="1.0.0",
+    version="1.0.2",
     author="Szymon Zaczek",
     author_email="szymon.zaczek@edu.p.lodz.pl",
     description='An interface to one of the most popular Molecular Dynamics codes - Amber - which aids user in '
@@ -15,7 +15,7 @@ setuptools.setup(
     url="https://github.com/szymonzaczek/MDMS",
     packages=setuptools.find_packages(),
     scripts=['mdms/mdms_menu.py'],
-    install_requires=['numpy', 'pandas', 'biopython'],
+    install_requires=['numpy', 'pandas', 'biopython', 'pdb-tools'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
