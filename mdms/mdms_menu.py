@@ -42,13 +42,18 @@ except:
           'Please, prior to using MDMS make sure that AmberTools is running properly.')
 
 print(
-    "Hello and welcome to Molecular Dynamics Made Simple (MDMS) created by Szymon Zaczek!\n"
+    "\nHello and welcome to Molecular Dynamics Made Simple (MDMS) created by Szymon Zaczek!\n"
     "This piece of software makes running Molecular Dynamics easy and straightforward, allowing non-experts "
     "in the field of computational chemistry to use Amber\n- one of the most renowned Molecular Dynamics packages available.\n"
     "If you use MDMS in your work, please, consider acknowledging my work by citing the original paper: xxx.\n"
     "If you have any suggestions, queries, bug reports or simply questions about how to proceed with your work using "
     "MDMS, please, contact me at: "
-    "szymon.zaczek@edu.p.lodz.pl\n")
+    "szymon.zaczek@edu.p.lodz.pl\n"
+    "MDMS aids in preparing and running classical Molecular Dynamics. Nonetheless, such simulations might sometimes"
+    " not sample the phase space enough to provide statistically relevant results within nanoseconds time scale. For such cases, "
+    "the use of enhanced sampling methods is strongly encouraged. In future releases, it will be possible to run "
+    "such simulations directly from within MDMS, but for now, if you decide to use them, you will need to manually modify"
+    " files controlling simulations after they will be generated.\n\n")
 
 USER_CHOICE_MENU = """\nPlease specify, what you would like to do:
 - press 'p' for establishing the protein (or protein-ligand complex) initial structure
@@ -94,3 +99,4 @@ def menu():
 
 
 menu()
+
