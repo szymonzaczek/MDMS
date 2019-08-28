@@ -1,0 +1,46 @@
+{% set name = "mdms" %}
+{% set version = "1.0.3" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+  sha256: "079cfa65cfc12507c53e1b3ef5180f8d58650ca9b9f84fe1965bde7126243d27"
+
+build:
+  number: 0
+  entry_points:
+    - mdms_menu = mdms.mdms_menu:menu
+  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv "
+
+requirements:
+  host:
+    - biopython
+    - numpy
+    - pandas
+    - pip
+    - python
+  run:
+    - biopython
+    - numpy
+    - pandas
+    - python
+
+test:
+  imports:
+    - mdms
+
+about:
+  home: "https://github.com/szymonzaczek/MDMS"
+  license: "MIT"
+  license_family: "MIT"
+  license_file: ""
+  summary: "An interface to one of the most popular Molecular Dynamics codes - Amber - which aids user in preparing and running their own simulations."
+  doc_url: ""
+  dev_url: ""
+
+extra:
+  recipe-maintainers:
+    - szymonzaczek
