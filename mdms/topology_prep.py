@@ -873,7 +873,6 @@ def metal_modelling():
                     residue_file_mol2 = Path(f'{residue}.mol2')
                     if residue_file_mol2.exists():
                         ligands_metal_center.append(residue)
-                    else:
                 # provide group name - it will be changed to uppercase
                 USER_CHOICE_GROUPNAME = f"Group name is used for naming files throughout MCPB.py modelling.\n" \
                     f"What group name would you like to use? \n"
