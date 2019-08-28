@@ -612,7 +612,6 @@ def pdb_process():
             full_files.append(ligand)
     complex_raw = f"{structure_match_split}_raw.pdb"
     # using context manager to concatenate protein and ligands together
-    print(full_files)
     with open(complex_raw, 'w') as outfile:
         # iterating over each file in full_files list
         for fname in full_files:
@@ -784,7 +783,6 @@ def metal_modelling():
                     except:
                         print('Please, provide valid input.')
                 # look for residue number for metal in the pdb file
-                print(metal)
                 resname = ''
                 resid = ''
                 atom_nr = ''
@@ -794,7 +792,6 @@ def metal_modelling():
                         if line.startswith('HETATM'):
                             resname = line[17:20]
                             resname = resname.replace(' ', '')
-                            print(resname)
                             # if resname is equal to metal, just take the line and overwrite as a metal.pdb
                             if resname == metal:
                                 if Path(f'{metal}.pdb').exists():
@@ -803,7 +800,6 @@ def metal_modelling():
                                     file.write(line)
                                 resid = line[24:27]
                                 resid = str(resid).replace(' ', '')
-                                print(resid)
                                 atom_nr = line[8:12]
                                 atom_nr = str(atom_nr).replace(' ', '')
                 antechamber_input = f"antechamber -fi pdb -fo mol2 -i {metal}.pdb -o {metal}.mol2 -at amber -pf y"
@@ -864,9 +860,12 @@ def metal_modelling():
                           'For modelling of metal ions, cpptraj must be run.')
                 # metal_center pdb is written; find out what residues are within
                 unique_res_list = []
-                for line in metal_center_file.splitlines():
-                    if line[17:20] not in unique_res_list:
-                        unique_res_list.append(line[17:20])
+                with open(f'{metal_center_file}', 'r') as file:
+                    a = file.read()
+                    for line in a.splitlines():
+                        if line[17:20] not in unique_res_list:
+                            unique_res_list.append(line[17:20])
+                print(unique_res_list)
                 # find if there is a mol2 file for entry in unique res list - if there is, ligand files will be put into
                 # input file for MCPB.py; otherwise there is no ligand around metal ion
                 ligands_metal_center = []
@@ -912,7 +911,7 @@ def metal_modelling():
                 if Path(f"{user_input_groupname}.in").exists():
                     os.remove(Path(f'{user_input_groupname}.in'))
                 # everything should be ready - create input file
-                mcpb_input = (f"{structure_match_split}_full.pdb\n" \
+                mcpb_input = (f"original_pdb {structure_match_split}_full.pdb\n" \
                     f"group_name {user_input_groupname}\n" \
                     f"cut_off {user_input_cutoff}\n" \
                     f"ion_ids {metal_atom_number}\n" \
@@ -929,9 +928,9 @@ def metal_modelling():
                     ligands_mol2 = ', '.join(ligands_mol2)
                     ligands_frcmod = ', '.join(ligands_frcmod)
                 if ligands_mol2:
-                    mcpb_input = mcpb_input + f'naa_mol2files {ligands_mol2}\n'
+                    mcpb_input = mcpb_input + f'naa_mol2files {ligands_mol2}'
                 if ligands_frcmod:
-                    mcpb_input = mcpb_input + f'frcmod_files {ligands_frcmod}\n'
+                    mcpb_input = mcpb_input + f'frcmod_files {ligands_frcmod}'
                 mcpb_input = mcpb_input + f'large_opt {opt_choice}'
                 # save mcpb input file; its naming is according to group_name
                 if Path(f'{user_input_groupname}.in').exists():

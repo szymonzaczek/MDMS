@@ -270,6 +270,10 @@ def running_simulations():
         job_script = f"{command_match} {job_name}"
         print(job_script)
         subprocess.run([f"{job_script}"], shell=True)
+        print(f"\nCongratulations!\n"
+              f"You have managed to submit Molecular Dynamics Simulations to the queueing system.\n"
+              f"After calculations will have finished   , you may proceed to analyzing the obtained results.\n"
+              f"Thank you for using MDMS and good luck in your future endeavors!")
         pass
     elif run_type_match == 'terminal':
         # executed lines are saved to a file; script iterates over each line and execute them
@@ -298,7 +302,9 @@ def running_simulations():
         for line in execution.splitlines():
             print(line)
             subprocess.run([f"{line}"], shell=True)
-        pass
+        print(f"\nCongratulations!\n"
+              f"You have managed to finish Molecular Dynamics Simulations. You may now proceed to analyzing the obtained results.\n"
+              f"Thank you for using MDMS and good luck in your future endeavors!")
     pass
 
 

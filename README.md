@@ -26,7 +26,7 @@ MDMS is aimed both to newcomers to the field as well as mature scientists. Newco
 ### Optional prerequisites
 
 - Openbabel distribution along with Pybel package
-- pdbfixer python package (part of Omnia suite)
+- pdbfixer python package (part of Omnia software suite)
 - Propka3.1 python package
 
 
@@ -42,22 +42,18 @@ Installing with conda:
 
 `conda install -c szymonzaczek mdms`
 
-In some cases, you might need to make mdms_menu.py file executable in order to use in any directory on your machine.
-
-To do so, type following commands in the terminal:
-
-`cd`
-
-`cd .local/bin/`
-
-`chmod +x mdms_menu.py`
-
 
 ### Installing dependencies
 
-Use conda or pip to download required dependencies for running MDMS:
+Depending on which installation you will use, not all of the dependancies might have been installed.
+
+For instance, neither installations automatically install Amber Tools - it is assumed that you already have it on your machine (this is due to the fact that there are a lot of ways to customly install Amber Tools).
+
+If you do not have required dependancies installed yet (and they were not installed along with MDMS installation), use conda or pip to download them:
 
 `conda install ambertools -c ambermd`
+
+`pip install pdb-tools`
 
 `pip install pandas`
 
@@ -65,9 +61,17 @@ Use conda or pip to download required dependencies for running MDMS:
 
 `pip install biopython`
 
-`pip install openbabel`
 
-`pip install pdb-tools`
+### Optional dependancies
+
+Following dependancies enable following functionalities:
+- Open Babel is used for adding hydrogen atoms to ligands
+- Propka is used to establish protonation states of residues within the structure
+- Pdbfixer program is used for modelling missing residues in proteins
+
+They might be installed by running following commands in the console:
+
+`conda install -c openbabel openbabel`
 
 `pip install PROPKA`
 
@@ -78,11 +82,9 @@ Use conda or pip to download required dependencies for running MDMS:
 
 Change to the desired directory. All of the files will be stored there. Then simply type:
 
-`mdms_menu.py`
+`mdms_menu`
 
 Follow on-screen prompts to run your MD simulations!
-
-If typing `mdms_menu.py` has no effect, you should make `mdms_menu.py` script an executable one. On how to do this, please refer to the Installation section.
 
 
 ### Features

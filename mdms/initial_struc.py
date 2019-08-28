@@ -5,6 +5,7 @@ import numpy as np
 import re
 import subprocess
 import readline
+import time
 from Bio.PDB import *
 from pathlib import Path
 
@@ -104,8 +105,18 @@ def read_het_atoms_pdb():
     pdb = 'pdb\s*=\s*(.*)'
     pdb_match = re.search(pdb, control).group(1)
     pdb_filename = pdb_match
-    # cCreating list into which all of the hetatm lines will be appended
-    pdb_hetatoms = []
+    # getting het_atms from pdb file
+    het_atoms_inp = f"pdb_selhetatm {pdb_filename} > het_atoms.csv"
+    subprocess.run([f"{het_atoms_inp}"], shell=True)
+    pdb_hetatoms = ''
+    # there might be no het atoms, thus try
+    try:
+        with open(f"het_atoms.csv") as file:
+            pdb_hetatoms = file.read()
+        return pdb_hetatoms
+    except:
+        print('There are no hetero atoms.')
+    """
     with open(f"{pdb_filename}", 'r') as file:
         for line in file:
             # looking for lines starting with hetatm and appending them to a
@@ -114,6 +125,19 @@ def read_het_atoms_pdb():
                 pdb_hetatoms.append(line.strip())
     # het atoms will only be saved if there are any het_atoms
     if pdb_hetatoms:
+
+    try:
+        os.remove(Path('het_atoms.csv'))
+    except:
+        pass
+    het_atoms_file = Path('het_atoms.')
+    het_atoms_pdb = f"pdb_selhetatm {pdb_filename} > het_atoms.csv"
+    subprocess.run([f"{het_atoms_pdb}"], shell=True)
+    pdb_hetatoms = ''
+    with open('het_atoms.csv', 'r') as file:
+        pdb_hetatoms = file.read()
+    if pdb_hetatoms:
+
         # saving het_atoms to a csv file - it will be easier to read it then
         with open('het_atoms.csv', 'w') as f:
             f.write('\n'.join(pdb_hetatoms))
@@ -121,7 +145,7 @@ def read_het_atoms_pdb():
         pdb_hetatoms = '\n'.join(pdb_hetatoms)
         return pdb_hetatoms
     else:
-        return None
+        return None"""
 
 
 def init_pdb():
@@ -400,7 +424,7 @@ def missing_res_pdb():
                             user_input_missing_res = str(input(USER_CHOICE_MISSING_RES).lower())
                             if user_input_missing_res == 'y':
                                 # save info to control file that pdbfixer should be run
-                                save_to_file(f"add_missing_res = True", filename)
+                                save_to_file(f"add_missing_res = True\n", filename)
                                 break
                             elif user_input_missing_res == 'n':
                                 # user do not want to add missing residues with pdfixer - nothing is to be run here
@@ -487,7 +511,6 @@ def protonation_state_prompt():
         while True:
             try:
                 user_input_ps = str(input(USER_CHOICE_PS).lower())
-                print(user_input_ps)
                 if user_input_ps == 'y':
                     USER_CHOICE_PH = f"Please, provide pH at which pKa values for amino acids are to be determined:\n"
                     while True:
@@ -652,21 +675,31 @@ def initial_pdb_process():
             except:
                 print('Something went wrong with running Propka. For more information, see Propka output files.')
     # renumber atoms, chains, residues
-    pdb_sort_inp = f"pdb_sort temp2_{pdb_filename} > temp3_{pdb_filename}"
+    pdb_sort_inp = f"pdb_reres temp2_{pdb_filename} > temp3_{pdb_filename}"
+    subprocess.run([f"{pdb_sort_inp}"], shell=True)
+    # sort atoms, chains, residues
+    pdb_sort_inp = f"pdb_sort temp3_{pdb_filename} > temp4_{pdb_filename}"
     subprocess.run([f"{pdb_sort_inp}"], shell=True)
     # tidy up a molecule
-    pdb_tidy_inp = f"pdb_tidy temp3_{pdb_filename} > {pdb_filename}"
+    pdb_tidy_inp = f"pdb_tidy temp4_{pdb_filename} > {pdb_filename}"
     subprocess.run([f"{pdb_tidy_inp}"], shell=True)
     # remove temp1, temp2, temp3
     try:
         os.remove(Path(f"temp1_{pdb_filename}"))
         os.remove(Path(f"temp2_{pdb_filename}"))
         os.remove(Path(f"temp3_{pdb_filename}"))
+        os.remove(Path(f"temp4_{pdb_filename}"))
     except:
         pass
 
 
 def ligands_pdb():
+    # getting pdb filename
+    # searching for filename
+    control = read_file(filename)
+    pdb = 'pdb\s*=\s*(.*)'
+    pdb_match = re.search(pdb, control).group(1)
+    pdb_filename = pdb_match
     # getting het_atms from pdb file
     het_atoms = read_het_atoms_pdb()    # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
@@ -721,11 +754,8 @@ def ligands_pdb():
             'OLC',
             '1PE',
             'CYN',
-            'I',
+            'IOD',
             'NO3']
-        # cleaning unique_ligands list so that will only contain ligands that
-        # should be acted upon
-
         for x in metal_list:
             for y in unique_ligands:
                 # check if any part of x is in y
@@ -845,13 +875,16 @@ def ligands_pdb():
                             # the control file, if they exist
                             if ligands:
                                 save_to_file(f"ligands = {ligands}\n", filename)
-                            # lines containing specified ligands are saved to
-                            # separate pdb files
                             for x in ligands:
+                                # saving ligands
+                                pdb_selresn_inp = f"pdb_selresname -{x} {pdb_filename} > {x}_raw.pdb"
+                                subprocess.run([f"{pdb_selresn_inp}"], shell=True)
+                                # DEPRECATED
+                                """
                                 ligand_pdb = '\n'.join(
                                     [s for s in het_atoms.splitlines() if x in s])
                                 with open(f"{x}_raw.pdb", "w") as f:
-                                    f.write(ligand_pdb)
+                                    f.write(ligand_pdb)"""
                             break
                     except BaseException:
                         pass
@@ -896,7 +929,6 @@ def metals_pdb():
         for x in metal_list:
             if x in unique_res:
                 unique_metals.append(x)
-        print(unique_metals)
         unique_metals_string = ', '.join(unique_metals)
         # list for storing metals for MD
         """USER_CHOICE_METALS = f"\nMetal ions handling\n" \
@@ -953,6 +985,11 @@ def metals_pdb():
 def waters_pdb():
     # getting hetatoms from pdb file
     het_atoms = read_het_atoms_pdb()
+    # searching for filename
+    control = read_file(filename)
+    pdb = 'pdb\s*=\s*(.*)'
+    pdb_match = re.search(pdb, control).group(1)
+    pdb_filename = pdb_match
     # it will only get executed if there are hetatoms records in PDB
     if het_atoms:
         # getting hetatoms as csv
@@ -999,9 +1036,20 @@ def waters_pdb():
                         user_input_waters = str(
                             input(USER_CHOICE_WATERS).lower())
                         if user_input_waters == 'y':
+                            pdb_wat_inp = f'pdb_selresname -HOH {pdb_filename} > {x}_temp.pdb'
+                            subprocess.run([f"{pdb_wat_inp}"], shell=True)
+                            pdb_ren_inp = f'pdb_reres {x}_temp.pdb > {x}.pdb'
+                            subprocess.run([f"{pdb_ren_inp}"], shell=True)
+                            try:
+                                os.remove(Path(f'{x}_temp.pdb'))
+                            except:
+                                pass
+                            """
+                            #DEPRECATED
                             # saving crystallographic waters to a separate file
                             with open(f"{x}.pdb", "w") as f:
                                 f.write(water_pdb)
+                            """
                             # saving info about crystallographic waters to a
                             # control file
                             save_to_file(f"waters = {unique_water}\n", filename)
@@ -1148,15 +1196,29 @@ def hydrogens_prompt():
                                 x.write(format='pdb', filename=f'{ligand}.pdb', overwrite=True)
                             # empty string, to which we we will append lines
                             ligand_temp_string = ''
+                            # list containing info about unique atom names in the residue
+                            unique_atom_names = []
+                            # counter which will count how many the same atom names was found in the pdb
+                            counter = 0
                             # keeping only atom or hetatm entries from pdb
                             with open(f'{ligand}.pdb', 'r') as file:
                                 a = file.read()
                                 for line in a.splitlines():
                                     if 'ATOM' in line or 'HETATM' in line:
                                         # since we act on ligands, if atom line is detected it is replaced
-                                        # with hetatm; atoms are added by pybel
+                                        # with hetatm; atoms were added by pybel
                                         if 'ATOM' in line:
                                             line = line.replace('ATOM  ', 'HETATM')
+                                        # finding out atomnames
+                                        #atom_name = line[12:16].replace(' ', '')
+                                        # if the entry is not in unique atom names, add it there; otherwise renumber
+                                        #if atom_name not in unique_atom_names:
+                                        #    unique_atom_names.append(atom_name)
+                                        #else:
+                                        #    # replace atom name in the residue
+                                        #    line = line[12:16].replace(' ', '')
+                                        #    atom_name = atom_name + str(counter)
+                                        #    counter = counter + 1
                                         # appending formatted line to a string
                                         ligand_temp_string = ligand_temp_string + '\n' + line
                             # string has an additional empty line at the beginning - this gets rid of it
@@ -1164,6 +1226,9 @@ def hydrogens_prompt():
                             # writing file
                             with open(f'{ligand}.pdb', 'w') as file:
                                 file.write(ligand_temp_string)
+
+                            # if atom name is not unique, rename it
+                            ##FROM HERE ON OLD CODE
                             # reading cleaned file
                             df = pd.read_csv(f'{ligand}.pdb', header=None, delim_whitespace=True)
                             # displaying 3 digits in x coordinates - if not used, numpy prints
@@ -1193,6 +1258,10 @@ def hydrogens_prompt():
                                 if line[0:1].isspace():
                                     # if a first character in a line is a string, it is removed
                                     line = line[1:]
+                                # adding additional whitespace in the position 7
+                                line_list = list(line)
+                                line_list.insert(7, ' ')
+                                line = ''.join(line_list)
                                 # appending formatted lines to a new string
                                 ligand_sorted_string_no_spaces = ligand_sorted_string_no_spaces + '\n' + line
                             # removing first line from newly created string
