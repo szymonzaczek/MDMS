@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mdms",
-    version="1.0.3",
+    version="1.0.4",
     author="Szymon Zaczek",
     author_email="szymon.zaczek@edu.p.lodz.pl",
     description='An interface to one of the most popular Molecular Dynamics codes - Amber - which aids user in '
@@ -15,10 +15,6 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url="https://github.com/szymonzaczek/MDMS",
     packages=setuptools.find_packages(),
-    #scripts=['bin/mdms_menu.py'],
-    # 'foo = my_package.some_module:main_func'
-    # 'console_scripts': [
-    #             'foo = my_package.some_module:main_func',
     entry_points={
         'console_scripts':'mdms_menu = mdms.mdms_menu:menu'
     },
