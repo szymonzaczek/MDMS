@@ -34,7 +34,7 @@ except:
 
 
 def file_naming():
-    # getting name for a control file, which will containg all info
+    # getting name for a control file, which will containing all info
     global filename
     filename_inp = Path(input('Please, provide name for the file that will contain every piece of information for running MDMS. '
                               '\nKeep in mind that if a file with that exact name exists, it will be overwritten.\n'
@@ -1353,6 +1353,7 @@ prep_functions = [
     waters_pdb,
     chain_processing,
 ]
+
 
 methods_generator = (y for y in prep_functions)
 

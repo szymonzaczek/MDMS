@@ -72,7 +72,27 @@ def clearing_control():
         'atoms_type',
         'ligands_charges',
         'ligands_multiplicities',
-        'ff',
+        'prot_ff',
+        'wat_ff',
+        'top_name',
+        'box_size'
+        ]
+    # writing content of control file without parameters in parameters list to
+    # the temporary file
+    with open(f"{filename}") as oldfile, open(filetemp, 'w') as newfile:
+        for line in oldfile:
+            if not any(parameters in line for parameters in parameters):
+                newfile.write(line)
+    # replacing control file with temporary file
+    os.replace(filetemp, filename)
+
+
+def clearing_control_mcpb():
+    # this function clears control file after the original run of mcpb.py
+    filetemp = 'temp.txt'
+    # list of parameters that will be stripped out of control file
+    parameters = [
+        'prot_ff',
         'wat_ff',
         'top_name',
         'box_size'
@@ -111,14 +131,14 @@ def hydrogen_check():
                 # reading 3rd column (pandas numbering - 2nd) from ligand.pdb -
                 # if there are no hydrogens in residue names, there are no
                 # hydrogens in the whole file
-                df = pd.read_csv(f'{ligand}.pdb', header=None, delim_whitespace=True, usecols=[2])
+                df = pd.read_csv(f'{ligand}.pdb', header=None, delim_whitespace=True, usecols=[2], error_bad_lines=False)
                 # getting info how many atoms are in a ligand
                 df_len = len(df.iloc[:, 0])
                 # storing info in list, which will contain info about all
                 # ligands
                 atoms_amount.append(df_len)
                 # establishing if there are hydrogens in atom names
-                hydrogen_match = (df[df.iloc[:, 0].str.match('H')])
+                hydrogen_match = (df[df.iloc[:, 0].str.match('H', na=False)])
                 # counting how many hydrogens were in a ligand
                 hydrogen_count = len(hydrogen_match.iloc[:, 0])
                 # storing info about amount of hydrogens in a list
@@ -699,66 +719,51 @@ def metal_modelling():
     structure_match_split = structure_match.split('.')[0]
     if metals_match:
         # checking if metal_modelling function was run - if it was, extract necessary info from obtained tleap input file
-        save_to_file(f"mcpb_input = True\n", filename)
-        mcpb = r'mcpb_input\s*=\s*\[(.*)]'
+        mcpb = r'mcpb_input\s*=\s*(.*)'
         mcpb_match = re.search(mcpb, control)
         if mcpb_match:
             # look for groupname in the control file
             #save_to_file(f"mcpb_groupname = {user_input_groupname}\n", filename)
-            groupname = r'mcpb_groupname\s*=\s*\[(.*)]'
+            groupname = r'mcpb_groupname\s*=\s*(.*)'
             groupname_match = re.search(groupname, control).group(1)
             # establishing tleap input name
             mcpb_tleap = f'{groupname_match}_tleap.in'
             # getting necessary info about additional atoms from tleap input
-            additional_atom_types = []
-            additional_mol2 = []
-            additional_frcmod = []
-            additional_bonds = []
-            molecule = []
+            # NEW VERSION OF MCPB.PY TLEAP OUTPUT
+            tleap_modifications_file = Path(f'tleap_{groupname_match}.in')
+            # checking if mcpb otuput in a tleap format is already present
+            # removing old version of tleap output
+            if tleap_modifications_file.exists():
+                os.remove(tleap_modifications_file)
+            # creating a string, to which tleap modifications will be appended
+            tleap_modifications_string = ''
+            # opening tleap output and extracting important information
             with open(f'{mcpb_tleap}', 'r') as file:
                 a = file.read()
                 for line in a.splitlines():
-                    # look for add atoms entries
-                    atom_type = r'({.*})'
-                    atom_type_match = re.search(atom_type, line).group(1)
-                    additional_atom_types.append(atom_type_match)
-                    # look for mol2 entries
-                    if 'loadmol2' in line:
-                        additional_mol2.append(line)
-                    # look for loadamberparams entries
-                    if 'loadamberparams' in line:
-                        additional_frcmod.append(line)
-                    # look for bond entries
-                    if 'bond' in line:
-                        additional_bonds.append(line)
-                    # look for mol entry
-                    if 'mol =' in line:
-                        molecule.append(line)
-            # make addAtomTypes and format it properly
-            add_atom_types = ''
-            if additional_atom_types:
-                for x in additional_atom_types:
-                    add_atom_types = additional_atom_types + x + '\n'
-                add_atom_types = additional_atom_types + '}\n'
-            # create file with tleap input which is a result from running MCPB.py
-            tleap_mcpb_modification = ''
-            if add_atom_types:
-                tleap_mcpb_modification = tleap_mcpb_modification + add_atom_types
-            if additional_mol2:
-                tleap_mcpb_modification = tleap_mcpb_modification + '\n'.join(additional_mol2)
-            if additional_frcmod:
-                tleap_mcpb_modification = tleap_mcpb_modification + '\n'.join(additional_frcmod)
-            if additional_bonds:
-                tleap_mcpb_modification = tleap_mcpb_modification + '\n'.join(additional_frcmod)
-            if molecule:
-                tleap_mcpb_modification = tleap_mcpb_modification + '\n'.join(additional_frcmod)
-            tleap_modifications_file = Path(f'tleap_{groupname_match}.in')
-            # checking if mcpb otuput in a tleap format is already present
-            if tleap_modifications_file.exists:
-                os.remove(tleap_modifications_file)
-            # saving results from mcpb to the file
+                    # getting rid of tleap lines which should be taken from mdms
+                    if line.startswith('source'):
+                        pass
+                    elif line.startswith('savepdb'):
+                        pass
+                    elif line.startswith('saveamberparm'):
+                        pass
+                    elif line.startswith('solvatebox'):
+                        pass
+                    elif line.startswith('addions'):
+                        pass
+                    elif line.startswith('quit'):
+                        pass
+                    # if line does not start with the above, given info is required for a succesfull tleap input
+                    else:
+                        tleap_modifications_string = tleap_modifications_string + line + '\n'
+            # remove last line from string (it is an empty line)
+            temp_string = tleap_modifications_string.splitlines()
+            temp_string = temp_string[:-1]
+            tleap_modifications_string = '\n'.join(temp_string)
+            # saving tleap modifications to a file
             with open(tleap_modifications_file, 'w') as file:
-                file.write(tleap_mcpb_modification)
+                file.write(tleap_modifications_string)
         else:
             # mcpb_input = True was not written to the control file, this will be run
             # taking only ligands entries
@@ -813,10 +818,12 @@ def metal_modelling():
                         if "DU" in line:
                             if len(metal) == 1:
                                 line = line.replace("DU", f"{metal} ")
-                                line = line.replace("0.000000", f'{charge}.000000')
+                                #line = line.replace("0.000000", f'{charge}.000000')
                             elif len(metal) == 2:
                                 line = line.replace("DU", f"{metal}")
-                                line = line.replace("0.000000", f'{charge}.000000')
+                                #line = line.replace("0.000000", f'{charge}.000000')
+                        if "0.000000" in line:
+                            line = line.replace("0.000000", f'{charge}.000000')
                         mol2_metal = mol2_metal + line + '\n'
                 # replacing {metal}.mol2
                 os.remove(Path(f'{metal}.mol2'))
@@ -840,7 +847,6 @@ def metal_modelling():
                     except:
                         print('Please, provide valid input')
                 # determine which residues create bonds with the metal ion
-                print('\n' + structure_match_split + '\n')
                 metal_center_file = 'metal_center.pdb'
                 metal_cpptraj_input= f"parm {structure_match_split}_full.pdb noconect\n" \
                     f"trajin {structure_match_split}_full.pdb\n" \
@@ -865,7 +871,6 @@ def metal_modelling():
                     for line in a.splitlines():
                         if line[17:20] not in unique_res_list:
                             unique_res_list.append(line[17:20])
-                print(unique_res_list)
                 # find if there is a mol2 file for entry in unique res list - if there is, ligand files will be put into
                 # input file for MCPB.py; otherwise there is no ligand around metal ion
                 ligands_metal_center = []
@@ -1000,9 +1005,22 @@ def tleap_input():
         except:
             print('Please, provide valid input')
     # saving choice to control file and tleap input
-    save_to_file(f"ff = {user_input_protein_ff}\n", filename)
+    save_to_file(f"prot_ff = {user_input_protein_ff}\n", filename)
     with open(tleap_file, "a") as f:
         f.write(f"source leaprc.protein.{user_input_protein_ff}\n")
+    # saving ligand force field to control file
+    ligands = r'ligands\s*=\s*\[(.*)\]'
+    ligands_match = re.search(ligands, control)
+    if ligands_match:
+        # if there are ligands, find which force field was used
+        lig_ff = r'atoms_type\s*=\s*(.*)'
+        lig_ff_match = re.search(lig_ff, control).group(1)
+        # saving match to tleap input
+        # this is done earlier
+        with open(tleap_file, "a") as f:
+            print('here7')
+            f.write(f"source leaprc.{lig_ff_match}\n")
+            print('here8')
     # water force field
     water_ff_list = ['tip3p', 'tip4pew', 'spce']
     # getting box info based on the chosen water ff
@@ -1046,39 +1064,85 @@ def tleap_input():
         f.write(f"loadamberparams frcmod.{user_input_water_ff}\n")
         f.write(f"loadamberparams {ions}\n")
     # finding if there are results from mcpb.py
-    mcpb = r'mcpb_input\s*=\s*\[(.*)]'
+    mcpb = r'mcpb_input\s*=\s*(.*)'
     mcpb_match = re.search(mcpb, control)
     tleap_mcpb_modifications = ''
     if mcpb_match:
         # look for groupname in the control file
-        groupname = r'mcpb_groupname\s*=\s*\[(.*)]'
+        groupname = r'mcpb_groupname\s*=\s*(.*)'
         groupname_match = re.search(groupname, control).group(1)
         tleap_modifications_file = Path(f'tleap_{groupname_match}.in')
         # assign the whole tleap modification to the string
         with open(tleap_modifications_file, 'r') as file:
             tleap_mcpb_modifications = file.read()
-        # saving mcpb modifications to
+        # saving mcpb modifications to tleap input file
+        with open(tleap_file, "a") as f:
+            f.write(f"{tleap_mcpb_modifications}\n")
     # finding if there are ligands in control file
     ligands = r'ligands\s*=\s*\[(.*)\]'
     ligands_match = re.search(ligands, control)
+    # saving ligands parameters is done only if mcpb was not run - MUST BE CHANGED TO INCORPORATE LIGANDS
+    # WHICH WERE NOT INCLUDED IN METAL CENTER
+    # taking ligands info
     if ligands_match:
-        # if there are ligands, find which force field was used
-        lig_ff = r'atoms_type\s*=\s*(.*)'
-        lig_ff_match = re.search(lig_ff, control).group(1)
-        # saving match to tleap input
-        with open(tleap_file, "a") as f:
-            f.write(f"source leaprc.{lig_ff_match}\n")
-        # taking only ligands entries
+        # taking only ligands' entries values
         ligands_match = ligands_match.group(1)
-        # removing quotes from string
+        # replacing quotes in string
         ligands_string = ligands_match.replace("'", "")
-        # removing whitespaces and turning string into a list
+        # converting string to list
         ligands_list = re.sub(r'\s', '', ligands_string).split(',')
-        # putting mol2 and frcmod for each ligand into tleap input
-        for ligand in ligands_list:
-            with open(tleap_file, 'a') as f:
-                f.write(f"{ligand} = loadmol2 {ligand}.mol2\n")
-                f.write(f"loadamberparams {ligand}.frcmod\n")
+        # list which will have ligands that were found in metal center
+        metal_center_ligands_list = []
+        # checking if mcpb was run
+        if mcpb_match:
+            # list which will cot
+            # reading metal center file
+            metal_center_file = 'metal_center.pdb'
+            with open(metal_center_file, 'r') as file:
+                a = file.readlines()
+                # iterating over each line in metal_center
+                for line in a:
+                    # iterating over each ligand
+                    for x in ligands_list:
+                        # if x ligand is in line, check if it is in metal_center_ligands_list
+                        if x in line[17:20]:
+                            # if there is no x ligand in metal_center_ligands_list, add it to the list
+                            if x not in metal_center_ligands_list:
+                                metal_center_ligands_list.append(x)
+            # if those 2 lists are the same, all of the ligands are included in metal center; nothing to be done
+            if metal_center_ligands_list == ligands_list:
+                pass
+            else:
+                # not all of the ligands were found in metal center; they must be added to tleap input
+                # remove from ligands_list entries that were found in metal_center
+                ligands_list = [elem for elem in ligands_list if elem not in metal_center_ligands_list]
+                # mol2 and frcmod must be added for each element in ligands_list
+                # putting mol2 and frcmod for each ligand into tleap input
+                for ligand in ligands_list:
+                    with open(tleap_file, 'a') as f:
+                        f.write(f"{ligand} = loadmol2 {ligand}.mol2\n")
+                        f.write(f"loadamberparams {ligand}.frcmod\n")
+            pass
+        # mcpb.py was not run - execute normally
+        else:
+            # if there are ligands, find which force field was used
+            lig_ff = r'atoms_type\s*=\s*(.*)'
+            lig_ff_match = re.search(lig_ff, control).group(1)
+            # saving match to tleap input
+            # this is done earlier
+            # with open(tleap_file, "a") as f:
+            #   f.write(f"source leaprc.{lig_ff_match}\n")
+            # taking only ligands entries
+            #ligands_match = ligands_match.group(1)
+            # removing quotes from string
+            #ligands_string = ligands_match.replace("'", "")
+            # removing whitespaces and turning string into a list
+            #ligands_list = re.sub(r'\s', '', ligands_string).split(',')
+            # putting mol2 and frcmod for each ligand into tleap input
+            for ligand in ligands_list:
+                with open(tleap_file, 'a') as f:
+                    f.write(f"{ligand} = loadmol2 {ligand}.mol2\n")
+                    f.write(f"loadamberparams {ligand}.frcmod\n")
     # finding if crystal waters were retained for MD
     waters = r'waters\s*=\s*\[(.*)\]'
     waters_match = re.search(waters, control)
@@ -1100,11 +1164,14 @@ def tleap_input():
             water_model = water_models_dict.get(user_input_water_ff)
             with open(tleap_file, 'a') as f:
                 f.write(f"{waters_list[x]} = {water_model}\n")
-    # reading complex file
-    with open(tleap_file, 'a') as f:
-        f.write(f"mol = loadpdb {complex}\n")
-        # checking complex pdb for validity
-        f.write(f"check mol\n")
+    # reading complex file - if mcpb py was run, skip this due to the fact that mcpb py changes mol file
+    if mcpb_match:
+        pass
+    else:
+        with open(tleap_file, 'a') as f:
+            f.write(f"mol = loadpdb {complex}\n")
+            # checking complex pdb for validity
+            f.write(f"check mol\n")
     # provide filaneme for topology and coordinates
     USER_CHOICE_NAME = "\nPrefix\n" \
                        "Please, provide name for the prefix for the topology and coordinates files.\n" \
@@ -1168,9 +1235,9 @@ def tleap_input():
     # execute tleap input
     subprocess.run([f"{tleap_run}"], shell=True)
 
-
+# these are run normally
 top_prep_functions = [
-    file_naming,
+#    file_naming,
     clearing_control,
     hydrogen_check,
     ligands_parameters,
@@ -1180,18 +1247,68 @@ top_prep_functions = [
     tleap_input]
 
 
-methods_generator = (y for y in top_prep_functions)
+# if mcpb.py was run, these are run
+top_prep_functions_after_mcpb = [
+    clearing_control_mcpb,
+    metal_modelling,
+    tleap_input
+]
+
+#methods_generator = (y for y in top_prep_functions)
+#next(methods_generator, None)
 
 
 def queue_methods():
-    next(methods_generator, None)
+    #next(methods_generator, None)
     global stop_generator
     stop_generator = False
-    for x in top_prep_functions:
-        x()
-        # if a condition is met, generator is stopped
-        if stop_generator:
-            # I do not know if this prompt is necessary
-            print('\nProgram has not finished normally - it appears that something was wrong with your structure. \n'
-                  'Apply changes and try again!\n')
-            break
+    # file naming must be run prior to generators
+    file_naming()
+    # check if mcpb.py was run
+    control = read_file(filename)
+    # finding if there are metal ions considered in the system
+    metals = r'metals\s*=\s*\[(.*)\]'
+    metals_match = re.search(metals, control)
+    if metals_match:
+        # checking if mcpb.py input was generated
+        mcpb = r'mcpb_input\s*=\s*(.*)'
+        mcpb_match = re.search(mcpb, control)
+        # if mcpb.py was run, run generator with functions from top_prep_functions_after_mcpb
+        if mcpb_match:
+            methods_generator = (y for y in top_prep_functions_after_mcpb)
+            next(methods_generator, None)
+            for x in top_prep_functions_after_mcpb:
+                x()
+                # if a condition is met, generator is stopped
+                if stop_generator:
+                    # I do not know if this prompt is necessary
+                    print(
+                        '\nProgram has not finished normally - it appears that something was wrong with your structure. \n'
+                        'Apply changes and try again!\n')
+                    break
+        else:
+            methods_generator = (y for y in top_prep_functions)
+            next(methods_generator, None)
+            # mcpb.py input was not generated yet; run top_prep_functions generator
+            for x in top_prep_functions:
+                x()
+                # if a condition is met, generator is stopped
+                if stop_generator:
+                    # I do not know if this prompt is necessary
+                    print(
+                        '\nProgram has not finished normally - it appears that something was wrong with your structure. \n'
+                        'Apply changes and try again!\n')
+                    break
+    else:
+        # there are no metal ions; run top_prep_functions generator
+        methods_generator = (y for y in top_prep_functions)
+        next(methods_generator, None)
+        for x in top_prep_functions:
+            x()
+            # if a condition is met, generator is stopped
+            if stop_generator:
+                # I do not know if this prompt is necessary
+                print(
+                    '\nProgram has not finished normally - it appears that something was wrong with your structure. \n'
+                    'Apply changes and try again!\n')
+                break
